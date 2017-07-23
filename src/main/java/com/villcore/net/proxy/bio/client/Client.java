@@ -51,7 +51,7 @@ public class Client {
                 Socket localSocket = serverSocket.accept();
                 Socket remoteSocket = SocketUtil.connect(remoteAddress);
                 if(remoteSocket == null) {
-                    LOG.debug("can not connect {}...", remoteAddress);
+                    LOG.info("can not connect {}...", remoteAddress);
                     localSocket.close();
                     continue;
                 }
@@ -60,7 +60,7 @@ public class Client {
                 SocketUtil.configSocket(localSocket);
                 Connection connection = new ClientConnection(localSocket, remoteSocket);
                 connection.start();
-                LOG.debug("client build connection [{} -> {}]...", localSocket.getRemoteSocketAddress().toString(), remoteSocket.getRemoteSocketAddress().toString());
+                LOG.info("client build connection [{} -> {}]...", localSocket.getRemoteSocketAddress().toString(), remoteSocket.getRemoteSocketAddress().toString());
                 connections.add(connection);
             }
         } catch (IOException e) {

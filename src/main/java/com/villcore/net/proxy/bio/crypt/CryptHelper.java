@@ -18,10 +18,26 @@ public class CryptHelper {
     private KeyGenerator keyGenerator;
     private int ivSize;
     private float interferenceFactor;
+    private String password;
 
     public CryptHelper() throws NoSuchAlgorithmException, NoSuchPaddingException {
         this.interferenceFactor = PkgConf.getInterferenceFactor();
-        secureRandom = new SecureRandom();
+        //secureRandom = new SecureRandom();
+        this.secureRandom = SecureRandom.getInstance("SHA1PRNG");
+        //TODO need fixed...
+        secureRandom.setSeed("test".getBytes());
+
+        cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
+        keyGenerator = KeyGenerator.getInstance("AES");
+    }
+
+    public CryptHelper(String password) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        this.password = password;
+        this.interferenceFactor = PkgConf.getInterferenceFactor();
+        //secureRandom = new SecureRandom();
+        this.secureRandom = SecureRandom.getInstance("SHA1PRNG");
+        secureRandom.setSeed(password.getBytes());
+
         cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
         keyGenerator = KeyGenerator.getInstance("AES");
     }

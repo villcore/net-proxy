@@ -33,7 +33,6 @@ public class ToUserPackageHandler implements Handler {
         userPackage.setConnectionId(connectionId);
         userPackage.setUserFlag(userFlag);
 
-        System.out.println(userPackage);
         return userPackage;
     }
 }
