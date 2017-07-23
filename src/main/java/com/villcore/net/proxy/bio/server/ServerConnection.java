@@ -30,14 +30,16 @@ public class ServerConnection extends Connection {
 
         //input output server decrypt           input2 output2 proxy encrypt
         super.decryptTask = new DecryptTask(this, super.inputStream, super.outputStream2);
+//        super.decryptTask.addHandler("decompress", new DecompressHandler(new GZipCompressor()));
         super.decryptTask.addHandler("decrypt", decryptHander);
-        super.decryptTask.addHandler("decompress", new DecompressHandler(new GZipCompressor()));
+        super.decryptTask.addHandler("user_to_default", new FromUserPackageHandler());
 
 
         //TODO add handlers
         super.encryptTask = new EncryptTask(this, super.inputStream2, super.outputStream);
-        super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
+        super.encryptTask.addHandler("pack_user", new ToUserPackageHandler(-1, 1001L));
         super.encryptTask.addHandler("encrypt", encryptHander);
+//        super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
     }
 
 }

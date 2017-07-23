@@ -5,9 +5,10 @@ import com.villcore.net.proxy.bio.crypt.Crypt;
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
 import com.villcore.net.proxy.bio.handler.*;
-import com.villcore.net.proxy.bio.pkg.DefaultPackage;
-import com.villcore.net.proxy.bio.pkg.EncryptPackage;
-import com.villcore.net.proxy.bio.pkg.PkgConf;
+import com.villcore.net.proxy.bio.pkg2.Package;
+import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
+import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
+import com.villcore.net.proxy.bio.pkg2.PkgConf;
 import org.junit.Test;
 import sun.plugin2.message.OverlayWindowMoveMessage;
 
@@ -38,7 +39,7 @@ public class CryptTest {
         Handler encryptHandler = new EncryptHandler(passwordManager, cryptHelper);
         Handler decryptHandler = new DecryptHandler(passwordManager, cryptHelper);
 
-        DefaultPackage pkg = new DefaultPackage();
+        Package pkg = new Package();
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(bos);
@@ -50,14 +51,11 @@ public class CryptTest {
         pkg.setHeader(bos.toByteArray());
         dos.close();
         pkg.setBody(msgBytes);
-        pkg.setSize(pkg.getHeader(), msgBytes.length);
 
-        EncryptPackage encryptPackage = (EncryptPackage) encryptHandler.handle(compressHandler.handle(pkg));
-        DefaultPackage decrptPackage = (DefaultPackage) decryptHandler.handle(encryptPackage);
+        EncryptPackage encryptPackage = (EncryptPackage) encryptHandler.handle(pkg);
+        Package pkg2 = decryptHandler.handle(encryptPackage);
 
-        decrptPackage = (DefaultPackage) decompressHandler.handle(decrptPackage);
-
-        System.out.println(new String(decrptPackage.getBody()));
+        System.out.println(new String(pkg2.getBody()));
     }
 
 

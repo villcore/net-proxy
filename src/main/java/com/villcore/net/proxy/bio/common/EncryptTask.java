@@ -2,9 +2,9 @@ package com.villcore.net.proxy.bio.common;
 
 import com.villcore.net.proxy.bio.common.Connection;
 import com.villcore.net.proxy.bio.common.DecryptTask;
-import com.villcore.net.proxy.bio.pkg.DefaultPackage;
+import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
 import com.villcore.net.proxy.bio.handler.Handler;
-import com.villcore.net.proxy.bio.pkg.Package;
+import com.villcore.net.proxy.bio.pkg2.Package;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,35 +46,17 @@ public class EncryptTask implements Runnable {
     @Override
     public void run() {
         while (running) {
-//            byte[] bytes = new byte[1 * 1024 * 1024];
-//            int pos = -1;
             try {
-//                pos = inputStream.read(bytes);
-//                if(pos > 0) {
-//                    outputStream.write(bytes, 0, pos);
-//                    outputStream.flush();
-//                }
-//
-//                if(pos == -1) {
-//                    throw new IOException("socket closed...");
-//                }
-                ////LOG.debug("encrypt task runing...");
-                Package pkg = new DefaultPackage();
-                //pkg.LOG = LOG;
+                Package pkg = new Package();
                 pkg.readPackageWithoutHeader(inputStream);
-                //LOG.debug("encryt read pkg...");
-
-                //LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(pkg.getHeader()), pkg.getHeader().length, pkg.getBody().length);
+                LOG.debug("encryt read pkg...");
+                LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
                 for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
                     pkg = entry.getValue().handle(pkg);
+                    LOG.debug("encrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
                 }
-                //LOG.debug("compress size = {}, header = {}, body = {}", pkg.getSize(pkg.getHeader()), pkg.getHeader().length, pkg.getBody().length);
-//                outputStream.write(pkg.getHeader());
-//                outputStream.write(pkg.getBody());
-//                outputStream.flush();
-
                 pkg.writePackageWithHeader(outputStream);
-                //LOG.debug("encryt write pkg...");
+                LOG.debug("encryt write pkg ...");
 
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
@@ -95,6 +77,61 @@ public class EncryptTask implements Runnable {
         }
         close();
     }
+
+    /*
+    @Override
+    public void run() {
+        while (running) {
+//            byte[] bytes = new byte[1 * 1024 * 1024];
+//            int pos = -1;
+            try {
+//                pos = inputStream.read(bytes);
+//                if(pos > 0) {
+//                    outputStream.write(bytes, 0, pos);
+//                    outputStream.flush();
+//                }
+//
+//                if(pos == -1) {
+//                    throw new IOException("socket closed...");
+//                }
+                ////LOG.debug("encrypt task runing...");
+                Package pkg = new DefaultPackage();
+                //pkg.LOG = LOG;
+                pkg.readPackageWithoutHeader(inputStream);
+                LOG.debug("encryt read pkg...");
+
+                LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(pkg.getHeader()), pkg.getHeader().length, pkg.getBody().length);
+                for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
+                    pkg = entry.getValue().handle(pkg);
+                }
+                LOG.debug("compress size = {}, header = {}, body = {}", pkg.getSize(pkg.getHeader()), pkg.getHeader().length, pkg.getBody().length);
+//                outputStream.write(pkg.getHeader());
+//                outputStream.write(pkg.getBody());
+//                outputStream.flush();
+
+                pkg.writePackageWithHeader(outputStream);
+                LOG.debug("encryt write pkg...");
+
+            } catch (IOException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (BadPaddingException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (InvalidAlgorithmParameterException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (IllegalBlockSizeException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (InvalidKeyException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            }
+        }
+        close();
+    }
+    */
 
     public void start() {
         running = true;

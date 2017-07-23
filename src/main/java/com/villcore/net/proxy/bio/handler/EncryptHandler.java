@@ -3,9 +3,10 @@ package com.villcore.net.proxy.bio.handler;
 
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
-import com.villcore.net.proxy.bio.pkg.EncryptPackage;
-import com.villcore.net.proxy.bio.pkg.Package;
-import com.villcore.net.proxy.bio.pkg.PkgConf;
+import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
+import com.villcore.net.proxy.bio.pkg2.Package;
+import com.villcore.net.proxy.bio.pkg2.PkgConf;
+import com.villcore.net.proxy.bio.pkg2.UserPackage;
 import com.villcore.net.proxy.bio.util.ByteArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,11 +35,20 @@ public class EncryptHandler implements Handler {
 
     @Override
     public Package handle(Package pkg) throws IOException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
-        // DefaultPackage -> EncryptPackage
-        //size/header size/body size/    (有效的内容/header iv, size(body), conn, userFlag, request body)  /干扰数据
-        byte[] header = pkg.getHeader();
-        byte[] body = pkg.getBody();
-        long userFlag = pkg.getUserFlag(header);
+
+        // UserPackage -> EncryptPackage
+//        if(!(pkg instanceof UserPackage)) {
+//            return pkg;
+//        }
+
+        UserPackage userPackage = new UserPackage();
+        userPackage.setHeader(pkg.getHeader());
+        userPackage.setBody(pkg.getBody());
+
+        byte[] header = userPackage.getHeader();
+        byte[] body = userPackage.getBody();
+        long userFlag = userPackage.getUserFlag();
+        int connectionId = userPackage.getConnectionId();
 
         String password = passwordManager.getPassword(userFlag);
         SecretKey key = cryptHelper.getSecretKey(password);
@@ -54,16 +64,16 @@ public class EncryptHandler implements Handler {
         byte[] encryptBody = cryptHelper.encryptBody(ivBytes, key, body);
 //        LOG.debug("encrypt encryptBody = {}", encryptBody);
 
-        byte[] decryptBody = cryptHelper.decryptBody(ivBytes, key, encryptBody);
-
+//        byte[] decryptBody = cryptHelper.decryptBody(ivBytes, key, encryptBody);
 //        LOG.debug(" encrypted body size = {}\n origin content = {}", encryptBody.length, new String(decryptBody));
-        //有干扰字节
+
+        //干扰字节
         byte[] interferenceBytes = cryptHelper.getInterferenceBytes(body.length);
 
         // [(bodySize + 干扰数据Size) / (bodySize) /（userFlag) / ivBytes] [ body (加密内容（defaultPackage))] [(干扰数据)]
         ByteBuffer encryptPkgHeaderBuffer = ByteBuffer.wrap(new byte[PkgConf.getEndryptPackageHeaderLen()]);
-        encryptPkgHeaderBuffer.putInt(encryptHeader.length + encryptBody.length + interferenceBytes.length);
-        encryptPkgHeaderBuffer.putInt(encryptHeader.length + encryptBody.length);
+        encryptPkgHeaderBuffer.putInt(encryptHeader.length);
+        encryptPkgHeaderBuffer.putInt(encryptBody.length);
         encryptPkgHeaderBuffer.putLong(userFlag);
         encryptPkgHeaderBuffer.put(ivBytes);
 
@@ -75,7 +85,6 @@ public class EncryptHandler implements Handler {
         EncryptPackage encryptPackage = new EncryptPackage();
         encryptPackage.setHeader(encryptPkgHeaderBuffer.array());
         encryptPackage.setBody(newBody);
-        encryptPackage.setSize(encryptPackage.getHeader(), newBody.length);
 
         return encryptPackage;
     }

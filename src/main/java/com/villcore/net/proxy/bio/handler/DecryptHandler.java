@@ -2,10 +2,10 @@ package com.villcore.net.proxy.bio.handler;
 
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
-import com.villcore.net.proxy.bio.pkg.DefaultPackage;
-import com.villcore.net.proxy.bio.pkg.EncryptPackage;
-import com.villcore.net.proxy.bio.pkg.Package;
-import com.villcore.net.proxy.bio.pkg.PkgConf;
+import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
+import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
+import com.villcore.net.proxy.bio.pkg2.Package;
+import com.villcore.net.proxy.bio.pkg2.PkgConf;
 import com.villcore.net.proxy.bio.util.ByteArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +32,7 @@ public class DecryptHandler implements Handler {
 
     @Override
     public Package handle(Package pkg) throws IOException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
-        // EncryptPackage -> DefaultPackage
-        // [(bodySize + 干扰数据Size) / (bodySize) /（userFlag) / ivBytes] [ body (加密内容（defaultPackage))] [(干扰数据)]
-//        if(!(pkg instanceof EncryptPackage)) {
-//            throw new IOException("package format error...");
-//        }
+        // EncryptPackage -> UserPackage
 
         EncryptPackage encryptPackage = new EncryptPackage();
         encryptPackage.setHeader(pkg.getHeader());
@@ -50,26 +46,24 @@ public class DecryptHandler implements Handler {
         byte[] bodyWithInterfenrence = encryptPackage.getBody();
         //LOG.debug("bodyWithInterfenrence len = {}", ByteBuffer.wrap(pkg.getHeader()).getInt());
 
-        long userFlag = encryptPackage.getUserFlag(header);
-        byte[] ivBytes = encryptPackage.getIvBytes(header);
+        int innerHeaderSize = encryptPackage.getHeaderSize();
+        int innerBodySize = encryptPackage.getBodySize();
+        long userFlag = encryptPackage.getUserFlag();
+        byte[] ivBytes = encryptPackage.getIvBytes();
         //LOG.debug("decrypt ivBytes = {}", ivBytes);
-        int bodySize = encryptPackage.getBodySize(header);
 
         //LOG.debug("body size = {}", bodySize);
-        byte[] bodyBytes = new byte[bodySize];
+
+        byte[] encryptHeader = new byte[innerHeaderSize];
+        byte[] encryptBody = new byte[innerBodySize];
         //LOG.debug("body = {}", new String(bodyBytes));
 
-        ByteArrayUtils.cpyToNew(bodyWithInterfenrence, bodyBytes, 0, 0, bodyBytes.length);
+        ByteArrayUtils.cpyToNew(bodyWithInterfenrence, encryptHeader, 0, 0, encryptHeader.length);
+        ByteArrayUtils.cpyToNew(bodyWithInterfenrence, encryptBody, encryptHeader.length, 0, encryptBody.length);
 
         String password = passwordManager.getPassword(userFlag);
         SecretKey key = cryptHelper.getSecretKey(password);
 
-        byte[] encryptHeader = new byte[PkgConf.getDefaultPackageHeaderLen()];
-        byte[] encryptBody = new byte[bodyBytes.length - encryptHeader.length];
-
-
-        ByteArrayUtils.cpyToNew(bodyBytes, encryptHeader, 0, 0, encryptHeader.length);
-        ByteArrayUtils.cpyToNew(bodyBytes, encryptBody, encryptHeader.length, 0, encryptBody.length);
         //LOG.debug("decrypt encryptBody = {}", encryptBody);
 
 
@@ -83,13 +77,10 @@ public class DecryptHandler implements Handler {
         //LOG.debug("decrypted header len = {}, decrypt body len = {}", decryptHeader.length, decryptBody.length);
         //LOG.debug("decrypted body content = {}", new String(decryptBody));
 
+        Package newPkg = new Package();
+        newPkg.setHeader(decryptHeader);
+        newPkg.setBody(decryptBody);
 
-        DefaultPackage defaultPackage = new DefaultPackage();
-        defaultPackage.setHeader(decryptHeader);
-        defaultPackage.setBody(decryptBody);
-        defaultPackage.setSize(decryptHeader, decryptBody.length);
-        defaultPackage.setUserFlag(decryptHeader, userFlag);
-
-        return defaultPackage;
+        return newPkg;
     }
 }

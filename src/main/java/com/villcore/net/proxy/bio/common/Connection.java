@@ -63,8 +63,13 @@ public abstract class Connection {
     }
 
     public void stop() {
-        encryptTask.stop();
-        decryptTask.stop();
+        if(encryptTask != null) {
+            encryptTask.stop();
+        }
+
+        if(decryptTask != null){
+            decryptTask.stop();
+        }
     }
 
     protected void closeInputStream(InputStream inputStream) {

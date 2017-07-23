@@ -1,7 +1,7 @@
 package com.villcore.net.proxy.bio.handler;
 
 import com.villcore.net.proxy.bio.compressor.Compressor;
-import com.villcore.net.proxy.bio.pkg.Package;
+import com.villcore.net.proxy.bio.pkg2.Package;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +21,13 @@ public class DecompressHandler implements Handler {
         byte[] header = pkg.getHeader();
         byte[] body = pkg.getBody();
 
+        byte[] decompressHeader = compressor.decompress(header);
         byte[] decompressBody = compressor.decompress(body);
         //LOG.debug("ori body size = {}, decompress body size = {}", body.length, decompressBody.length);
-        pkg.setHeader(header);
-        pkg.setBody(decompressBody);
-        pkg.setSize(header, decompressBody.length);
-//        pkg.buildPackage(header, body);
-        return pkg;
+
+        Package newPkg = new Package();
+        newPkg.setHeader(decompressHeader);
+        newPkg.setBody(decompressBody);
+        return newPkg;
     }
 }

@@ -1,4 +1,4 @@
-package com.villcore.net.proxy.bio.pkg;
+package com.villcore.net.proxy.bio.pkg2;
 
 import com.villcore.net.proxy.bio.util.ByteArrayUtils;
 import org.slf4j.Logger;
@@ -7,38 +7,37 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
- * Created by Administrator on 2017/7/18.
+ * Created by villcore on 2017/7/18.
+ *
+ * Package struct
+ *
+ * [SIZE (INT)] + [HEADER_SIZE (INT)] + [BODY_SIZE (INT)] + [HEADER (BYTE ARRAY)] + [BODY (BYTE ARRAY)]
  */
-public abstract class Package {
+public class Package {
     private static final Logger LOG = LoggerFactory.getLogger(Package.class);
+
+
+    //private int size;
+//    private int headerLen = -1;
+//    private int bodyLen = -1;
 
     private byte[] header;
     private byte[] body;
 
-    /**
-     * 从header读取body size
-     * @return
-     */
-    public abstract int getSize(byte[] header);
+    public int getSize() {
+        return header.length + body.length;
+    }
 
-    /**
-     * 在header写入body size
-     * @param header
-     * @param size
-     * @return
-     */
-    public abstract int setSize(byte[] header, int size);
+    public int getBodyLen() {
+        return body.length;
+    }
 
-    /**
-     * 获取header长度
-     * @return
-     */
-    public abstract int getHeaderLen();
-
-    public abstract long getUserFlag(byte[] header);
-    public abstract void setUserFlag(byte[] header, long userFlag);
+    public int getHeaderLen() {
+        return header.length;
+    }
 
     public byte[] getHeader() {
         return header;
@@ -46,26 +45,68 @@ public abstract class Package {
 
     public void setHeader(byte[] header) {
         this.header = header;
+        //this.headerLen = headerLen;
     }
 
     public byte[] getBody() {
         return body;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " size = " + getSize() + ", header len = " + getHeader().length + ", body len = " + body.length;
+    }
+
     public void setBody(byte[] body) {
         this.body = body;
+        //this.bodyLen = body.length;
+    }
+
+    public static Package buildPackage(byte[] header, byte[] body) {
+        Package pkg = new Package();
+
+        int size = header.length + body.length;
+        pkg.setHeader(header);
+        pkg.setBody(body);
+        return pkg;
+    }
+
+    public static byte[] toBytes(Package pkg) {
+        byte[] sizeBytes =
+                ByteBuffer.wrap(new byte[PkgConf.getPackageMetaLen()]).putInt(pkg.getSize()).putInt(pkg.getHeaderLen()).putInt(pkg.getBodyLen()).array();
+        byte[] bytes = new byte[sizeBytes.length + pkg.getHeaderLen() + pkg.getBodyLen()];
+
+        ByteArrayUtils.cpyToNew(sizeBytes, bytes, 0, 0, sizeBytes.length);
+        ByteArrayUtils.cpyToNew(pkg.getHeader(), bytes, 0, sizeBytes.length, pkg.getHeaderLen());
+        ByteArrayUtils.cpyToNew(pkg.getBody(), bytes, 0, sizeBytes.length + pkg.getHeaderLen(), pkg.getBodyLen());
+
+        return bytes;
     }
 
     public void readPackageWithHeader(InputStream inputStream) throws IOException {
-        header = new byte[getHeaderLen()];
-        readFully(inputStream, header);
-        //read body
-        int size = getSize(header);
+        byte[] metaBytes = new byte[PkgConf.getPackageMetaLen()];
+        readFully(inputStream, metaBytes);
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap(metaBytes);
+        int size = byteBuffer.getInt();
+        int headerLen = byteBuffer.getInt();
+        int bodyLen = byteBuffer.getInt();
+
         if(size < 0 || size > 10 * 1024 * 1024){
             throw new IOException("illegal byte size...");
         }
-        body = new byte[size];
-        readFully(inputStream, body);
+
+        byte[] all = new byte[size];
+        readFully(inputStream, all);
+
+        byte[] header = new byte[headerLen];
+        byte[] body = new byte[bodyLen];
+        ByteArrayUtils.cpyToNew(all, header, 0, 0, headerLen);
+        ByteArrayUtils.cpyToNew(all, body, headerLen, 0, bodyLen);
+
+        setHeader(header);
+        setBody(body);
+
         //LOG.debug("read page without header, header size = {}, body size = {} ", getHeader().length, getBody().length);
     }
 
@@ -77,9 +118,7 @@ public abstract class Package {
 //        System.out.println("body = " + bytes.length);
 //        System.out.println("body = " + new String(bytes));
         setBody(bytes);
-        header = new byte[getHeaderLen()];
-        setHeader(header);
-        setSize(header, getBody().length);
+        setHeader(newHeader());
         //LOG.debug("read page without header, header size = {}, body size = {} ", getHeader().length, getBody().length);
 
     }
@@ -87,13 +126,15 @@ public abstract class Package {
     public void writePackageWithHeader(OutputStream outputStream) throws IOException {
         //LOG.debug("writePackageWithHeader  header = {}, body = {}", getHeader() == null, getBody() == null);
 
-        if(getHeader().length != 0) {
-            writeFully(outputStream, getHeader());
-        }
+//        if(getHeader().length != 0) {
+//            writeFully(outputStream, getHeader());
+//        }
+//
+//        if(getBody().length != 0) {
+//            writeFully(outputStream, getBody());
+//        }
 
-        if(getBody().length != 0) {
-            writeFully(outputStream, getBody());
-        }
+        writeFully(outputStream, toBytes(this));
     }
 
     public void writePackageWithoutHeader(OutputStream outputStream) throws IOException {
@@ -141,12 +182,11 @@ public abstract class Package {
 
     private void writeFully(OutputStream outputStream, byte[] bytes) throws IOException {
         outputStream.write(bytes);
+        //LOG.debug("wirte {} bytes to os ...", bytes.length);
         outputStream.flush();
     }
 
-    public void buildPackage(byte[] header, byte[] body) {
-        setHeader(header);
-        setSize(header, body.length);
-        setBody(body);
+    public byte[] newHeader() {
+        return new byte[]{};
     }
 }

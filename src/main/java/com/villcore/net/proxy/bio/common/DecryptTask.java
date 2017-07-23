@@ -1,10 +1,10 @@
 package com.villcore.net.proxy.bio.common;
 
-import com.villcore.net.proxy.bio.pkg.DefaultPackage;
+import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
 import com.villcore.net.proxy.bio.handler.Handler;
-import com.villcore.net.proxy.bio.pkg.EncryptPackage;
-import com.villcore.net.proxy.bio.pkg.Package;
-import com.villcore.net.proxy.bio.pkg.TransferPackage;
+import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
+import com.villcore.net.proxy.bio.pkg2.Package;
+import com.villcore.net.proxy.bio.pkg2.TransferPackage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +46,41 @@ public class DecryptTask implements Runnable {
 
     @Override
     public void run() {
+
+        while (running) {
+            try {
+                Package pkg = new Package();
+                pkg.readPackageWithHeader(inputStream);
+                LOG.debug("decrypt task read pkg size = {}, header len = {}, body len = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
+                for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
+                    pkg = entry.getValue().handle(pkg);
+                    LOG.debug("decrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
+                }
+
+                pkg.writePackageWithoutHeader(outputStream);
+                LOG.debug("decryt task write pkg...");
+            } catch (IOException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (BadPaddingException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (InvalidAlgorithmParameterException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (IllegalBlockSizeException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            } catch (InvalidKeyException e) {
+                LOG.error(e.getMessage(), e);
+                stop();
+            }
+        }
+        close();
+    }
+    /*
+    @Override
+    public void run() {
 //        byte[] bytes = new byte[1 * 1024 * 1024];
 //        int pos = -1;
         while (running) {
@@ -66,6 +101,7 @@ public class DecryptTask implements Runnable {
                 //pkg.LOG = LOG;
 
                 pkg.readPackageWithHeader(inputStream);
+                LOG.debug("decrypt task read pkg header len = {}, body len = {}", pkg.getHeader().length, pkg.getBody().length);
                 //byte[] bytes = new byte[20];
                 //LOG.debug("decrypt read bytes = {}", inputStream.read(bytes));
                 //LOG.debug("decryt read pkg...");
@@ -78,7 +114,7 @@ public class DecryptTask implements Runnable {
                 pkg.writePackageWithoutHeader(outputStream);
 //                outputStream.write(pkg.getBody());
 //                outputStream.flush();
-//                LOG.debug("decryt write pkg...");
+                LOG.debug("decryt task write pkg...");
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
                 stop();
@@ -98,6 +134,7 @@ public class DecryptTask implements Runnable {
         }
         close();
     }
+    */
 
     public void start() {
         running = true;

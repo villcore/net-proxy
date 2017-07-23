@@ -1,6 +1,6 @@
 package com.villcore.net.proxy.bio.handler;
 
-import com.villcore.net.proxy.bio.pkg.Package;
+import com.villcore.net.proxy.bio.pkg2.Package;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
