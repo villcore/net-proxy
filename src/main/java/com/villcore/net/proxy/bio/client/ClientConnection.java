@@ -34,7 +34,7 @@ public class ClientConnection extends Connection {
         LOG.debug("init task...");
         //input output local encrypt        input2 output2 remote decrypt
         super.encryptTask = new EncryptTask(connection, inputStream, outputStream2);
-        super.encryptTask.addHandler("pack_user", new ToUserPackageHandler(-1, 1001L));
+        super.encryptTask.addHandler("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
         super.encryptTask.addHandler("encrypt", encryptHander);
         super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
 //

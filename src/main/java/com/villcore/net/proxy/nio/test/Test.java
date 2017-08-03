@@ -42,7 +42,7 @@ public class Test {
         }
         @Override
         public void run() {
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[1024 * 1024];
             int pos = -1;
 
             while(true) {

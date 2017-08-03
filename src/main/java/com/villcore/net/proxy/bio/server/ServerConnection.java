@@ -37,7 +37,7 @@ public class ServerConnection extends Connection {
 
         //TODO add handlers
         super.encryptTask = new EncryptTask(this, super.inputStream2, super.outputStream);
-        super.encryptTask.addHandler("pack_user", new ToUserPackageHandler(-1, 1001L));
+        super.encryptTask.addHandler("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
         super.encryptTask.addHandler("encrypt", encryptHander);
         super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
     }

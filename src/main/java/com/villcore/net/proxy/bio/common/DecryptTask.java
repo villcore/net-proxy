@@ -49,6 +49,8 @@ public class DecryptTask implements Runnable {
 
         while (running) {
             try {
+                LOG.debug("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+
                 Package pkg = new Package();
                 pkg.readPackageWithHeader(inputStream);
                 LOG.debug("decrypt task read pkg size = {}, header len = {}, body len = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
@@ -57,9 +59,10 @@ public class DecryptTask implements Runnable {
                     LOG.debug("decrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
                 }
 
-                LOG.debug("request content = \n==\n{}\n==", new String(pkg.getBody(), "utf-8"));
+                //LOG.debug("request content = \n==\n{}\n==", new String(pkg.getBody(), "utf-8"));
                 pkg.writePackageWithoutHeader(outputStream);
-                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", new String(pkg.getBody()));
+                //LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", new String(pkg.getBody()));
+
                 LOG.debug("decryt task write pkg...");
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
