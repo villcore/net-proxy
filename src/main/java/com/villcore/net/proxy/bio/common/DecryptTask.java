@@ -58,6 +58,7 @@ public class DecryptTask implements Runnable {
                 }
 
                 pkg.writePackageWithoutHeader(outputStream);
+                LOG.debug("write to decrypting =  \n{}\n", new String(pkg.getBody()));
                 LOG.debug("decryt task write pkg...");
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
