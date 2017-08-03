@@ -19,6 +19,7 @@ public class EncryptPackage extends Package {
     public int getHeaderSize() {
         return ByteBuffer.wrap(getHeader()).getInt();
     }
+
     public byte[] getIvBytes() {
         byte[] ivBytes = new byte[PkgConf.getIvBytesLen()];
         ByteArrayUtils.cpyToNew(getHeader(), ivBytes, 4 + 4 + 8, 0, ivBytes.length);

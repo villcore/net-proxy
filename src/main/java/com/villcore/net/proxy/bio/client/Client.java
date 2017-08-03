@@ -23,8 +23,9 @@ public class Client {
         List<Connection> connections = new LinkedList<>();
 
         int listenPort = 10080;
-        InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 20080);
+//        InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 20080);
 
+        InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
         ServerSocket serverSocket = null;
 
         WinSystemProxy proxy = null;
