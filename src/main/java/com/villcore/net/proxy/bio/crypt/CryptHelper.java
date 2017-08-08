@@ -65,7 +65,9 @@ public class CryptHelper {
     }
 
     public byte[] getSecureRandomBytes(int size) {
-        return secureRandom.generateSeed(size);
+        byte[] bytes = new byte[size];
+        secureRandom.nextBytes(bytes);
+        return bytes;
     }
 
     public SecretKey getSecretKey(String password) throws UnsupportedEncodingException {
