@@ -47,6 +47,7 @@ public class EncryptHandler implements Handler {
 
         byte[] header = userPackage.getHeader();
         byte[] body = userPackage.getBody();
+
         long userFlag = userPackage.getUserFlag();
         int connectionId = userPackage.getConnectionId();
 
