@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.bio.crypt;
 
 import com.villcore.net.proxy.bio.pkg.PkgConf;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.crypto.*;
@@ -20,26 +21,47 @@ public class CryptHelper {
     private float interferenceFactor;
     private String password;
 
+    @Deprecated
+    /**
+     *
+     */
     public CryptHelper() throws NoSuchAlgorithmException, NoSuchPaddingException {
         this.interferenceFactor = PkgConf.getInterferenceFactor();
-        //secureRandom = new SecureRandom();
-        this.secureRandom = SecureRandom.getInstance("SHA1PRNG");
-        //TODO need fixed...
-        secureRandom.setSeed("test".getBytes());
 
-        cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
-        keyGenerator = KeyGenerator.getInstance("AES");
+        secureRandom = new SecureRandom();
+
+        try {
+
+            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
+
+            keyGenerator = KeyGenerator.getInstance("AES");
+            secureRandom.setSeed("test".getBytes());
+            keyGenerator.init(128, secureRandom);
+
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
+
+            throw new RuntimeException(ex);
+
+        }
+
     }
 
     public CryptHelper(String password) throws NoSuchAlgorithmException, NoSuchPaddingException {
         this.password = password;
         this.interferenceFactor = PkgConf.getInterferenceFactor();
-        //secureRandom = new SecureRandom();
-        this.secureRandom = SecureRandom.getInstance("SHA1PRNG");
-        secureRandom.setSeed(password.getBytes());
+        secureRandom = new SecureRandom();
 
-        cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
-        keyGenerator = KeyGenerator.getInstance("AES");
+        try {
+
+            cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
+
+            keyGenerator = KeyGenerator.getInstance("AES");
+
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
+
+            throw new RuntimeException(ex);
+
+        }
     }
 
     public byte[] getSecureRandomBytes(int size) {
@@ -47,7 +69,8 @@ public class CryptHelper {
     }
 
     public SecretKey getSecretKey(String password) throws UnsupportedEncodingException {
-        byte[] bytes = DigestUtils.md5Hex(password.getBytes(CHARSET)).getBytes(CHARSET);
+        String stringKey = DigestUtils.md5Hex(password.getBytes(CHARSET));
+        byte[] bytes = Base64.decodeBase64(stringKey);
         return new SecretKeySpec(bytes, 0, bytes.length, "AES");
     }
 
