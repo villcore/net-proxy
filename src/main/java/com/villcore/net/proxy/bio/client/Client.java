@@ -24,29 +24,54 @@ public class Client {
 
         int listenPort = 10080;
         InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 20080);
-        //InetSocketAddress remoteAddress = new InetSocketAddress("192.168.56.101", 20080);
+        //InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
 
         ServerSocket serverSocket = null;
 
         WinSystemProxy proxy = null;
-//        try {
-//           proxy = new WinSystemProxy("win_utils");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+           proxy = new WinSystemProxy("win_utils");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         WinSystemProxy finalProxy = proxy;
         ServerSocket finalServerSocket = serverSocket;
 
+        Runtime.getRuntime().addShutdownHook(new Thread(){
+            @Override
+            public void run() {
+                try {
+                    System.out.println("close client, reset proxy address...");
+                    finalProxy.clearProxy();
+                } catch (IOException e) {
+                    LOG.error(e.getMessage(), e);
+                }
+
+                if(finalServerSocket != null) {
+                    try {
+                        finalServerSocket.close();
+                    } catch (IOException e) {
+                        LOG.error(e.getMessage(), e);
+                    }
+                }
+
+                for(Connection connection : connections) {
+                    connection.stop();
+                }
+
+            }
+        });
+
         try {
             serverSocket = new ServerSocket(listenPort);
-//            try {
-//                String proxyAddress = "http://127.0.0.1:10080";
-//                proxy.setGlobalProxy(proxyAddress);
-//                System.out.println("set proxy address to : [" + proxyAddress + "]");
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            try {
+                String proxyAddress = "http://127.0.0.1:10080";
+                proxy.setGlobalProxy(proxyAddress);
+                System.out.println("set proxy address to : [" + proxyAddress + "]");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             while (true) {
                 Socket localSocket = serverSocket.accept();
@@ -65,33 +90,10 @@ public class Client {
                 connections.add(connection);
             }
         } catch (IOException e) {
-            //proxy.clearProxy();
+            proxy.clearProxy();
             LOG.error(e.getMessage(), e);
         }
 
-//        Runtime.getRuntime().addShutdownHook(new Thread(){
-//            @Override
-//            public void run() {
-//                try {
-//                    System.out.println("close client, reset proxy address...");
-//                    finalProxy.clearProxy();
-//                } catch (IOException e) {
-//                    LOG.error(e.getMessage(), e);
-//                }
-//
-//                if(finalServerSocket != null) {
-//                    try {
-//                        finalServerSocket.close();
-//                    } catch (IOException e) {
-//                        LOG.error(e.getMessage(), e);
-//                    }
-//                }
-//
-//                for(Connection connection : connections) {
-//                    connection.stop();
-//                }
-//
-//            }
-//        });
+
     }
 }

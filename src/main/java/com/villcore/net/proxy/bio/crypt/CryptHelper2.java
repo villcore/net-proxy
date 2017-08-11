@@ -8,9 +8,12 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
-public class CryptHelper {
+public class CryptHelper2 {
 
     public static final String CHARSET = "utf-8";
 
@@ -21,40 +24,16 @@ public class CryptHelper {
     private float interferenceFactor;
     private String password;
 
-    /**
-     *
-     */
-    public CryptHelper() throws NoSuchAlgorithmException, NoSuchPaddingException {
-        this.interferenceFactor = PkgConf.getInterferenceFactor();
-
-        secureRandom = new SecureRandom();
-
-        try {
-
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
-
-            keyGenerator = KeyGenerator.getInstance("AES");
-            secureRandom.setSeed("test".getBytes());
-            keyGenerator.init(128, secureRandom);
-
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
-
-            throw new RuntimeException(ex);
-
-        }
-
-    }
-
-    public CryptHelper(String password) throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public CryptHelper2(String password) throws NoSuchAlgorithmException, NoSuchPaddingException {
         this.password = password;
         this.interferenceFactor = PkgConf.getInterferenceFactor();
-        secureRandom = new SecureRandom();
+        secureRandom = new SecureRandom(password.getBytes());
 
         try {
-
+            keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(128, secureRandom);
             cipher = Cipher.getInstance("AES/CFB/NoPadding"); // Advanced Encryption Standard - Cipher Feedback Mode - No Padding
 
-            keyGenerator = KeyGenerator.getInstance("AES");
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
 
@@ -64,9 +43,7 @@ public class CryptHelper {
     }
 
     public byte[] getSecureRandomBytes(int size) {
-        byte[] bytes = new byte[size];
-        secureRandom.nextBytes(bytes);
-        return bytes;
+        return secureRandom.generateSeed(size);
     }
 
     public SecretKey getSecretKey(String password) throws UnsupportedEncodingException {

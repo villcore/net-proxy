@@ -7,9 +7,11 @@ import com.villcore.net.proxy.bio.handler.Handler;
 import com.villcore.net.proxy.bio.pkg2.Package;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.swing.PrintingStatus;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
+import javax.sound.midi.SoundbankResource;
 import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -28,7 +30,7 @@ public class EncryptTask implements Runnable {
     private Connection connection;
     private InputStream inputStream;
     private OutputStream outputStream;
-
+    private boolean fisrtLineFinish = false;
     public EncryptTask(Connection connection, InputStream inputStream, OutputStream outputStream) {
         this.connection = connection;
         this.inputStream = inputStream;
@@ -49,16 +51,17 @@ public class EncryptTask implements Runnable {
             try {
                 Package pkg = new Package();
                 pkg.readPackageWithoutHeader(inputStream);
-                LOG.debug("encryt read pkg...");
-                LOG.debug("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+
+                //LOG.debug("encryt read pkg...");
+                //LOG.debug("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
                 //LOG.debug("read to encrypting request = >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n{}\n", new String(pkg.getBody()));
-                LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
+                //LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
                 for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
                     pkg = entry.getValue().handle(pkg);
                     LOG.debug("encrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
                 }
                 pkg.writePackageWithHeader(outputStream);
-                LOG.debug("encryt write pkg ...");
+                //LOG.debug("encryt write pkg ...");
 
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
