@@ -68,7 +68,7 @@ public class HttpParser {
                     }
                 }
 
-                if (portStr != null) {
+                if (portStr != null && !portStr.isEmpty()) {
                     port = Integer.valueOf(portStr);
                 }
 

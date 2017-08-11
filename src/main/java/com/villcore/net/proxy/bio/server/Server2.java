@@ -32,7 +32,7 @@ public class Server2 {
         ExecutorService executorService = new ThreadPoolExecutor(1, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
 
         int listenPort = 20080;
-        InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 3128);
+        //InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 3128);
 
         ServerSocket serverSocket = null;
         final ServerSocket finalServerSocket = serverSocket;
