@@ -49,12 +49,22 @@ public class ClientConnectionDispatcherTask implements Runnable {
             }
 
             byte[] httpRequest = pkg.getBody();
-            InetSocketAddress address = HttpParser.parseAddress(httpRequest);
+            InetSocketAddress address = HttpParser.parseAddress2(httpRequest);
             if (address == null) {
                 throw new IllegalArgumentException("parse address error...");
             }
 
-            Socket remoteSocket = SocketUtil.connect(address);
+            LOG.debug("need connect remote server {}", address.toString());
+
+            Socket remoteSocket = null;
+            if(address.getPort() == 443) {
+                //https
+                remoteSocket = SocketUtil.connectSSL(address);
+                LOG.debug("connect https server {}", address);
+            } else {
+                remoteSocket = SocketUtil.connect(address);
+            }
+
             if (remoteSocket == null) {
                 LOG.info("can not connect {}...", address);
                 clientSocket.close();
@@ -62,7 +72,10 @@ public class ClientConnectionDispatcherTask implements Runnable {
             }
 
             LOG.debug("first pkg content = \n{}\n", new String(pkg.getBody()));
-            pkg.writePackageWithoutHeader(remoteSocket.getOutputStream());
+            //pkg.writePackageWithoutHeader(remoteSocket.getOutputStream());
+            remoteSocket.getOutputStream().write(pkg.getBody());
+            remoteSocket.getOutputStream().flush();
+
             SocketUtil.configSocket(clientSocket);
             SocketUtil.configSocket(remoteSocket);
             Connection connection = new ServerConnection(clientSocket, remoteSocket);

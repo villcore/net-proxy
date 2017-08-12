@@ -29,7 +29,8 @@ public class Server2 {
 
     public static void main(String[] args) throws NoSuchPaddingException, NoSuchAlgorithmException {
         List<Connection> connections = Collections.synchronizedList(new LinkedList<>());
-        ExecutorService executorService = new ThreadPoolExecutor(1, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
+        //ExecutorService executorService = new ThreadPoolExecutor(1, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
+        ExecutorService executorService = Executors.newCachedThreadPool();
 
         int listenPort = 20080;
         //InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 3128);

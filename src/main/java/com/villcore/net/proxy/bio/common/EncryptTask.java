@@ -5,6 +5,7 @@ import com.villcore.net.proxy.bio.common.DecryptTask;
 import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
 import com.villcore.net.proxy.bio.handler.Handler;
 import com.villcore.net.proxy.bio.pkg2.Package;
+import com.villcore.net.proxy.bio.util.HttpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.swing.PrintingStatus;
