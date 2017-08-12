@@ -45,11 +45,15 @@ public class Server2 {
                 Socket localSocket = serverSocket.accept();
 
                 Map<String, Handler> handlerMap = new LinkedHashMap<>();
-//                handlerMap.put("decompress", new DecompressHandler(new GZipCompressor()));
-//                handlerMap.put("decrypt", new DecryptHandler(new PasswordManager(), new CryptHelper()));
-//                handlerMap.put("user_to_default", new FromUserPackageHandler());
+                handlerMap.put("decompress", new DecompressHandler(new GZipCompressor()));
+                handlerMap.put("decrypt", new DecryptHandler(new PasswordManager(), new CryptHelper()));
+                handlerMap.put("user_to_default", new FromUserPackageHandler());
 
-                executorService.submit(new ClientConnectionDispatcherTask(localSocket, handlerMap, connections));
+                Map<String, Handler> handlerMap2 = new LinkedHashMap<>();
+                handlerMap2.put("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
+                handlerMap2.put("encrypt", new EncryptHandler(new PasswordManager(), new CryptHelper()));
+                handlerMap2.put("compress", new CompressHandler(new GZipCompressor()));
+                executorService.submit(new ClientConnectionDispatcherTask(localSocket, handlerMap, handlerMap2, connections));
             }
         } catch (IOException e) {
             LOG.error(e.getMessage(), e);

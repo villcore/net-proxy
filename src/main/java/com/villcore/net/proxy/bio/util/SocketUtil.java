@@ -30,11 +30,17 @@ public class SocketUtil {
 
     public static Socket connectSSL(InetSocketAddress address) {
         try {
-            System.setProperty("javax.net.ssl.trustStore", "clienttrust");
-            SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            Socket socket = ssf.createSocket(address.getAddress(), address.getPort());
+//            System.setProperty("javax.net.ssl.trustStore", "clienttrust");
+//            SSLSocketFactory ssf = (SSLSocketFactory) SSLSocketFactory.getDefault();
+//            Socket socket = ssf.createSocket(address.getAddress(), address.getPort());
+            SSLSocketFactory factory =
+                    (SSLSocketFactory)SSLSocketFactory.getDefault();
+            SSLSocket socket =
+                    (SSLSocket)factory.createSocket(address.getAddress(), address.getPort());
             //Socket socket = new Socket();
-            socket.connect(address);
+//            if(!socket.isConnected()) {
+//                socket.connect(address);
+//            }
             return socket;
         } catch (IOException e) {
             LOG.error(e.getMessage(), e);

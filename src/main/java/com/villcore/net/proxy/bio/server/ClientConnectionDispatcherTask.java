@@ -29,11 +29,14 @@ public class ClientConnectionDispatcherTask implements Runnable {
 
     private Socket clientSocket;
     private Map<String, Handler> handlerChain;
+    private Map<String, Handler> handlerChain2;
+
     private List<Connection> connections;
 
-    public ClientConnectionDispatcherTask(Socket clientSocket, Map<String, Handler> handlerChain, List<Connection> connections) {
+    public ClientConnectionDispatcherTask(Socket clientSocket, Map<String, Handler> handlerChain, Map<String, Handler> handlerChain2, List<Connection> connections) {
         this.clientSocket = clientSocket;
         this.handlerChain = handlerChain;
+        this.handlerChain2 = handlerChain2;
         this.connections = connections;
     }
 
@@ -59,10 +62,26 @@ public class ClientConnectionDispatcherTask implements Runnable {
             Socket remoteSocket = null;
             if(address.getPort() == 443) {
                 //https
-                remoteSocket = SocketUtil.connectSSL(address);
-                LOG.debug("connect https server {}", address);
+                //remoteSocket = SocketUtil.connectSSL(address);
+                remoteSocket = SocketUtil.connect(address);
+                LOG.debug("connect https server ---------------------------------------------------- {}", address);
+
+                String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
+
+                Package proxyPkg = new Package();
+                proxyPkg.setBody(connectResponse.getBytes());
+                proxyPkg.setHeader(new byte[]{});
+                for (Map.Entry<String, Handler> entry : handlerChain2.entrySet()) {
+                    proxyPkg = entry.getValue().handle(proxyPkg);
+                }
+                proxyPkg.writePackageWithHeader(clientSocket.getOutputStream());
             } else {
                 remoteSocket = SocketUtil.connect(address);
+                LOG.debug("first pkg content = \n{}\n", new String(pkg.getBody()));
+                //pkg.writePackageWithoutHeader(remoteSocket.getOutputStream());
+                remoteSocket.getOutputStream().write(pkg.getBody());
+                remoteSocket.getOutputStream().flush();
+
             }
 
             if (remoteSocket == null) {
@@ -71,11 +90,6 @@ public class ClientConnectionDispatcherTask implements Runnable {
                 return;
             }
 
-            LOG.debug("first pkg content = \n{}\n", new String(pkg.getBody()));
-            //pkg.writePackageWithoutHeader(remoteSocket.getOutputStream());
-            remoteSocket.getOutputStream().write(pkg.getBody());
-            remoteSocket.getOutputStream().flush();
-
             SocketUtil.configSocket(clientSocket);
             SocketUtil.configSocket(remoteSocket);
             Connection connection = new ServerConnection(clientSocket, remoteSocket);
@@ -83,6 +97,7 @@ public class ClientConnectionDispatcherTask implements Runnable {
 
             LOG.info("server build connection [{} -> {}]...", clientSocket.getRemoteSocketAddress().toString(), remoteSocket.getRemoteSocketAddress().toString());
             connections.add(connection);
+            LOG.debug("dispatcher task for [{}] finished...", remoteSocket.getRemoteSocketAddress());
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             try {
