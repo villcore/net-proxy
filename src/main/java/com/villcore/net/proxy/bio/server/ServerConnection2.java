@@ -1,14 +1,13 @@
-package com.villcore.net.proxy.bio.client;
+package com.villcore.net.proxy.bio.server;
 
+
+import com.villcore.net.proxy.bio.common.Connection;
 import com.villcore.net.proxy.bio.common.DecryptTask;
 import com.villcore.net.proxy.bio.common.EncryptTask;
+import com.villcore.net.proxy.bio.compressor.GZipCompressor;
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
 import com.villcore.net.proxy.bio.handler.*;
-import com.villcore.net.proxy.bio.common.Connection;
-import com.villcore.net.proxy.bio.compressor.GZipCompressor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.InputStream;
@@ -17,12 +16,10 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Created by villcore on 2017/7/17.
+ * Created by Administrator on 2017/7/17.
  */
-public class ClientConnection extends Connection {
-    private static final Logger LOG = LoggerFactory.getLogger(ClientConnection.class);
-
-    public ClientConnection(Socket readSocket, Socket writeSocket) {
+public class ServerConnection2 extends Connection {
+    public ServerConnection2(Socket readSocket, Socket writeSocket) {
         super(readSocket, writeSocket);
     }
 
@@ -31,17 +28,18 @@ public class ClientConnection extends Connection {
         Handler encryptHander = new EncryptHandler(new PasswordManager(), new CryptHelper());
         Handler decryptHander = new DecryptHandler(new PasswordManager(), new CryptHelper());
 
-        LOG.debug("init task...");
-        //input output local encrypt        input2 output2 remote decrypt
-        super.encryptTask = new EncryptTask(connection, inputStream, outputStream2);
-//        super.encryptTask.addHandler("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
-//        super.encryptTask.addHandler("encrypt", encryptHander);
-//        super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
-//
-        super.decryptTask = new DecryptTask(connection, inputStream2, outputStream);
+        //input output server decrypt           input2 output2 proxy encrypt
+        super.decryptTask = new DecryptTask(this, super.inputStream, super.outputStream2);
 //        super.decryptTask.addHandler("decompress", new DecompressHandler(new GZipCompressor()));
 //        super.decryptTask.addHandler("decrypt", decryptHander);
 //        super.decryptTask.addHandler("user_to_default", new FromUserPackageHandler());
 
+
+        //TODO add handlers
+        super.encryptTask = new EncryptTask(this, super.inputStream2, super.outputStream);
+//        super.encryptTask.addHandler("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
+//        super.encryptTask.addHandler("encrypt", encryptHander);
+//        super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
     }
+
 }

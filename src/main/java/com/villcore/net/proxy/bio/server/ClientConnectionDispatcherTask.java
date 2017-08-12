@@ -61,6 +61,7 @@ public class ClientConnectionDispatcherTask implements Runnable {
                 return;
             }
 
+            LOG.debug("first pkg content = \n{}\n", new String(pkg.getBody()));
             pkg.writePackageWithoutHeader(remoteSocket.getOutputStream());
             SocketUtil.configSocket(clientSocket);
             SocketUtil.configSocket(remoteSocket);

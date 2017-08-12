@@ -44,9 +44,9 @@ public class Server2 {
                 Socket localSocket = serverSocket.accept();
 
                 Map<String, Handler> handlerMap = new LinkedHashMap<>();
-                handlerMap.put("decompress", new DecompressHandler(new GZipCompressor()));
-                handlerMap.put("decrypt", new DecryptHandler(new PasswordManager(), new CryptHelper()));
-                handlerMap.put("user_to_default", new FromUserPackageHandler());
+//                handlerMap.put("decompress", new DecompressHandler(new GZipCompressor()));
+//                handlerMap.put("decrypt", new DecryptHandler(new PasswordManager(), new CryptHelper()));
+//                handlerMap.put("user_to_default", new FromUserPackageHandler());
 
                 executorService.submit(new ClientConnectionDispatcherTask(localSocket, handlerMap, connections));
             }
