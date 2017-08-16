@@ -59,7 +59,7 @@ public class EncryptTask implements Runnable {
                 //LOG.debug("origin size = {}, header = {}, body = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
                 for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
                     pkg = entry.getValue().handle(pkg);
-                    LOG.debug("encrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
+                    //LOG.debug("encrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
                 }
                 pkg.writePackageWithHeader(outputStream);
                 //LOG.debug("encryt write pkg ...");

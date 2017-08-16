@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class Client {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
-
+    private static long connectionId = 0;
     public static void main(String[] args) throws IOException {
         List<Connection> connections = new LinkedList<>();
 
@@ -87,7 +87,7 @@ public class Client {
 
                 Connection connection = new ClientConnection(localSocket, remoteSocket);
                 connection.start();
-                LOG.info("client build connection [{} -> {}]...", localSocket.getRemoteSocketAddress().toString(), remoteSocket.getRemoteSocketAddress().toString());
+                LOG.info("client build connection {} : [{} -> {}]...", connectionId++, localSocket.getRemoteSocketAddress().toString(), remoteSocket.getRemoteSocketAddress().toString());
                 connections.add(connection);
             }
         } catch (IOException e) {
