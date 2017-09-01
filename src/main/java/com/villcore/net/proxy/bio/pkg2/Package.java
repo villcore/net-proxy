@@ -19,13 +19,31 @@ import java.nio.ByteBuffer;
 public class Package {
     private static final Logger LOG = LoggerFactory.getLogger(Package.class);
 
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
 
-    //private int size;
-//    private int headerLen = -1;
-//    private int bodyLen = -1;
+    public static Package buildPackage(byte[] header, byte[] body) {
+        Package pkg = new Package();
 
-    private byte[] header;
-    private byte[] body;
+        int size = header.length + body.length;
+        pkg.setHeader(header);
+        pkg.setBody(body);
+        return pkg;
+    }
+
+    public static byte[] toBytes(Package pkg) {
+        byte[] sizeBytes =
+                ByteBuffer.wrap(new byte[PkgConf.getPackageMetaLen()]).putInt(pkg.getSize()).putInt(pkg.getHeaderLen()).putInt(pkg.getBodyLen()).array();
+        byte[] bytes = new byte[sizeBytes.length + pkg.getHeaderLen() + pkg.getBodyLen()];
+
+        ByteArrayUtils.cpyToNew(sizeBytes, bytes, 0, 0, sizeBytes.length);
+        ByteArrayUtils.cpyToNew(pkg.getHeader(), bytes, 0, sizeBytes.length, pkg.getHeaderLen());
+        ByteArrayUtils.cpyToNew(pkg.getBody(), bytes, 0, sizeBytes.length + pkg.getHeaderLen(), pkg.getBodyLen());
+
+        return bytes;
+    }
+
+    private byte[] header = EMPTY_BYTE_ARRAY;
+    private byte[] body = EMPTY_BYTE_ARRAY;
 
     public int getSize() {
         return header.length + body.length;
@@ -52,35 +70,9 @@ public class Package {
         return body;
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + " size = " + getSize() + ", header len = " + getHeader().length + ", body len = " + body.length;
-    }
-
     public void setBody(byte[] body) {
         this.body = body;
         //this.bodyLen = body.length;
-    }
-
-    public static Package buildPackage(byte[] header, byte[] body) {
-        Package pkg = new Package();
-
-        int size = header.length + body.length;
-        pkg.setHeader(header);
-        pkg.setBody(body);
-        return pkg;
-    }
-
-    public static byte[] toBytes(Package pkg) {
-        byte[] sizeBytes =
-                ByteBuffer.wrap(new byte[PkgConf.getPackageMetaLen()]).putInt(pkg.getSize()).putInt(pkg.getHeaderLen()).putInt(pkg.getBodyLen()).array();
-        byte[] bytes = new byte[sizeBytes.length + pkg.getHeaderLen() + pkg.getBodyLen()];
-
-        ByteArrayUtils.cpyToNew(sizeBytes, bytes, 0, 0, sizeBytes.length);
-        ByteArrayUtils.cpyToNew(pkg.getHeader(), bytes, 0, sizeBytes.length, pkg.getHeaderLen());
-        ByteArrayUtils.cpyToNew(pkg.getBody(), bytes, 0, sizeBytes.length + pkg.getHeaderLen(), pkg.getBodyLen());
-
-        return bytes;
     }
 
     public void readPackageWithHeader(InputStream inputStream) throws IOException {
@@ -106,7 +98,6 @@ public class Package {
 
         setHeader(header);
         setBody(body);
-
         //LOG.debug("read page without header, header size = {}, body size = {} ", getHeader().length, getBody().length);
     }
 
@@ -115,25 +106,14 @@ public class Package {
         if(bytes.length == 0) {
             return;
         }
-//        System.out.println("body = " + bytes.length);
-//        System.out.println("body = " + new String(bytes));
+
         setBody(bytes);
         setHeader(newHeader());
         //LOG.debug("read page without header, header size = {}, body size = {} ", getHeader().length, getBody().length);
-
     }
 
     public void writePackageWithHeader(OutputStream outputStream) throws IOException {
         //LOG.debug("writePackageWithHeader  header = {}, body = {}", getHeader() == null, getBody() == null);
-
-//        if(getHeader().length != 0) {
-//            writeFully(outputStream, getHeader());
-//        }
-//
-//        if(getBody().length != 0) {
-//            writeFully(outputStream, getBody());
-//        }
-
         writeFully(outputStream, toBytes(this));
     }
 
@@ -144,10 +124,8 @@ public class Package {
     }
 
     public byte[] readFully(InputStream inputStream) throws IOException {
-        //LOG.debug("read fully ");
         byte[] bytes = new byte[1 * 1024 * 1024];
         int pos = inputStream.read(bytes);
-        //LOG.debug("read bytes in once {}", pos);
         if(pos == -1) {
             throw new IOException("socket closed");
         }
@@ -182,7 +160,6 @@ public class Package {
 
     private void writeFully(OutputStream outputStream, byte[] bytes) throws IOException {
         outputStream.write(bytes);
-        //LOG.debug("wirte {} bytes to os ...", bytes.length);
         outputStream.flush();
     }
 

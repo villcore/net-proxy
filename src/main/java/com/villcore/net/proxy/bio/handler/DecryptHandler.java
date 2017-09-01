@@ -2,10 +2,8 @@ package com.villcore.net.proxy.bio.handler;
 
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
-import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
 import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
 import com.villcore.net.proxy.bio.pkg2.Package;
-import com.villcore.net.proxy.bio.pkg2.PkgConf;
 import com.villcore.net.proxy.bio.util.ByteArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +12,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.util.Arrays;
 
 public class DecryptHandler implements Handler {
     private static final Logger LOG = LoggerFactory.getLogger(DecryptHandler.class);

@@ -104,7 +104,13 @@ public abstract class Package {
 
     public byte[] readFully(InputStream inputStream) throws IOException {
         //LOG.debug("read fully ");
-        byte[] bytes = new byte[1 * 1024 * 1024];
+
+        int bytesArraySize = 1 * 1024 * 1024; //1M
+        int availableSize = inputStream.available();
+        if(availableSize > 0) {
+            bytesArraySize = availableSize;
+        }
+        byte[] bytes = new byte[bytesArraySize];
         int pos = inputStream.read(bytes);
         //LOG.debug("read bytes in once {}", pos);
         if(pos == -1) {

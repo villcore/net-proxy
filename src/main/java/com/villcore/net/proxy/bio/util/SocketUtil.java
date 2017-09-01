@@ -17,10 +17,12 @@ import java.net.SocketException;
 public class SocketUtil {
     private static final Logger LOG = LoggerFactory.getLogger(Socket.class);
 
+    private static final int TIME_OUT = 2 * 60 * 1000;
+
     public static Socket connect(InetSocketAddress address) {
         try {
             Socket socket = new Socket();
-            socket.connect(address);
+            socket.connect(address, TIME_OUT);
             return socket;
         } catch (IOException e) {
             LOG.error(e.getMessage(), e);
@@ -53,5 +55,6 @@ public class SocketUtil {
         socket.setKeepAlive(true);
         socket.setSendBufferSize(128 * 1024);
         socket.setReceiveBufferSize(128 * 1024);
+        socket.setSoTimeout(TIME_OUT);
     }
 }

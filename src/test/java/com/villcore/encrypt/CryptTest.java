@@ -1,16 +1,13 @@
 package com.villcore.encrypt;
 
 import com.villcore.net.proxy.bio.compressor.GZipCompressor;
-import com.villcore.net.proxy.bio.crypt.Crypt;
 import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.bio.crypt.PasswordManager;
 import com.villcore.net.proxy.bio.handler.*;
 import com.villcore.net.proxy.bio.pkg2.Package;
-import com.villcore.net.proxy.bio.pkg2.DefaultPackage;
 import com.villcore.net.proxy.bio.pkg2.EncryptPackage;
 import com.villcore.net.proxy.bio.pkg2.PkgConf;
 import org.junit.Test;
-import sun.plugin2.message.OverlayWindowMoveMessage;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -20,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
