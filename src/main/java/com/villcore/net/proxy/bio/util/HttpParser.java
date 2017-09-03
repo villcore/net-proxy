@@ -35,7 +35,12 @@ public class HttpParser {
         return null;
     }
 
-    public static InetSocketAddress parseAddress2(byte[] httpRequest) {
+    public static InetSocketAddress parseAddress2(byte[] httpRequest, int off, int len) {
+        byte[] arr = new byte[len];
+        System.arraycopy(httpRequest, off, arr, 0, len);
+        return parseAddress2(arr);
+    }
+        public static InetSocketAddress parseAddress2(byte[] httpRequest) {
         for (int i = 0; i < httpRequest.length; i++) {
             if (httpRequest[i] == 10 || httpRequest[i] == 13) {
                 String firstLine = new String(httpRequest, 0, i);
