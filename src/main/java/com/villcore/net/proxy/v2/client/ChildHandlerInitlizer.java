@@ -5,10 +5,20 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 
 public class ChildHandlerInitlizer extends ChannelInitializer<SocketChannel> {
-    //private ChannelInboundHandler proxyDetectHandler = new ProxyDetectHandler();
+    private ConnectionManager connectionManager;
+    private PackageQeueu pkgQueue;
+
+    private ChannelInboundHandler packageGatherHandler;
+
+    public ChildHandlerInitlizer(ConnectionManager connectionManager, PackageQeueu pkgQueue) {
+        this.connectionManager = connectionManager;
+        this.pkgQueue = pkgQueue;
+        this.packageGatherHandler = new PackageGatherHandler(this.pkgQueue);
+    }
+
     @Override
     protected void initChannel(SocketChannel socketChannel) throws Exception {
-        socketChannel.pipeline().addLast("proxy-detect", new ProxyDetectHandler());
-        socketChannel.pipeline().addLast("pkg-gather", proxyDetectHandler);
+        socketChannel.pipeline().addLast(ProxyDetectHandler.HANDLER_NAME, new ProxyDetectHandler(connectionManager));
+        socketChannel.pipeline().addLast(PackageGatherHandler.HANDLER_NAME, this.packageGatherHandler);
     }
 }

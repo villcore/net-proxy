@@ -1,7 +1,10 @@
 package com.villcore.net.proxy.v2.client;
 
 import com.villcore.net.proxy.bio.util.HttpParser;
+import com.villcore.net.proxy.v2.pkg.Package;
+import com.villcore.net.proxy.v2.pkg.PackageType;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -19,9 +22,10 @@ import java.util.List;
  * 根据请求的内容
  *
  */
-//@ChannelHandler.Sharable
 public class ProxyDetectHandler extends ByteToMessageDecoder {
     private static final Logger LOG = LoggerFactory.getLogger(ProxyDetectHandler.class);
+
+    public static final String HANDLER_NAME = "proxy-detect";
 
     private ConnectionManager connectionManager;
 
@@ -73,10 +77,33 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
                     LOG.debug("read first http req finish...");
                     InetSocketAddress address = HttpParser.parseAddress2(byteBuf.toString(Charset.forName("utf-8")).getBytes());
                     LOG.debug("connect address = {}", address.toString());
-                    channelHandlerContext.channel().pipeline().remove(this);
-                    channelHandlerContext.close();
+
+                    String hostName = address.getHostName();
+                    short port = (short) address.getPort();
+
+                    Package pkg = new Package();
+                    Integer localConnId = connectionManager.getConnId((NioSocketChannel) channelHandlerContext.channel());
+                    Long userFlag = 1L;
+
+                    //headerLen, localConnId, userFlag, addrLen, addr, port
+                    int addrLen = hostName.getBytes().length;
+
+                    ByteBuf header = Unpooled.buffer(4 + 4 + 8 + 4 +   + 2);
+                    header.setInt(0, header.capacity());
+                    header.setInt(4, localConnId);
+                    header.setLong(4 + 4, userFlag);
+                    header.setInt(4 + 4 + 8, addrLen);
+                    header.setBytes(4 + 4 + 8 + 4, hostName.getBytes());
+                    header.setShort(header.capacity() - 2, port);
+
+                    pkg.setHeader(header);
+                    pkg.setPkgType(PackageType.PKG_CONNECT_REQ);
+                    channelHandlerContext.writeAndFlush(pkg.toByteBuf());
+                    channelHandlerContext.pipeline().addAfter(channelHandlerContext.executor(), HANDLER_NAME, ByteBufToPackageHandler.HANDLER_NAME, new ByteBufToPackageHandler());
+                    channelHandlerContext.pipeline().remove(HANDLER_NAME);
                     return;
                 } else {
+
                 }
             }
         }
@@ -101,8 +128,29 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
                     LOG.debug("connect address = {}", address.toString());
                     String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
                     channelHandlerContext.channel().writeAndFlush(connectResponse.getBytes("utf-8"));
-                    channelHandlerContext.channel().pipeline().remove(this);
-                    channelHandlerContext.close();
+                    String hostName = address.getHostName();
+                    short port = (short) address.getPort();
+
+                    Package pkg = new Package();
+                    Integer localConnId = connectionManager.getConnId((NioSocketChannel) channelHandlerContext.channel());
+                    Long userFlag = 1L;
+
+                    //headerLen, localConnId, userFlag, addrLen, addr, port
+                    int addrLen = hostName.getBytes().length;
+
+                    ByteBuf header = Unpooled.buffer(4 + 4 + 8 + 4 +   + 2);
+                    header.setInt(0, header.capacity());
+                    header.setInt(4, localConnId);
+                    header.setLong(4 + 4, userFlag);
+                    header.setInt(4 + 4 + 8, addrLen);
+                    header.setBytes(4 + 4 + 8 + 4, hostName.getBytes());
+                    header.setShort(header.capacity() - 2, port);
+
+                    pkg.setHeader(header);
+                    pkg.setPkgType(PackageType.PKG_CONNECT_REQ);
+                    channelHandlerContext.writeAndFlush(pkg.toByteBuf());
+                    channelHandlerContext.pipeline().addAfter(channelHandlerContext.executor(), HANDLER_NAME, ByteBufToPackageHandler.HANDLER_NAME, new ByteBufToPackageHandler());
+                    channelHandlerContext.pipeline().remove(HANDLER_NAME);
                 }
             }
         }

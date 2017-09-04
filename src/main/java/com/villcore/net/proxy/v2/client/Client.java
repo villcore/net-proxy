@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v2.client;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -35,12 +36,14 @@ public class Client {
         //TODO load form conf file
         String proxyPort = "10081";
 
-        String remoteAddress = "45.63.120.186";
+        String remoteAddress = "127.0.0.1";
         String remotePort = "20080";
 
         //
         ConnectionManager connectionManager = new ConnectionManager();
         new Thread(connectionManager, "connection-manager").start();
+
+        PackageQeueu pkgQueue = new PackageQeueu(1 * 10000);
 
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -51,7 +54,7 @@ public class Client {
             serverBootstrap.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new RemoteChannelInitlizer(remoteChannel, bossGroup, new InetSocketAddress(remoteAddress, Integer.valueOf(remotePort))))
-                    .childHandler(new ChildHandlerInitlizer());
+                    .childHandler(new ChildHandlerInitlizer(connectionManager, pkgQueue));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);
