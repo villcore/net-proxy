@@ -44,9 +44,8 @@ public class HttpParser {
         for (int i = 0; i < httpRequest.length; i++) {
             if (httpRequest[i] == 10 || httpRequest[i] == 13) {
                 String firstLine = new String(httpRequest, 0, i);
-                System.out.println("request content ========== " + new String(httpRequest));
-
-                System.out.println("http first line ========== " + firstLine);
+//                System.out.println("request content ========== " + new String(httpRequest));
+//                System.out.println("http first line ========== " + firstLine);
 
                 int start = 0, end = 0;
                 for (int j = 0; j < i; j++) {
@@ -111,7 +110,7 @@ public class HttpParser {
                     port = Integer.valueOf(portStr);
                 }
 
-                System.out.printf("protocal = %s, address: %s, port = %d\n", protocal, address, port);
+                //System.out.printf("protocal = %s, address: %s, port = %d\n", protocal, address, port);
                 return new InetSocketAddress(address, port);
             }
         }

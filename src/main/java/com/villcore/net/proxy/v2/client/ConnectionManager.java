@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v2.client;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,9 @@ public class ConnectionManager implements Runnable {
     private final Map<Integer, Long> lastTouchMap = new ConcurrentHashMap<>();
 
     private Object updateLock = new Object();
-    private static long idleScanInterval = 30 * 1000;
+    private static long idleScanInterval = 3 * 1000;
     private volatile boolean running;
+
     //负责维护本地connId -> channel映射
     //负责关闭超时的链接
     //负责新建链接
@@ -46,6 +48,9 @@ public class ConnectionManager implements Runnable {
         return idCount.getAndIncrement() & 0x7fffffff;
     }
 
+    public NioSocketChannel getChannel(int connId) {
+        return channelMap.get(Integer.valueOf(connId));
+    }
     public void touch(Integer connId) {
         lastTouchMap.put(connId, System.currentTimeMillis());
     }
@@ -58,6 +63,7 @@ public class ConnectionManager implements Runnable {
                 Thread.currentThread().interrupt();
             }
 
+            long time = System.currentTimeMillis();
             synchronized (updateLock) {
                 Iterator<Map.Entry<Integer, Long>> it = lastTouchMap.entrySet().iterator();
                 while(it.hasNext()) {
@@ -71,12 +77,18 @@ public class ConnectionManager implements Runnable {
                         NioSocketChannel channel = channelMap.remove(connId);
                         connIdMap.remove(channel);
                         if(channel != null && !channel.isOpen()) {
-                            channel.closeFuture();
+                            channel.write(Unpooled.EMPTY_BUFFER);
+                            try {
+                                channel.closeFuture().sync();
+                            } catch (InterruptedException e) {
+                                LOG.error(e.getMessage(), e);
+                            }
                         }
                     }
-
                 }
             }
+            time = System.currentTimeMillis() - time;
+            LOG.debug("scan idle connection finished ... use time [{}].", time);
         }
     }
 }

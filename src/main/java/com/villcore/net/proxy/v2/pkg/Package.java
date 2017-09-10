@@ -71,4 +71,34 @@ public class Package implements Serializable {
     public ByteBuf toByteBuf() {
         return Unpooled.wrappedBuffer(fixed, header, body);
     }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Package aPackage = (Package) o;
+
+        if (!fixed.equals(aPackage.fixed)) return false;
+        if (!header.equals(aPackage.header)) return false;
+        return body.equals(aPackage.body);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fixed.hashCode();
+        result = 31 * result + header.hashCode();
+        result = 31 * result + body.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Package{" +
+                "fixed=" + fixed +
+                ", header=" + header +
+                ", body=" + body +
+                '}';
+    }
 }
