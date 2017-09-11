@@ -6,6 +6,9 @@ import io.netty.buffer.Unpooled;
 import java.io.UnsupportedEncodingException;
 
 public class DefaultDataPackage extends Package {
+    {
+        setPkgType(PackageType.PKG_DEFAULT_DATA);
+    }
     public int getLocalConnectionId () {
         return header.getInt(0);
     }

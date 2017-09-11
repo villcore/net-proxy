@@ -26,35 +26,35 @@ public class Client {
     public static void main(String[] args) {
         //load configuration
         //TODO load form conf file
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
 
         String proxyPort = "10081";
 
         String remoteAddress = "127.0.0.1";
         String remotePort = "20080";
 
-        //
+        PackageQeueu sendQueue = new PackageQeueu(1 * 1000);
+        PackageQeueu recvQueue = new PackageQeueu(1 * 1000);
+        PackageQeueu failQueue = new PackageQeueu(1 * 1000);
+
         ConnectionManager connectionManager = new ConnectionManager();
         connectionManager.start();
         new Thread(connectionManager, "connection-manager").start();
 
-        PackageQeueu pkgQueue = new PackageQeueu(1 * 1000);
+        ClientChannelSendService clientChannelSendService = new ClientChannelSendService(connectionManager, sendQueue, recvQueue, failQueue, eventLoopGroup, remoteAddress, Integer.valueOf(remotePort));
+        clientChannelSendService.start();
+        new Thread(clientChannelSendService, "client-send-service").start();
 
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        //EventLoopGroup workerGroup = new NioEventLoopGroup();
-
-        NioSocketChannel remoteChannel = null;
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(bossGroup)
+            serverBootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
-                    //.handler(new RemoteChannelInitlizer(remoteChannel, bossGroup, new InetSocketAddress(remoteAddress, Integer.valueOf(remotePort))))
-                    .childHandler(new ChildHandlerInitlizer(connectionManager, pkgQueue));
+                    .childHandler(new ChildHandlerInitlizer(connectionManager, sendQueue));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);
         } finally {
-            bossGroup.shutdownGracefully();
-            //workerGroup.shutdownGracefully();
+            eventLoopGroup.shutdownGracefully();
         }
     }
 }

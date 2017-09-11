@@ -1,39 +1,34 @@
-package com.villcore.net.proxy.v2.client;
+package com.villcore.net.proxy.v2.server;
 
-import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.villcore.net.proxy.v2.Html404;
+import com.villcore.net.proxy.v2.client.ConnectionManager;
+import com.villcore.net.proxy.v2.client.PackageQeueu;
 import com.villcore.net.proxy.v2.pkg.ConnectPackage;
 import com.villcore.net.proxy.v2.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v2.pkg.Package;
-import com.villcore.net.proxy.v2.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 客户端发送服务
+ * 服务端发送服务
  * <p>
  *
- * 主要执行以下操作
+ * 服务端接收到 Package 会做以下处理
  *
- * 1.对于
- * 2.将聚合的请求package发送到远程服务器通道
- * 3.从远程服务器通道读取相应package，并根据connId分发给本地channnel
+ * 1.优先处理ConnectPackage，根据连接地址新建SocketChannel，如果成功，分配connId，并将接收到的localConnId与远程connId返回，如果失败，返回远程的远程Id为-1
+ * 2.处理 DataPackage， 根据接收到的 Package中的connId进行链接的读写
  */
-public class ClientChannelSendService implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(ClientChannelSendService.class);
+public class ServerChannelSendService implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(ServerChannelSendService.class);
 
     private static final long IDLE_SLEEP_MICROSECONDS = 50;
     private volatile boolean running;
@@ -54,7 +49,7 @@ public class ClientChannelSendService implements Runnable {
 
     RemoteReadHandler remoteReadHandler = new RemoteReadHandler();
 
-    public ClientChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
+    public ServerChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
         this.connectionManager = connectionManager;
         this.sendPackage = sendPackage;
         this.recvPackage = recvPackage;

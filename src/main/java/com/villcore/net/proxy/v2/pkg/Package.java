@@ -10,12 +10,14 @@ import java.io.Serializable;
  * make sure construct Package with exist ByteBuf read/writer index correct
  */
 public class Package implements Serializable {
-    public static final int FIXED_LEN = 4 + 4 + 4 + 2;
     //totalLen
     //headerLen
     //bodyLen
     //pkgType
-    protected ByteBuf fixed = Unpooled.buffer(4 + 4 + 4 + 2);
+
+    public static final int FIXED_LEN = 4 + 4 + 4 + 2;
+
+    protected ByteBuf fixed = Unpooled.buffer(FIXED_LEN);
 
     //header
     protected ByteBuf header = Unpooled.EMPTY_BUFFER;
@@ -47,15 +49,14 @@ public class Package implements Serializable {
         return this.body;
     }
 
+    public void setFixed(ByteBuf fixed) {
+        this.fixed = fixed;
+    }
+
     public void setHeader(ByteBuf header) {
         this.header = header;
         this.fixed.setInt(4, header.writerIndex() - header.readerIndex());
         setTotolLen();
-    }
-
-    public void setTotolLen() {
-        int total = header.writerIndex() - header.readerIndex() + body.writerIndex() - body.readerIndex() + 4 + 4 + 2;
-        fixed.setInt(0, total);
     }
 
     public void setBody(ByteBuf body) {
@@ -63,6 +64,14 @@ public class Package implements Serializable {
         this.fixed.setInt(4 + 4, body.writerIndex() - body.readerIndex());
         setTotolLen();
     }
+
+    public void setTotolLen() {
+        int total = getBodyLen() + getHeaderLen() + FIXED_LEN;
+        fixed.setInt(0, total);
+        fixed.writerIndex(FIXED_LEN);
+    }
+
+
 
     public void setPkgType(short type) {
         this.fixed.setShort(4 + 4 + 4, type);
@@ -100,5 +109,28 @@ public class Package implements Serializable {
                 ", header=" + header +
                 ", body=" + body +
                 '}';
+    }
+
+    public static Package valueOf(ByteBuf byteBuf) {
+        Package pkg = new Package();
+
+        ByteBuf fixed = Unpooled.buffer(FIXED_LEN);
+
+        int headerLen = byteBuf.getInt(0);
+        int bodyLen = byteBuf.getInt(4);
+        short pkgType = byteBuf.getShort(4 + 4);
+
+        fixed.writeInt(headerLen + bodyLen).writeInt(headerLen).writeInt(bodyLen).writeShort(pkgType);
+
+        ByteBuf header = byteBuf.slice(4 + 4 + 2, headerLen);
+        header.writerIndex(headerLen);
+
+        ByteBuf body = byteBuf.slice(4 + 4 + 2 + headerLen, bodyLen);
+        body.writerIndex(bodyLen);
+
+        pkg.setFixed(fixed);
+        pkg.setHeader(header);
+        pkg.setBody(body);
+        return pkg;
     }
 }

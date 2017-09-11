@@ -38,6 +38,7 @@ public class ConnectPackage extends Package {
         header.writeInt(addrBytes.length);
         header.writeBytes(addrBytes);
         header.writeShort(port);
+        header.writerIndex(header.capacity());
         return header;
     }
 }

@@ -32,6 +32,7 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
     public static final String HANDLER_NAME = "proxy-detect";
     private static final String HTTPS_CONNECTED_RESP = "HTTP/1.0 200 Connection Established\\r\\n\\r\\n\";\n";
 
+    private boolean detectedProxy = false;
     private ConnectionManager connectionManager;
 
     private static AtomicLong count = new AtomicLong();
@@ -49,6 +50,19 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+//        if(detectedProxy) {
+//            LOG.debug("get byteBuf, and convert it to a pkg... total = {}", count.incrementAndGet());
+//            //LOG.debug("msg = {}", ((ByteBuf) msg).toString(Charset.forName("utf-8")));
+//            NioSocketChannel socketChannel = (NioSocketChannel) channelHandlerContext.pipeline().channel();
+//            int connId = connectionManager.getConnId(socketChannel);
+//
+//            ByteBuf data = byteBuf;
+//            Package dataPackage = PackageUtils.buildDataPackage(connId, -1, 1L, data);
+//            //ctx.writeAndFlush(dataPackage);
+//            //ctx.writeAndFlush(Unpooled.wrappedBuffer(Html404.RESP.getBytes()));
+//            list.add(dataPackage);
+//            return;
+//        }
 //        list.add(Unpooled.wrappedBuffer("test".getBytes()));
 //        int a = 1;
 //        if(1 == a) {
@@ -58,7 +72,7 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
 
         int readerIndex = byteBuf.readerIndex();
         int writerIndex = byteBuf.writerIndex();
-//        LOG.debug("\n=======================\n{}\n==========================", byteBuf.toString(Charset.forName("utf-8")));
+        LOG.debug("\n=======================\n{}\n==========================", byteBuf.copy().toString(Charset.forName("utf-8")));
 //        LOG.debug("readerIndex = {}", readerIndex);
 //        LOG.debug("writerIndex = {}", writerIndex);
 
@@ -111,13 +125,16 @@ public class ProxyDetectHandler extends ByteToMessageDecoder {
                     list.add(connectPackage);
                     list.add(dataPackage);
 
+                    LOG.debug("connect package type = {}, data package type = {}", connectPackage.getPkgType(), dataPackage.getPkgType());
+
 //                    LOG.debug("connect package = {}", connectPackage.toByteBuf().toString(Charset.forName("utf-8")));
-//                    LOG.debug("data package = {}", dataPackage.toByteBuf().toString(Charset.forName("utf-8")));
+                    LOG.debug("data package = {}", dataPackage.getBody().toString(Charset.forName("utf-8")));
 
                     LOG.debug("write pkg time = {}", System.currentTimeMillis());
                     LOG.debug("proxy wirte a data package, total = {}", count.incrementAndGet());
-                    pipeline.addAfter(channelHandlerContext.name(), null, new ByteBufToPackageHandler(connectionManager));
-                    pipeline.remove(this);
+                    //pipeline.addAfter(channelHandlerContext.name(), null, new ByteBufToPackageHandler(connectionManager));
+                    //pipeline.remove(this);
+                    //detectedProxy = true;
                     return;
                 } else {
 

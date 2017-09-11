@@ -32,9 +32,9 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
     public static final String HANDLER_NAME = "pkg-gather";
     public long count = 0;
 
-    private PackageQeueu packageQeueu;
-    public PackageGatherHandler(PackageQeueu packageQeueu) {
-        this.packageQeueu = packageQeueu;
+    private PackageQeueu sendPackage;
+    public PackageGatherHandler(PackageQeueu sendPackage) {
+        this.sendPackage = sendPackage;
     }
 
 
@@ -43,7 +43,8 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
         if(msg instanceof Package) {
             LOG.debug("gather packge = {}, total = {}", "", ++count);
             Package pkg = (Package) msg;
-            packageQeueu.putPackage(pkg);
+            sendPackage.putPackage(pkg);
+            LOG.debug("put send package queue, queue size = {}", sendPackage.size());
         }
     }
 }

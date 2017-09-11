@@ -18,9 +18,10 @@ public class ConnectionManager implements Runnable {
     private final Map<Integer, NioSocketChannel> channelMap = new Hashtable<>();
     private final Map<NioSocketChannel, Integer> connIdMap = new Hashtable<>();
     private final Map<Integer, Long> lastTouchMap = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> connectionMap = new ConcurrentHashMap<>();
 
     private Object updateLock = new Object();
-    private static long idleScanInterval = 3 * 1000;
+    private static long idleScanInterval = 300 * 1000;
     private volatile boolean running;
 
     //负责维护本地connId -> channel映射
@@ -44,6 +45,14 @@ public class ConnectionManager implements Runnable {
         return connId;
     }
 
+    public void makeConnectionMap(int connId, int connId2) {
+        connectionMap.put(Integer.valueOf(connId), Integer.valueOf(connId2));
+    }
+
+    public int getConnectionMap(int connId) {
+        return connectionMap.getOrDefault(connId, -1);
+    }
+
     public Integer getConnId() {
         return idCount.getAndIncrement() & 0x7fffffff;
     }
@@ -51,9 +60,11 @@ public class ConnectionManager implements Runnable {
     public NioSocketChannel getChannel(int connId) {
         return channelMap.get(Integer.valueOf(connId));
     }
+
     public void touch(Integer connId) {
         lastTouchMap.put(connId, System.currentTimeMillis());
     }
+
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted() && running) {
@@ -76,6 +87,7 @@ public class ConnectionManager implements Runnable {
                         it.remove();
                         NioSocketChannel channel = channelMap.remove(connId);
                         connIdMap.remove(channel);
+                        connectionMap.remove(Integer.valueOf(connId));
                         if(channel != null && !channel.isOpen()) {
                             channel.write(Unpooled.EMPTY_BUFFER);
                             try {

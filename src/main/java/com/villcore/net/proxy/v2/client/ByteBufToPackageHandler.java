@@ -32,7 +32,7 @@ public class ByteBufToPackageHandler extends ChannelInboundHandlerAdapter{
         if(msg instanceof ByteBuf) {
             LOG.debug("get byteBuf, and convert it to a pkg... total = {}", count.incrementAndGet());
             ByteBuf byteBuf = (ByteBuf) msg;
-            LOG.debug("msg = {}", ((ByteBuf) msg).toString(Charset.forName("utf-8")));
+            //LOG.debug("msg = {}", ((ByteBuf) msg).toString(Charset.forName("utf-8")));
             NioSocketChannel socketChannel = (NioSocketChannel) ctx.pipeline().channel();
             int connId = connectionManager.getConnId(socketChannel);
 

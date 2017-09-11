@@ -4,23 +4,35 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 public class PackageUtils {
-    public static Package buildConnectPackage(String hostName, short port, int localConnId, long userFlag) throws UnsupportedEncodingException {
+    public static ConnectPackage buildConnectPackage(String hostName, short port, int localConnId, long userFlag) throws UnsupportedEncodingException {
         ByteBuf header = ConnectPackage.newHeader(hostName, port, localConnId, userFlag);
 
-        Package pkg = new ConnectPackage();
+        ConnectPackage pkg = new ConnectPackage();
         pkg.setHeader(header);
         pkg.setBody(Unpooled.EMPTY_BUFFER);
         return pkg;
     }
 
-    public static Package buildDataPackage(int localConnId, int remoteConnId, long userFlag, ByteBuf data) throws UnsupportedEncodingException {
+    public static DefaultDataPackage buildDataPackage(int localConnId, int remoteConnId, long userFlag, ByteBuf data) throws UnsupportedEncodingException {
         ByteBuf header = DefaultDataPackage.newHeader(localConnId, remoteConnId, userFlag);
+        header.writerIndex(header.capacity());
+        header.readerIndex(0);
 
-        Package pkg = new DefaultDataPackage();
+        DefaultDataPackage pkg = new DefaultDataPackage();
         pkg.setHeader(header);
         pkg.setBody(data);
         return pkg;
+    }
+
+    public static String toString(Package pkg) throws UnsupportedEncodingException {
+        return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
+    }
+
+    public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
+        //ByteBuf byteBuf2 = byteBuf.copy();
+        return byteBuf.toString(Charset.forName("utf-8"));
     }
 }
