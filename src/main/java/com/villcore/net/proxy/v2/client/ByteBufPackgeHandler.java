@@ -60,7 +60,7 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
             LOG.debug("get byteBuf, and convert it to a pkg... total = {}", count.incrementAndGet());
             //LOG.debug("msg = {}", ((ByteBuf) msg).toString(Charset.forName("utf-8")));
             NioSocketChannel socketChannel = (NioSocketChannel) pipeline.channel();
-            int connId = connectionManager.getConnId(socketChannel);
+            int connId = connectionManager.addConnection(socketChannel);
 
             ByteBuf data = byteBuf;
             Package dataPackage = PackageUtils.buildDataPackage(connId, -1, 1L, data);

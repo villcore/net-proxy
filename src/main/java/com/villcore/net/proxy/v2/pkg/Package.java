@@ -125,6 +125,7 @@ public class Package implements Serializable {
         ByteBuf header = byteBuf.slice(4 + 4 + 2, headerLen);
         header.writerIndex(headerLen);
 
+
         ByteBuf body = byteBuf.slice(4 + 4 + 2 + headerLen, bodyLen);
         body.writerIndex(bodyLen);
 

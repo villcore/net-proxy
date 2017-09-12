@@ -27,6 +27,17 @@ public class PackageUtils {
         return pkg;
     }
 
+    public static ConnectRespPackage buildConnectRespPackage(int localConnId, int remoteConnId, long userFlag) throws UnsupportedEncodingException {
+        ByteBuf header = ConnectRespPackage.newHeader(localConnId, remoteConnId, userFlag);
+        header.writerIndex(header.capacity());
+        header.readerIndex(0);
+
+        ConnectRespPackage pkg = new ConnectRespPackage();
+        pkg.setHeader(header);
+        pkg.setBody(Unpooled.EMPTY_BUFFER);
+        return pkg;
+    }
+
     public static String toString(Package pkg) throws UnsupportedEncodingException {
         return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
     }

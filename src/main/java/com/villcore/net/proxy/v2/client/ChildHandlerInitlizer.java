@@ -25,7 +25,7 @@ public class ChildHandlerInitlizer extends ChannelInitializer<SocketChannel> {
     public ChildHandlerInitlizer(ConnectionManager connectionManager, PackageQeueu pkgQueue) {
         this.connectionManager = connectionManager;
         this.pkgQueue = pkgQueue;
-        this.packageGatherHandler = new PackageGatherHandler(this.pkgQueue);
+        this.packageGatherHandler = new PackageGatherHandler(connectionManager, this.pkgQueue);
     }
 
     @Override

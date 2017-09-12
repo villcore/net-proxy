@@ -1,15 +1,15 @@
 package com.villcore.net.proxy.v2.client;
 
 import com.sun.xml.internal.bind.v2.model.core.ID;
-import com.villcore.net.proxy.v2.Html404;
-import com.villcore.net.proxy.v2.pkg.ConnectPackage;
-import com.villcore.net.proxy.v2.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.nio.Connection;
+import com.villcore.net.proxy.v2.pkg.*;
 import com.villcore.net.proxy.v2.pkg.Package;
-import com.villcore.net.proxy.v2.pkg.PackageUtils;
+import com.villcore.net.proxy.v2.server.PackageDecoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
@@ -52,7 +52,7 @@ public class ClientChannelSendService implements Runnable {
     private String remoteAddr;
     private int port;
 
-    RemoteReadHandler remoteReadHandler = new RemoteReadHandler();
+    private RemoteReadHandler remoteReadHandler;
 
     public ClientChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
         this.connectionManager = connectionManager;
@@ -64,20 +64,80 @@ public class ClientChannelSendService implements Runnable {
         this.remoteAddr = remoteAddr;
         this.port = port;
 
+        remoteReadHandler = new RemoteReadHandler(connectionManager, sendPackage, recvPackage);
         bootstrap.group(this.eventExecutors)
                 .channel(NioSocketChannel.class)
-                .handler(remoteReadHandler);
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new ClientPackageDecoder());
+                        ch.pipeline().addLast(new RemoteReadHandler(connectionManager, sendPackage, recvPackage));
+                    }
+                });
     }
 
     //远程读取handler
     @ChannelHandler.Sharable
     private static class RemoteReadHandler extends ChannelInboundHandlerAdapter {
+        private ConnectionManager connectionManager;
+        private PackageQeueu sendQueue;
+        private PackageQeueu recvQueue;
+
+        public RemoteReadHandler(ConnectionManager connectionManager, PackageQeueu sendQueue, PackageQeueu recvQueue) {
+            this.connectionManager = connectionManager;
+            this.sendQueue = sendQueue;
+            this.recvQueue = recvQueue;
+        }
+
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            LOG.debug("get remote resp...");
+            if(msg instanceof Package) {
+                Package pkg = (Package) msg;
+
+                ByteBuf header = pkg.getHeader().copy();
+                ByteBuf body = pkg.getBody().copy();
+                LOG.debug(">>>>>>>>>>>>>>>>client recv package = {}", PackageUtils.toString(pkg));
+
+                short pkgType = pkg.getPkgType();
+                if (pkgType == PackageType.PKG_CONNECT_RESP) {
+                    ConnectRespPackage connectRespPackage = new ConnectRespPackage();
+                    connectRespPackage.setHeader(header);
+                    connectRespPackage.setBody(body);
+
+                    //ConnectRespPackage connectRespPackage = (ConnectRespPackage) msg;
+                    int localConnId = connectRespPackage.getLocalConnId();
+                    int remoteConnId = connectRespPackage.getRemoteConnId();
+                    NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
+
+                    if(remoteConnId == -1) {
+                        socketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+                        connectionManager.closeConnection(socketChannel);
+                        return;
+                    }
+
+                    connectionManager.channelConnected(socketChannel);
+                    connectionManager.makeConnectionMap(localConnId, remoteConnId);
+                    for(Package dataPkg : connectionManager.drainPendingPackages(socketChannel)) {
+                        DefaultDataPackage defaultDataPackage = (DefaultDataPackage) dataPkg;
+                        defaultDataPackage.setRemoteConnId(remoteConnId);
+                        LOG.debug("recv resp package, drain data package to send queue...{}", PackageUtils.toString(dataPkg));
+                        sendQueue.putPackage(dataPkg);
+                    }
+                    connectionManager.touch(localConnId);
+                }
+
+                if(pkgType == PackageType.PKG_DEFAULT_DATA) {
+                    DefaultDataPackage dataPackage = new DefaultDataPackage();
+                    dataPackage.setHeader(header);
+                    dataPackage.setBody(body);
+//                    DefaultDataPackage dataPackage = (DefaultDataPackage) msg;
+                    recvQueue.putPackage(dataPackage);
+                }
+            } else {
+                ctx.fireChannelRead(msg);
+            }
         }
     };
-
 
     public void start() {
         running = true;
@@ -194,7 +254,6 @@ public class ClientChannelSendService implements Runnable {
         }
     }
 
-
     private void writeSendPackages(List<Package> packages) throws Exception {
         LOG.debug("package size = {}", packages.size());
         int count = 0;
@@ -205,13 +264,13 @@ public class ClientChannelSendService implements Runnable {
             LOG.debug("pkg class = {}, cunt = {}", pkg.getClass(), ++count);
             if (pkg instanceof ConnectPackage) {
                 ConnectPackage connectPackage = (ConnectPackage) pkg;
-                localConnId = connectPackage.getLocalConnectionId();
+                localConnId = connectPackage.getConnId();
                 //LOG.debug(">>>connect package...{}", PackageUtils.toString(pkg));
             }
 
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
-                localConnId = defaultDataPackage.getLocalConnectionId();
+                localConnId = defaultDataPackage.getLocalConnId();
                 //LOG.debug(">>>data package...{}", PackageUtils.toString(pkg));
             }
 
@@ -247,12 +306,12 @@ public class ClientChannelSendService implements Runnable {
             int localConnId = -1;
             if (pkg instanceof ConnectPackage) {
                 ConnectPackage connectPackage = (ConnectPackage) pkg;
-                localConnId = connectPackage.getLocalConnectionId();
+                localConnId = connectPackage.getConnId();
             }
 
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
-                localConnId = defaultDataPackage.getLocalConnectionId();
+                localConnId = defaultDataPackage.getLocalConnId();
             }
 
             NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
@@ -260,7 +319,8 @@ public class ClientChannelSendService implements Runnable {
                 continue;
             }
 
-            socketChannel.writeAndFlush(Unpooled.wrappedBuffer(Html404.RESP.getBytes()));
+            //socketChannel.writeAndFlush(Unpooled.wrappedBuffer(Html404.RESP.getBytes()));
+            socketChannel.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
             LOG.debug("connId = {}, channel null {}", localConnId, socketChannel == null);
 
             //remoteSocketChannel.writeAndFlush(pkg.toByteBuf());

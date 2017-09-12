@@ -5,10 +5,11 @@ import io.netty.buffer.Unpooled;
 
 import java.io.UnsupportedEncodingException;
 
-public class DefaultDataPackage extends Package {
+public class ConnectRespPackage extends Package {
     {
-        setPkgType(PackageType.PKG_DEFAULT_DATA);
+        this.setPkgType(PackageType.PKG_CONNECT_RESP);
     }
+
 
     public int getLocalConnId() {
         int localConnId = -1;
@@ -22,31 +23,25 @@ public class DefaultDataPackage extends Package {
     }
 
     public int getRemoteConnId() {
-        int localConnId = -1;
+        int remoteConnId = -1;
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
+
         header.readInt();
-        localConnId = header.readInt();
+        remoteConnId = header.readInt();
         header.readerIndex(oriReadIndex);
 
-        return localConnId;
-    }
-
-    public void setRemoteConnId(int remoteConnId) {
-        ByteBuf header = getHeader();
-        int oriReadIndex = header.readerIndex();
-        header.readInt();
-        header.setInt(header.readerIndex(), remoteConnId);
-        header.readerIndex(oriReadIndex);
+        return remoteConnId;
     }
 
     public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) throws UnsupportedEncodingException {
-        //localConnId[4] + remoteConnid[4] + userFlag[8]
+        //localConnId[4] + remoteConnId[4] + userFlag[8];
         ByteBuf header = Unpooled.buffer(4 + 4 + 8);
 
         header.writeInt(localConnId);
         header.writeInt(remoteConnId);
         header.writeLong(userFlag);
+        header.writerIndex(header.capacity());
         return header;
     }
 }
