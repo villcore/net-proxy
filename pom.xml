@@ -89,5 +89,12 @@
             <artifactId>netty-all</artifactId>
             <version>${netty.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-udt</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
+
     </dependencies>
 </project>

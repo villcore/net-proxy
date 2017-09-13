@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 服务端发送服务
@@ -49,6 +50,16 @@ public class ServerChannelSendService implements Runnable {
 
     private ExecutorService connectExecutor = Executors.newCachedThreadPool();
 
+    private AtomicLong recvCnt = new AtomicLong();
+    private AtomicLong sendCnt = new AtomicLong();
+
+    public void addRecv() {
+        //LOG.debug("recv pkg, total = {}", recvCnt.incrementAndGet());
+    }
+
+    public void addSend() {
+        //LOG.debug("send pkg, total = {}", sendCnt.incrementAndGet());
+    }
     public ServerChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors) {
         this.connectionManager = connectionManager;
         this.sendPackage = sendPackage;
@@ -57,6 +68,8 @@ public class ServerChannelSendService implements Runnable {
         this.eventExecutors = eventExecutors;
 
         bootstrap.group(this.eventExecutors)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                .option(ChannelOption.SO_KEEPALIVE, true)
                 .channel(NioSocketChannel.class)
                 .handler(new DstSocketReadHandler(connectionManager, sendPackage));
     }
@@ -83,6 +96,11 @@ public class ServerChannelSendService implements Runnable {
             if(msg instanceof ByteBuf) {
                 ByteBuf data = (ByteBuf) msg;
                 DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(localConnId, dstConnId, 1L, data);
+                try {
+                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", dataPackage.getLocalConnId(), dataPackage.getRemoteConnId(), /**PackageUtils.toString(dataPackage.getBody())**/"");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 sendPackage.putPackage(dataPackage);
             }
         }
@@ -99,10 +117,11 @@ public class ServerChannelSendService implements Runnable {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted() && running) {
+            List<Package> failPackages = failedSendPackage.drainPackage();
             List<Package> recvPackages = recvPackage.drainPackage();
             List<Package> sendPackages = sendPackage.drainPackage();
 
-            if (sendPackages.isEmpty() && recvPackages.isEmpty()) {
+            if (sendPackages.isEmpty() && recvPackages.isEmpty() && failPackages.isEmpty()) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(IDLE_SLEEP_MICROSECONDS);
                     continue;
@@ -113,6 +132,7 @@ public class ServerChannelSendService implements Runnable {
             }
 
             buildDstChannelOrSend(recvPackages);
+            sendClient(failPackages);
             sendClient(sendPackages);
         }
     }
@@ -151,12 +171,21 @@ public class ServerChannelSendService implements Runnable {
         }
     }
 
-    private void writeSendPackages(List<Package> packages) {
-        LOG.debug("send package size = {}", packages.size());
+    private void writeSendPackages(List<Package> packages) throws InterruptedException {
+        //LOG.debug("send package size = {}", packages.size());
         int count = 0;
         for (Package pkg : packages) {
-            LOG.debug("channel send service write send package ... {}", pkg);
-            clientChannel.writeAndFlush(pkg.toByteBuf());
+            //LOG.debug("channel send service write send package ... {}", pkg);
+            if(clientChannel == null || !clientChannel.isOpen()) {
+                failedSendPackage.putPackage(pkg);
+                continue;
+            }
+            clientChannel.write(pkg.toByteBuf());
+            addSend();
+        }
+        if(clientChannel == null || !clientChannel.isOpen()) {
+
+        } else {
             clientChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         }
     }
@@ -185,8 +214,10 @@ public class ServerChannelSendService implements Runnable {
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
                 localConnId = defaultDataPackage.getLocalConnId();
+
                 sendDst(defaultDataPackage);
             }
+            addRecv();
         }
     }
 
@@ -194,8 +225,15 @@ public class ServerChannelSendService implements Runnable {
         int dstConnId = defaultDataPackage.getRemoteConnId();
         NioSocketChannel socketChannel = connectionManager.getChannel(dstConnId);
         if(socketChannel != null) {
+            try {
+                LOG.debug("\n=======================req[local{}, remote{}]====================\n{}\n",defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             socketChannel.writeAndFlush(defaultDataPackage.getBody());
             connectionManager.touch(dstConnId);
+        } else {
+            defaultDataPackage.toByteBuf().release();
         }
     }
 
@@ -217,7 +255,7 @@ public class ServerChannelSendService implements Runnable {
                     } else {
                         respPackage = PackageUtils.buildConnectRespPackage(localConnId, -1, 1L);
                     }
-                    LOG.debug("build connect resp package, localConnId = {}, remoteId = {}", respPackage.getLocalConnId(), respPackage.getRemoteConnId());
+                    //LOG.debug("build connect resp package, localConnId = {}, remoteId = {}", respPackage.getLocalConnId(), respPackage.getRemoteConnId());
                     sendPackage.putPackage(respPackage);
                 } catch (Exception e) {
                     LOG.error(e.getMessage(), e);

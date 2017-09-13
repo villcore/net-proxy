@@ -46,13 +46,14 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if(msg instanceof Package) {
-            LOG.debug("gather packge = {}, total = {}", "", ++count);
+            //LOG.debug("gather packge = {}, total = {}", "", ++count);
             if(msg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) msg;
                 int localConnId = defaultDataPackage.getLocalConnId();
                 NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
                 if(!connectionManager.isChannelConnected(socketChannel)) {
                     connectionManager.pendingPackage(socketChannel, defaultDataPackage);
+                    LOG.debug("pending pkg for [{}]...", socketChannel.localAddress().toString());
                 } else {
                     sendPackage.putPackage(defaultDataPackage);
                 }
@@ -60,7 +61,7 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
             }
             Package pkg = (Package) msg;
             sendPackage.putPackage(pkg);
-            LOG.debug("put send package queue, queue size = {}", sendPackage.size());
+            //LOG.debug("put send package queue, queue size = {}", sendPackage.size());
         }
     }
 }

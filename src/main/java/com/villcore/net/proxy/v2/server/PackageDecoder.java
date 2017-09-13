@@ -50,7 +50,7 @@ public class PackageDecoder extends ByteToMessageDecoder {
                         break;
                 }
 
-                LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
+                //LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
                 out.add(pkg);
                 packageLen = 0;
             } else {

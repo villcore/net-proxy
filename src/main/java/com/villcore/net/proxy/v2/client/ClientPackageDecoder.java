@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 此类将服务端接收到的 ByteBuf 还原成对应的Package, 该类不可共享
@@ -16,19 +17,21 @@ import java.util.List;
 public class ClientPackageDecoder extends ByteToMessageDecoder {
     private static final Logger LOG = LoggerFactory.getLogger(ClientPackageDecoder.class);
 
+    private static AtomicLong cnt = new AtomicLong();
+
     private int packageLen = 0;
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
+//        LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
         if (packageLen > 0) {
-            LOG.debug("pkg len = {}", packageLen);
+//            LOG.debug("pkg len = {}", packageLen);
             if (in.readableBytes() >= packageLen - 4) {
                 ByteBuf byteBuf = in.slice(in.readerIndex(), packageLen - 4);
                 in.readerIndex(in.readerIndex() + packageLen - 4);
 
-                LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
-                LOG.debug("rx = {}, wx = {}", byteBuf.readerIndex(), byteBuf.writerIndex());
+//                LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
+//                LOG.debug("rx = {}, wx = {}", byteBuf.readerIndex(), byteBuf.writerIndex());
 
                 Package pkg = Package.valueOf(byteBuf);
 
@@ -41,7 +44,7 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 //                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         connectRespPackage.setHeader(header);
                         connectRespPackage.setBody(body);
-                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
+//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
                         pkg = connectRespPackage;
                         break;
                     case PackageType.PKG_DEFAULT_DATA:
@@ -54,9 +57,10 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                         break;
                 }
 
-                LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
+//                LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
                 //out.add(pkg);
                 ctx.fireChannelRead(pkg);
+                LOG.debug("decoder recv pgk count = {}", cnt.incrementAndGet());
                 packageLen = 0;
             } else {
                 //continue;

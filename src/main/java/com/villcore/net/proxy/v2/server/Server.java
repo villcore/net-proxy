@@ -26,12 +26,12 @@ public class Server {
     public static void main(String[] args) {
         //load configuration
         //TODO load form conf file
-        String listenPort = "20080";
+        String listenPort = "20081";
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
 
-        PackageQeueu sendQueue = new PackageQeueu(1 * 1000);
-        PackageQeueu recvQueue = new PackageQeueu(1 * 1000);
-        PackageQeueu failQueue = new PackageQeueu(1 * 1000);
+        PackageQeueu sendQueue = new PackageQeueu(1 * 100000);
+        PackageQeueu recvQueue = new PackageQeueu(1 * 100000);
+        PackageQeueu failQueue = new PackageQeueu(1 * 100000);
 
         ConnectionManager connectionManager = new ConnectionManager();
         connectionManager.start();

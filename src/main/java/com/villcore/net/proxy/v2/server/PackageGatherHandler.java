@@ -20,10 +20,10 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        LOG.debug("gather package ...{}", msg.getClass().toString());
+        //LOG.debug("gather package ...{}", msg.getClass().toString());
         if(msg instanceof Package) {
             Package pkg = (Package) msg;
-            LOG.debug("server gather a package...");
+            //LOG.debug("server gather a package...");
             packageQeueu.putPackage(pkg);
         } else {
             ctx.fireChannelRead(msg);

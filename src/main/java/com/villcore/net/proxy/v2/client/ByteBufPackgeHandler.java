@@ -57,11 +57,10 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = (ByteBuf) msg;
 
         if(detectedProxy) {
-            LOG.debug("get byteBuf, and convert it to a pkg... total = {}", count.incrementAndGet());
+            //LOG.debug("get byteBuf, and convert it to a pkg... total = {}", count.incrementAndGet());
             //LOG.debug("msg = {}", ((ByteBuf) msg).toString(Charset.forName("utf-8")));
             NioSocketChannel socketChannel = (NioSocketChannel) pipeline.channel();
-            int connId = connectionManager.addConnection(socketChannel);
-
+            int connId = connectionManager.getConnId(socketChannel);
             ByteBuf data = byteBuf;
             Package dataPackage = PackageUtils.buildDataPackage(connId, -1, 1L, data);
             ctx.fireChannelRead(dataPackage);
@@ -70,9 +69,9 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
 
         int readerIndex = byteBuf.readerIndex();
         int writerIndex = byteBuf.writerIndex();
-        LOG.debug("read index = {}, write index = {}", readerIndex, writerIndex);
-        LOG.debug("channel local addr = {}", pipeline.channel().remoteAddress().toString());
-        LOG.debug("\n=======================\n{}\n==========================", byteBuf.copy().toString(Charset.forName("utf-8")));
+        //LOG.debug("read index = {}, write index = {}", readerIndex, writerIndex);
+//        LOG.debug("channel local addr = {}", pipeline.channel().remoteAddress().toString());
+//        LOG.debug("\n=======================\n{}\n==========================", byteBuf.copy().toString(Charset.forName("utf-8")));
         //http
         //https
         //socks5
@@ -102,29 +101,29 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-                    Integer localConnId = connectionManager.getConnId((NioSocketChannel) ctx.channel());
+                    Integer localConnId = connectionManager.addConnection((NioSocketChannel) ctx.channel());
                     Long userFlag = 1L;
 
                     ConnectPackage connectPackage = PackageUtils.buildConnectPackage(hostName, port, localConnId, userFlag);
 
-                    LOG.debug("proxy wirte a connect package, total = {}", count.incrementAndGet());
+                    //LOG.debug("proxy wirte a connect package, total = {}", count.incrementAndGet());
 
 
                     //data package
                     DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(localConnId, -1, userFlag, byteBuf);
-                    LOG.debug("connect package type = {}, data package type = {}", connectPackage.getPkgType(), dataPackage.getPkgType());
+                    //LOG.debug("connect package type = {}, data package type = {}", connectPackage.getPkgType(), dataPackage.getPkgType());
 
-                    LOG.debug("connect pkg len = {}, header len = {}, body len = {}", connectPackage.getTotalLen(), connectPackage.getHeaderLen(), connectPackage.getBodyLen());
-                    LOG.debug("data pkg len = {}, header len = {}, body len = {}", dataPackage.getTotalLen(), dataPackage.getHeaderLen(), dataPackage.getBodyLen());
+//                    LOG.debug("connect pkg len = {}, header len = {}, body len = {}", connectPackage.getTotalLen(), connectPackage.getHeaderLen(), connectPackage.getBodyLen());
+//                    LOG.debug("data pkg len = {}, header len = {}, body len = {}", dataPackage.getTotalLen(), dataPackage.getHeaderLen(), dataPackage.getBodyLen());
 
                     ctx.fireChannelRead(connectPackage);
                     ctx.fireChannelRead(dataPackage);
 
 //                    LOG.debug("connect package = {}", connectPackage.toByteBuf().toString(Charset.forName("utf-8")));
-                    LOG.debug("data package = {}", dataPackage.getBody().toString(Charset.forName("utf-8")));
-
-                    LOG.debug("write pkg time = {}", System.currentTimeMillis());
-                    LOG.debug("proxy wirte a data package, total = {}", count.incrementAndGet());
+//                    LOG.debug("data package = {}", dataPackage.getBody().toString(Charset.forName("utf-8")));
+//
+//                    LOG.debug("write pkg time = {}", System.currentTimeMillis());
+//                    LOG.debug("proxy wirte a data package, total = {}", count.incrementAndGet());
                     //pipeline.addAfter(channelHandlerContext.name(), null, new ByteBufToPackageHandler(connectionManager));
                     //pipeline.remove(this);
                     detectedProxy = true;
@@ -140,7 +139,7 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
             ByteBuf httpsProcotol = byteBuf.slice(0, httpsFirst.length());
             String procotol = httpsProcotol.toString(Charset.forName("utf-8"));
             if(procotol.contains(httpsFirst)) {
-                LOG.debug("detect protocal = {}", procotol);
+//                LOG.debug("detect protocal = {}", procotol);
                 int lastIndex = writerIndex;
                 int last = byteBuf.getByte(lastIndex - 1);
                 int lastOne = byteBuf.getByte(lastIndex - 2);
@@ -156,12 +155,12 @@ public class ByteBufPackgeHandler extends ChannelInboundHandlerAdapter {
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-                    Integer localConnId = connectionManager.getConnId((NioSocketChannel) ctx.channel());
+                    Integer localConnId = connectionManager.addConnection((NioSocketChannel) ctx.channel());
                     Long userFlag = 1L;
 
                     ConnectPackage connectPackage = PackageUtils.buildConnectPackage(hostName, port, localConnId, userFlag);
-                    LOG.debug("proxy wirte a connect package, total = {}", count.incrementAndGet());
-                    LOG.debug("connect pkg len = {}, header len = {}, body len = {}", connectPackage.getTotalLen(), connectPackage.getHeaderLen(), connectPackage.getBodyLen());
+//                    LOG.debug("proxy wirte a connect package, total = {}", count.incrementAndGet());
+//                    LOG.debug("connect pkg len = {}, header len = {}, body len = {}", connectPackage.getTotalLen(), connectPackage.getHeaderLen(), connectPackage.getBodyLen());
                     ctx.fireChannelRead(connectPackage);
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
                     detectedProxy = true;

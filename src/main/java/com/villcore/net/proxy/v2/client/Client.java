@@ -27,15 +27,19 @@ public class Client {
         //load configuration
         //TODO load form conf file
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+        EventLoopGroup wokerLoopGroup = new NioEventLoopGroup();
 
         String proxyPort = "10081";
 
-        String remoteAddress = "127.0.0.1";
-        String remotePort = "20080";
+//        String remoteAddress = "127.0.0.1";
+//        String remotePort = "20080";
 
-        PackageQeueu sendQueue = new PackageQeueu(1 * 1000);
-        PackageQeueu recvQueue = new PackageQeueu(1 * 1000);
-        PackageQeueu failQueue = new PackageQeueu(1 * 1000);
+        String remoteAddress = "45.63.120.186";
+        String remotePort = "20081";
+
+        PackageQeueu sendQueue = new PackageQeueu(1 * 100000);
+        PackageQeueu recvQueue = new PackageQeueu(1 * 100000);
+        PackageQeueu failQueue = new PackageQeueu(1 * 100000);
 
         ConnectionManager connectionManager = new ConnectionManager();
         connectionManager.start();
@@ -47,7 +51,7 @@ public class Client {
 
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(eventLoopGroup)
+            serverBootstrap.group(eventLoopGroup, wokerLoopGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChildHandlerInitlizer(connectionManager, sendQueue));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();

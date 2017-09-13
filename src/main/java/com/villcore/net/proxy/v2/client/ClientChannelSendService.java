@@ -18,9 +18,11 @@ import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 客户端发送服务
@@ -53,6 +55,17 @@ public class ClientChannelSendService implements Runnable {
     private int port;
 
     private RemoteReadHandler remoteReadHandler;
+
+    private AtomicLong recvCnt = new AtomicLong();
+    private AtomicLong sendCnt = new AtomicLong();
+
+    public void addRecv() {
+        //LOG.debug("recv pkg, total = {}", recvCnt.incrementAndGet());
+    }
+
+    public void addSend() {
+        //LOG.debug("send pkg, total = {}", sendCnt.incrementAndGet());
+    }
 
     public ClientChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
         this.connectionManager = connectionManager;
@@ -96,7 +109,7 @@ public class ClientChannelSendService implements Runnable {
 
                 ByteBuf header = pkg.getHeader().copy();
                 ByteBuf body = pkg.getBody().copy();
-                LOG.debug(">>>>>>>>>>>>>>>>client recv package = {}", PackageUtils.toString(pkg));
+//                LOG.debug(">>>>>>>>>>>>>>>>client recv package = {}", PackageUtils.toString(pkg));
 
                 short pkgType = pkg.getPkgType();
                 if (pkgType == PackageType.PKG_CONNECT_RESP) {
@@ -120,7 +133,7 @@ public class ClientChannelSendService implements Runnable {
                     for(Package dataPkg : connectionManager.drainPendingPackages(socketChannel)) {
                         DefaultDataPackage defaultDataPackage = (DefaultDataPackage) dataPkg;
                         defaultDataPackage.setRemoteConnId(remoteConnId);
-                        LOG.debug("recv resp package, drain data package to send queue...{}", PackageUtils.toString(dataPkg));
+                        //LOG.debug("recv resp package, drain data package to send queue...{}", PackageUtils.toString(dataPkg));
                         sendQueue.putPackage(dataPkg);
                     }
                     connectionManager.touch(localConnId);
@@ -208,17 +221,21 @@ public class ClientChannelSendService implements Runnable {
 
     @Override
     public void run() {
+
         while (!Thread.currentThread().isInterrupted() && running) {
+
             try {
                 checkRemoteServerConnectState();
             } catch (InterruptedException e) {
                 LOG.error(e.getMessage(), e);
                 Thread.currentThread().interrupt();
             }
+
+            List<Package> failPackages = failedSendPackage.drainPackage();
             List<Package> sendPackages = sendPackage.drainPackage();
             List<Package> recvPackages = recvPackage.drainPackage();
 
-            if (sendPackages.isEmpty() && recvPackages.isEmpty()) {
+            if (failPackages.isEmpty() && sendPackages.isEmpty() && recvPackages.isEmpty()) {
                 try {
                     TimeUnit.MILLISECONDS.sleep(IDLE_SLEEP_MICROSECONDS);
                     continue;
@@ -228,7 +245,8 @@ public class ClientChannelSendService implements Runnable {
                 }
             }
 
-
+            //send failed
+            sendRemote(failPackages);
             //send remote
             sendRemote(sendPackages);
             //send local
@@ -255,54 +273,49 @@ public class ClientChannelSendService implements Runnable {
     }
 
     private void writeSendPackages(List<Package> packages) throws Exception {
-        LOG.debug("package size = {}", packages.size());
+//        LOG.debug("package size = {}", packages.size());
         int count = 0;
         for (Package pkg : packages) {
-            LOG.debug("channel send service write send package ... {}", pkg);
+//            LOG.debug("channel send service write send package ... {}", pkg);
             int localConnId = -1;
 
-            LOG.debug("pkg class = {}, cunt = {}", pkg.getClass(), ++count);
+//            LOG.debug("pkg class = {}, cunt = {}", pkg.getClass(), ++count);
             if (pkg instanceof ConnectPackage) {
                 ConnectPackage connectPackage = (ConnectPackage) pkg;
                 localConnId = connectPackage.getConnId();
-                //LOG.debug(">>>connect package...{}", PackageUtils.toString(pkg));
             }
 
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
                 localConnId = defaultDataPackage.getLocalConnId();
-                //LOG.debug(">>>data package...{}", PackageUtils.toString(pkg));
+                int remoteConnId = connectionManager.getConnectionMap(localConnId);
+                defaultDataPackage.setRemoteConnId(remoteConnId);
+                try {
+                    LOG.debug("\n=======================req[local{}, remote{}]====================\n{}\n",defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
-
-
-//            DefaultDataPackage testPkg = new DefaultDataPackage();
-//            ByteBuf header = DefaultDataPackage.newHeader(localConnId, -1, 1L);
-//            testPkg.setHeader(header);
-//            testPkg.setBody(Unpooled.wrappedBuffer(Html404.RESP.getBytes()));
-//
-//            recvPackage.putPackage(testPkg);
-
+            //TODO 需要处理
             if (remoteSocketChannel == null || !remoteSocketChannel.isOpen()) {
                 LOG.debug("remote server channel does not connected...");
                 failedSendPackage.putPackage(pkg);
                 continue;
             }
 
-//            LOG.debug("pkg len = {}", pkg.toByteBuf().readableBytes());
-//            String test = "this is a test...";
-//            ByteBuf testBuf = Unpooled.wrappedBuffer(Unpooled.buffer().writeInt(test.getBytes().length), Unpooled.wrappedBuffer(test.getBytes()));
-//            remoteSocketChannel.writeAndFlush(testBuf);
-
-            //
-            remoteSocketChannel.writeAndFlush(pkg.toByteBuf());
+            remoteSocketChannel.write(pkg.toByteBuf());
+            addSend();
+        }
+        if (remoteSocketChannel == null || !remoteSocketChannel.isOpen()) {
+        } else {
             remoteSocketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         }
     }
 
     private void writeRecvPackages(List<Package> packages) throws Exception {
         for (Package pkg : packages) {
-            LOG.debug("channel send service write recv package ... {}", pkg);
+            //LOG.debug("channel send service write recv package ... {}", pkg);
             int localConnId = -1;
             if (pkg instanceof ConnectPackage) {
                 ConnectPackage connectPackage = (ConnectPackage) pkg;
@@ -312,18 +325,22 @@ public class ClientChannelSendService implements Runnable {
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
                 localConnId = defaultDataPackage.getLocalConnId();
+                try {
+                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
             if (socketChannel == null || !socketChannel.isOpen()) {
+                //failedSendPackage.putPackage(pkg);
+                pkg.toByteBuf().release();
                 continue;
             }
 
-            //socketChannel.writeAndFlush(Unpooled.wrappedBuffer(Html404.RESP.getBytes()));
             socketChannel.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
-            LOG.debug("connId = {}, channel null {}", localConnId, socketChannel == null);
-
-            //remoteSocketChannel.writeAndFlush(pkg.toByteBuf());
+            addRecv();
         }
     }
 
