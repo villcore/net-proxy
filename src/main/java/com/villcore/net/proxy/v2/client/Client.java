@@ -36,10 +36,11 @@ public class Client {
 
         String remoteAddress = "45.63.120.186";
         String remotePort = "20081";
-
+    //
         PackageQeueu sendQueue = new PackageQeueu(1 * 100000);
         PackageQeueu recvQueue = new PackageQeueu(1 * 100000);
         PackageQeueu failQueue = new PackageQeueu(1 * 100000);
+
 
         ConnectionManager connectionManager = new ConnectionManager();
         connectionManager.start();
