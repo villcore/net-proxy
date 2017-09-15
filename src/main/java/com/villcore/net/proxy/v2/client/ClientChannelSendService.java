@@ -1,10 +1,7 @@
 package com.villcore.net.proxy.v2.client;
 
-import com.sun.xml.internal.bind.v2.model.core.ID;
-import com.villcore.net.proxy.nio.Connection;
 import com.villcore.net.proxy.v2.pkg.*;
 import com.villcore.net.proxy.v2.pkg.Package;
-import com.villcore.net.proxy.v2.server.PackageDecoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -12,14 +9,10 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -80,6 +73,11 @@ public class ClientChannelSendService implements Runnable {
         remoteReadHandler = new RemoteReadHandler(connectionManager, sendPackage, recvPackage);
         bootstrap.group(this.eventExecutors)
                 .channel(NioSocketChannel.class)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_RCVBUF, 128 * 1024)
+                .option(ChannelOption.SO_SNDBUF, 128 * 1024)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
@@ -273,16 +271,12 @@ public class ClientChannelSendService implements Runnable {
     }
 
     private void writeSendPackages(List<Package> packages) throws Exception {
-//        LOG.debug("package size = {}", packages.size());
-        int count = 0;
         for (Package pkg : packages) {
-//            LOG.debug("channel send service write send package ... {}", pkg);
             int localConnId = -1;
 
-//            LOG.debug("pkg class = {}, cunt = {}", pkg.getClass(), ++count);
-            if (pkg instanceof ConnectPackage) {
-                ConnectPackage connectPackage = (ConnectPackage) pkg;
-                localConnId = connectPackage.getConnId();
+            if (pkg instanceof ConnectReqPackage) {
+                ConnectReqPackage connectReqPackage = (ConnectReqPackage) pkg;
+                localConnId = connectReqPackage.getConnId();
             }
 
             if (pkg instanceof DefaultDataPackage) {
@@ -290,11 +284,6 @@ public class ClientChannelSendService implements Runnable {
                 localConnId = defaultDataPackage.getLocalConnId();
                 int remoteConnId = connectionManager.getConnectionMap(localConnId);
                 defaultDataPackage.setRemoteConnId(remoteConnId);
-                try {
-                    LOG.debug("\n=======================req[local{}, remote{}]====================\n{}\n",defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
 
             //TODO 需要处理
@@ -317,19 +306,23 @@ public class ClientChannelSendService implements Runnable {
         for (Package pkg : packages) {
             //LOG.debug("channel send service write recv package ... {}", pkg);
             int localConnId = -1;
-            if (pkg instanceof ConnectPackage) {
-                ConnectPackage connectPackage = (ConnectPackage) pkg;
-                localConnId = connectPackage.getConnId();
+            if (pkg instanceof ConnectReqPackage) {
+                ConnectReqPackage connectReqPackage = (ConnectReqPackage) pkg;
+                localConnId = connectReqPackage.getConnId();
             }
 
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
                 localConnId = defaultDataPackage.getLocalConnId();
-                try {
-                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+            }
+
+            if(connectionManager.getConnectionMap(localConnId) == -1) {
+                localConnId = -1;
             }
 
             NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);

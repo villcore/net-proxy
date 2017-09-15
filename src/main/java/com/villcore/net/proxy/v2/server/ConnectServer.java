@@ -15,8 +15,10 @@ public class ConnectServer {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectServer.class);
 
     public static void main(String[] args) {
-        String addr = "www.speedtest.cn";
+        String addr = "http://stream.javhihi.com/videos/jav789.com/701-750/jav789.com-sex-heaven-slim-beauty-s-full-course-sex-593.439.mp4";
         int port = 80;
+
+        long time = System.currentTimeMillis();
 
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup())
@@ -24,6 +26,7 @@ public class ConnectServer {
                 .handler(new ChannelInboundHandlerAdapter() {
                     @Override
                     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                        LOG.debug("{}", ctx.channel().remoteAddress().toString());
                         LOG.debug("channel read...");
                     }
                 });
@@ -31,6 +34,7 @@ public class ConnectServer {
         LOG.debug("ready to connect to server [{}:{}]...", addr, port);
         Channel channel = null;
         try {
+            time = System.currentTimeMillis();
             channel = bootstrap.connect(addr, port).sync().channel();
             channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override
@@ -39,10 +43,12 @@ public class ConnectServer {
                 }
             });
             NioSocketChannel dstSocketChannel = (NioSocketChannel) channel;
-            LOG.debug("connect to server [{}] success ...", dstSocketChannel.remoteAddress().toString());
+            LOG.debug("{} connect to server [{}] success ...", System.currentTimeMillis() - time, dstSocketChannel.remoteAddress().toString());
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
-            channel.closeFuture();
+            if(channel != null) {
+                channel.closeFuture();
+            }
         }
     }
 }

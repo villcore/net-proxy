@@ -153,7 +153,7 @@ public class ConnectionManager implements Runnable {
 
     public void closeConnection(NioSocketChannel channel) {
         synchronized (updateLock) {
-            int connId = connIdMap.remove(channel);
+            Integer connId = connIdMap.remove(channel);
             channelMap.remove(connId);
             connectionMap.remove(Integer.valueOf(connId));
             pendingPackage.remove(channel);

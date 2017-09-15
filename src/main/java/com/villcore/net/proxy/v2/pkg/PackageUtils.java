@@ -7,10 +7,10 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 public class PackageUtils {
-    public static ConnectPackage buildConnectPackage(String hostName, short port, int localConnId, long userFlag) throws UnsupportedEncodingException {
-        ByteBuf header = ConnectPackage.newHeader(hostName, port, localConnId, userFlag);
+    public static ConnectReqPackage buildConnectPackage(String hostName, short port, int localConnId, long userFlag) throws UnsupportedEncodingException {
+        ByteBuf header = ConnectReqPackage.newHeader(hostName, port, localConnId, userFlag);
 
-        ConnectPackage pkg = new ConnectPackage();
+        ConnectReqPackage pkg = new ConnectReqPackage();
         pkg.setHeader(header);
         pkg.setBody(Unpooled.EMPTY_BUFFER);
         return pkg;

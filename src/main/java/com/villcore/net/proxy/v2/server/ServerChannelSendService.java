@@ -8,6 +8,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -60,6 +61,7 @@ public class ServerChannelSendService implements Runnable {
     public void addSend() {
         //LOG.debug("send pkg, total = {}", sendCnt.incrementAndGet());
     }
+
     public ServerChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors) {
         this.connectionManager = connectionManager;
         this.sendPackage = sendPackage;
@@ -70,6 +72,9 @@ public class ServerChannelSendService implements Runnable {
         bootstrap.group(this.eventExecutors)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
                 .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_RCVBUF, 128 * 1024)
+                .option(ChannelOption.SO_SNDBUF, 128 * 1024)
                 .channel(NioSocketChannel.class)
                 .handler(new DstSocketReadHandler(connectionManager, sendPackage));
     }
@@ -87,7 +92,6 @@ public class ServerChannelSendService implements Runnable {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            LOG.debug("get dst resp...");
             NioSocketChannel socketChannel = (NioSocketChannel) ctx.channel();
             int dstConnId = connectionManager.getConnId(socketChannel);
             int localConnId = connectionManager.getConnectionMap(dstConnId);
@@ -95,12 +99,14 @@ public class ServerChannelSendService implements Runnable {
             connectionManager.touch(dstConnId);
             if(msg instanceof ByteBuf) {
                 ByteBuf data = (ByteBuf) msg;
+                LOG.debug("{} get dst resp {}...", System.currentTimeMillis(), data.readableBytes());
+
                 DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(localConnId, dstConnId, 1L, data);
-                try {
-                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", dataPackage.getLocalConnId(), dataPackage.getRemoteConnId(), /**PackageUtils.toString(dataPackage.getBody())**/"");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    LOG.debug("\n=======================resp[local{}, remote{}]====================\n{}\n", dataPackage.getLocalConnId(), dataPackage.getRemoteConnId(), /**PackageUtils.toString(dataPackage.getBody())**/"");
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
                 sendPackage.putPackage(dataPackage);
             }
         }
@@ -139,13 +145,16 @@ public class ServerChannelSendService implements Runnable {
 
     private NioSocketChannel connectServer(int localConnId, String addr, int port) {
         LOG.debug("ready to connect to server [{}:{}]...", addr, port);
-        Channel channel = null;
+        String[] addrInfo = DNS.parseIp(addr, port);
+        String ip = addrInfo[0] == null || addrInfo[0].isEmpty() ? addr : addrInfo[0];
         try {
-            channel = bootstrap.connect(addr, port).sync().channel();
+            final long time = System.currentTimeMillis();
+            final Channel channel = bootstrap.connect(ip, port).sync().channel();
             channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override
                 public void operationComplete(Future<? super Void> future) throws Exception {
-                    LOG.debug("remote server channel closed...");
+                    LOG.debug("{} remote server [{}] channel closed...", System.currentTimeMillis() - time, channel.remoteAddress());
+                    connectionManager.closeConnection((NioSocketChannel) channel);
                 }
             });
             NioSocketChannel dstSocketChannel = (NioSocketChannel) channel;
@@ -172,7 +181,7 @@ public class ServerChannelSendService implements Runnable {
     }
 
     private void writeSendPackages(List<Package> packages) throws InterruptedException {
-        //LOG.debug("send package size = {}", packages.size());
+        LOG.debug("send package size = {}", packages.size());
         int count = 0;
         for (Package pkg : packages) {
             //LOG.debug("channel send service write send package ... {}", pkg);
@@ -202,34 +211,34 @@ public class ServerChannelSendService implements Runnable {
     private void handleRecvPackages(List<Package> packages) throws Exception {
         for (Package pkg : packages) {
             int localConnId = -1;
-            if (pkg instanceof ConnectPackage) {
-                ConnectPackage connectPackage = (ConnectPackage) pkg;
+            if (pkg instanceof ConnectReqPackage) {
+                ConnectReqPackage connectReqPackage = (ConnectReqPackage) pkg;
 
-                LOG.debug("handle recv package, connect pkg totalLen = {}, headerLen = {}, bodyLen = {}", connectPackage.getTotalLen(), connectPackage.getHeaderLen(), connectPackage.getBodyLen());
-                //connectPackage.getHeader().retain();
-                localConnId = connectPackage.getConnId();
-                buildDstChannel(localConnId, connectPackage);
+                LOG.debug("handle recv package, connect pkg totalLen = {}, headerLen = {}, bodyLen = {}", connectReqPackage.getTotalLen(), connectReqPackage.getHeaderLen(), connectReqPackage.getBodyLen());
+                //connectReqPackage.getHeader().retain();
+                localConnId = connectReqPackage.getConnId();
+                buildDstChannel(localConnId, connectReqPackage);
             }
 
             if (pkg instanceof DefaultDataPackage) {
                 DefaultDataPackage defaultDataPackage = (DefaultDataPackage) pkg;
                 localConnId = defaultDataPackage.getLocalConnId();
 
-                sendDst(defaultDataPackage);
+                writeDst(defaultDataPackage);
             }
             addRecv();
         }
     }
 
-    private void sendDst(DefaultDataPackage defaultDataPackage) {
+    private void writeDst(DefaultDataPackage defaultDataPackage) {
         int dstConnId = defaultDataPackage.getRemoteConnId();
         NioSocketChannel socketChannel = connectionManager.getChannel(dstConnId);
         if(socketChannel != null) {
-            try {
-                LOG.debug("\n=======================req[local{}, remote{}]====================\n{}\n",defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            try {
+//                LOG.debug("\n=======================req[local{}, remote{}]====================\n{}\n",defaultDataPackage.getLocalConnId(), defaultDataPackage.getRemoteConnId(), /**PackageUtils.toString(defaultDataPackage.getBody())**/"");
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
             socketChannel.writeAndFlush(defaultDataPackage.getBody());
             connectionManager.touch(dstConnId);
         } else {
@@ -237,9 +246,9 @@ public class ServerChannelSendService implements Runnable {
         }
     }
 
-    private void buildDstChannel(int localConnId, ConnectPackage connectPackage) throws UnsupportedEncodingException, InterruptedException {
-        String hostname = connectPackage.getHostname();
-        short port = connectPackage.getPort();
+    private void buildDstChannel(int localConnId, ConnectReqPackage connectReqPackage) throws UnsupportedEncodingException, InterruptedException {
+        String hostname = connectReqPackage.getHostname();
+        short port = connectReqPackage.getPort();
 
         connectExecutor.submit(new Runnable() {
             @Override

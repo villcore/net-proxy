@@ -60,7 +60,7 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 //                LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
                 //out.add(pkg);
                 ctx.fireChannelRead(pkg);
-                LOG.debug("decoder recv pgk count = {}", cnt.incrementAndGet());
+                //LOG.debug("decoder recv pgk count = {}", cnt.incrementAndGet());
                 packageLen = 0;
             } else {
                 //continue;

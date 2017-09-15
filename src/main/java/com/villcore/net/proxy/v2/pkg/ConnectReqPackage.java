@@ -5,7 +5,7 @@ import io.netty.buffer.Unpooled;
 
 import java.io.UnsupportedEncodingException;
 
-public class ConnectPackage extends Package {
+public class ConnectReqPackage extends Package {
     {
         this.setPkgType(PackageType.PKG_CONNECT_REQ);
     }

@@ -1,9 +1,7 @@
 package com.villcore.net.proxy.v2.client;
 
-import com.villcore.net.proxy.v2.pkg.ConnectPackage;
 import com.villcore.net.proxy.v2.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v2.pkg.Package;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
@@ -53,7 +51,7 @@ public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
                 NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
                 if(!connectionManager.isChannelConnected(socketChannel)) {
                     connectionManager.pendingPackage(socketChannel, defaultDataPackage);
-                    LOG.debug("pending pkg for [{}]...", socketChannel.localAddress().toString());
+                    LOG.debug("pending pkg for [{}]...", socketChannel.remoteAddress().toString());
                 } else {
                     sendPackage.putPackage(defaultDataPackage);
                 }

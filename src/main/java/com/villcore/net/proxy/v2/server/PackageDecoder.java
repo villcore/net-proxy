@@ -3,14 +3,11 @@ package com.villcore.net.proxy.v2.server;
 import com.villcore.net.proxy.v2.pkg.*;
 import com.villcore.net.proxy.v2.pkg.Package;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteOrder;
 import java.util.List;
 
 /**
@@ -35,10 +32,10 @@ public class PackageDecoder extends ByteToMessageDecoder {
                 ByteBuf body = pkg.getBody().copy();
                 switch (pkg.getPkgType()) {
                     case PackageType.PKG_CONNECT_REQ:
-                        ConnectPackage connectPackage = new ConnectPackage();
-                        connectPackage.setHeader(header);
-                        connectPackage.setBody(body);
-                        pkg = connectPackage;
+                        ConnectReqPackage connectReqPackage = new ConnectReqPackage();
+                        connectReqPackage.setHeader(header);
+                        connectReqPackage.setBody(body);
+                        pkg = connectReqPackage;
                         break;
                     case PackageType.PKG_DEFAULT_DATA:
                         DefaultDataPackage defaultDataPackage = new DefaultDataPackage();
