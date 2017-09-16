@@ -9,7 +9,7 @@ public class ConnIdGenerator {
     private final AtomicInteger idCount = new AtomicInteger(0);
 
     /**
-     * 自增生成一个唯一connId，该Id只能在该Jvm维持唯一（数值越界不考虑）
+     * 自增生成一个唯一connId，该Id只能在该Jvm维持唯一（数值越界不考虑,会自动重置）
      *
      * @return
      */

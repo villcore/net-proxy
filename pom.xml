@@ -13,6 +13,7 @@
         <log4j.version>1.2.17</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
         <netty.version>4.1.15.Final</netty.version>
+        <common.conf.version>1.10</common.conf.version>
         <jdk.version>1.8</jdk.version>
     </properties>
 
@@ -31,6 +32,12 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>${common.conf.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

@@ -15,4 +15,14 @@ public class Tunnel {
     //数据队列（线程安全的双端队列）
     //lasttouch
     //close
+
+    //connected
+    //shoudClose
+
+    //read()
+    //write()
+
+    //channelOpen()
+
+
 }

@@ -25,11 +25,7 @@ public class Client {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
 
     public static void main(String[] args) {
-        //load configuration
-        //TODO load form conf file
-        EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
-        EventLoopGroup wokerLoopGroup = new NioEventLoopGroup();
-
+        //TODO 配置信息需要从文件中读取
         String proxyPort = "10081";
 
 //        String remoteAddress = "127.0.0.1";
@@ -38,10 +34,15 @@ public class Client {
         String remoteAddress = "45.63.120.186";
         String remotePort = "20081";
 
+
+        /**
+         * 客户端读写压力不大，worker与boss共用eventLoopGroup
+         */
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+
         PackageQeueu sendQueue = new PackageQeueu(1 * 100000);
         PackageQeueu recvQueue = new PackageQeueu(1 * 100000);
         PackageQeueu failQueue = new PackageQeueu(1 * 100000);
-
 
         ConnectionManager connectionManager = new ConnectionManager();
         connectionManager.start();
@@ -53,7 +54,7 @@ public class Client {
 
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(eventLoopGroup, wokerLoopGroup)
+            serverBootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
