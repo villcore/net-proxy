@@ -1,8 +1,6 @@
 package com.villcore.net.proxy.v3.client;
 
-import com.villcore.net.proxy.v3.common.PackageProcessService;
-import com.villcore.net.proxy.v3.common.WriteService;
-import com.villcore.net.proxy.v3.common.TunnelManager;
+import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -18,18 +16,19 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
     private static final Logger LOG = LoggerFactory.getLogger(ClientChildChannelHandlerInitlizer.class);
 
     private TunnelManager tunnelManager;
+    private Connection connection;
 
-    public ClientChildChannelHandlerInitlizer(EventLoopGroup eventLoopGroup, TunnelManager tunnelManager, PackageProcessService packageProcessService, WriteService writeService) {
+    public ClientChildChannelHandlerInitlizer(TunnelManager tunnelManager, Connection connection) {
         this.tunnelManager = tunnelManager;
+        this.connection = connection;
     }
 
     @Override
     protected void initChannel(Channel channel) throws Exception {
         LOG.debug("init channel [{}]...", channel.remoteAddress().toString());
 
-        //TunnelManager#buildeTunnel()
-        tunnelManager.newTunnel(channel);
-
+        Tunnel tunnel = tunnelManager.newTunnel(channel);
+        tunnelManager.bindConnection(connection, tunnel);
         //channel add handler
         //TunnelReadHandler 解析proxy，打包Package，这里需要对不再读取的三种情形做判断
         channel.pipeline().addLast(new TunnelReadHandler(tunnelManager));

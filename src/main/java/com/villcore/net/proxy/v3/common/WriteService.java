@@ -30,8 +30,8 @@ public class WriteService extends LoopTask {
 
     @Override
     void loop() throws InterruptedException {
+        //LOG.debug("write service loop ...");
         time = System.currentTimeMillis();
-
         //主要的遍历writable
         writeables.stream()
                 .map(writeable -> BasicWriteableImpl.class.cast(writeable))

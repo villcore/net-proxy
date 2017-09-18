@@ -6,32 +6,36 @@ import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * Tunnel 管理类
- *
+ * <p>
  * TunnelManager 负责新增加Tunnel，并通过定期任务对Tunnel进行清理
  */
-public class TunnelManager {
+public class TunnelManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(TunnelManager.class);
+
+    private static final long MAX_TOUCH_INTERVAL = 1 * 60 * 1000L;
 
     private ConnIdGenerator connIdGenerator = new ConnIdGenerator();
 
-    /** Tunnel相关状态字段 **/
+    /**
+     * Tunnel相关状态字段
+     **/
     private Map<Integer, Tunnel> connIdTunnelMap = new ConcurrentHashMap<>();
     private Map<Channel, Tunnel> channelTunnelMap = new ConcurrentHashMap<>();
     private Map<Integer, Tunnel> correspondConnIdTunnelMap = new ConcurrentHashMap<>();
+    private Map<Connection, Set<Tunnel>> connectionSetMap = new ConcurrentHashMap<>();
+
     //用于再清理中加锁，可能不需要
     private Object tunnelStateLock = new Object();
 
     private WriteService writeService;
 
-    public void newTunnel(Channel channel) {
+    public Tunnel newTunnel(Channel channel) {
         //分配connId
         Integer connId = connIdGenerator.generateConnId();
 
@@ -40,6 +44,13 @@ public class TunnelManager {
         connIdTunnelMap.put(Integer.valueOf(connId), tunnel);
         channelTunnelMap.put(channel, tunnel);
         writeService.addWrite(tunnel);
+        return tunnel;
+    }
+
+    public void bindConnection(Connection connection, Tunnel tunnel) {
+        Set<Tunnel> tunnels = connectionSetMap.getOrDefault(connection, new HashSet<>());
+        tunnels.add(tunnel);
+        connectionSetMap.put(connection, tunnels);
     }
 
     public void setWriteService(WriteService writeService) {
@@ -65,14 +76,13 @@ public class TunnelManager {
         return channelTunnelMap.get(channel);
     }
 
-    public List<Package> gatherSendPackages() {
-        return connIdTunnelMap.values().stream().flatMap( t -> {
+    public List<Package> gatherSendPackages(Connection connection) {
+        return connectionSetMap.getOrDefault(connection, Collections.emptySet()).stream().flatMap(t -> {
             List<Package> packages = Collections.emptyList();
-            if(t.getConnected()) {
+            if (t.getConnected()) {
                 packages = t.getWritePackages();
-            }
-            else if (!t.isWaitConnect()) {
-                if(t.getConnectPackage() == null) {
+            } else if (!t.isWaitConnect()) {
+                if (t.getConnectPackage() == null) {
                     //LOG.debug("connect pkg null for tunnel {}", t.getConnId());
                     packages = Collections.emptyList();
                 } else {
@@ -80,8 +90,7 @@ public class TunnelManager {
                     packages = Collections.singletonList(t.getConnectPackage());
                     //LOG.debug("connect pkg = {}", t.getConnectPackage());
                 }
-            }
-            else {
+            } else {
                 packages = Collections.emptyList();
             }
             return packages.stream();
@@ -96,7 +105,7 @@ public class TunnelManager {
                     int connId = pkg.getLocalConnId();
                     Tunnel tunnel = tunnelFor(connId);
 
-                    if(tunnel == null && tunnel.shouldClose()) {
+                    if (tunnel == null && tunnel.shouldClose()) {
                         pkg.toByteBuf().release();
                     } else {
                         tunnel.addRecvPackage(pkg);
@@ -111,8 +120,8 @@ public class TunnelManager {
         int correspondConnId = connectRespPackage.getRemoteConnId();
 
         Tunnel tunnel = channelTunnelMap.get(Integer.valueOf(connId));
-        if(tunnel != null) {
-            if(correspondConnId >= 0) {
+        if (tunnel != null) {
+            if (correspondConnId >= 0) {
                 tunnel.setConnect(true);
                 tunnel.setCorrespondConnId(correspondConnId);
             } else {
@@ -124,7 +133,7 @@ public class TunnelManager {
     public void tunnelClose(ChannelClosePackage channelClosePackage) {
         int connId = channelClosePackage.getLocalConnId();
         Tunnel tunnel = connIdTunnelMap.get(Integer.valueOf(connId));
-        if(tunnel != null) {
+        if (tunnel != null) {
             tunnel.needClose();
             writeService.removeWrite(tunnel);
         }
@@ -138,42 +147,47 @@ public class TunnelManager {
         int connId = -1;
 
         //connect req
-        if(pkg instanceof ConnectReqPackage) {
+        if (pkg instanceof ConnectReqPackage) {
             connId = ConnectReqPackage.class.cast(pkg).getConnId();
         }
 
         //data
-        if(pkg instanceof DefaultDataPackage) {
+        if (pkg instanceof DefaultDataPackage) {
             connId = DefaultDataPackage.class.cast(pkg).getLocalConnId();
         }
 
         Tunnel tunnel = tunnelFor(connId);
-        if(tunnel == null && tunnel.shouldClose()) {
+        if (tunnel == null && tunnel.shouldClose()) {
             tunnel.touch(pkg);
         }
     }
 
-    //定时服务相关
-    //调度线程池，
-    //定时任务runnable
+    public void addConnection(Connection connection) {
+        connectionSetMap.put(connection, new HashSet<>());
+    }
 
-    //ConnIdGenerator
+    @Override
+    public void run() {
+        synchronized (tunnelStateLock) {
+            connIdTunnelMap.values().stream()
+                    .filter(t -> lastTouchInterval(t.getLastTouch()) > MAX_TOUCH_INTERVAL)
+                    .collect(Collectors.toList()).forEach(t -> t.needClose());
 
-    //addTunnel(Channel channel)
-    //addTunnel(Integer connId, Channel channel)
-    //getConnId()
+            List<Tunnel> needClearTunners = connIdTunnelMap.values().stream().filter(t -> t.shouldClose()).collect(Collectors.toList());
+            for (Tunnel tunnel : needClearTunners) {
+                Integer connId = tunnel.getConnId();
+                Channel channel = tunnel.getChannel();
+                Integer correspondConnId = tunnel.getCorrespondConnId();
+                Connection connection = tunnel.getBindConnection();
+                connIdTunnelMap.remove(connId);
+                channelTunnelMap.remove(channel);
+                correspondConnIdTunnelMap.remove(correspondConnId);
+                connectionSetMap.getOrDefault(connection, Collections.EMPTY_SET).remove(tunnel);
+            }
+        }
+    }
 
-    //cleanTunnels()
-    //closeTunnel()
-
-    //needCloseCTunnel(Integer connId)
-    //shouldCloseTunnel(Integer connId)
-
-    //channelFor(Channel channel) Tunnel
-
-    //getTunnel(int connId)
-
-    //drainSendPackages()
-
-    //AvaliableSendPackages() 对Tunnel遍历，将可以发送的package打包，包括connect package 和 已经连接的Tunnel的data package
+    private long lastTouchInterval(long lastTouch) {
+        return System.currentTimeMillis() - lastTouch;
+    }
 }

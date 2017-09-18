@@ -4,6 +4,8 @@ import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * client 与 server 对每个连接的代理通道
  */
 public class Tunnel extends BasicWriteableImpl {
+    private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
     //tunnelManager
     private TunnelManager tunnelManager;
@@ -51,6 +54,9 @@ public class Tunnel extends BasicWriteableImpl {
     //wait for connect
     private volatile boolean waitConnect = false;
 
+    //bind connection, 该Tunnel绑定的Connection
+    private Connection bindConnection;
+
     public Tunnel(Channel channel, Integer connId, int sendQueueSize, int recvQueueSize) {
         this.channel = channel;
         this.connId = connId;
@@ -70,9 +76,6 @@ public class Tunnel extends BasicWriteableImpl {
         return connId;
     }
 
-    public boolean shouldClose() {
-        return shouldClose;
-    }
 
     public boolean sendQueueIsFull() {
         return sendQueue.isEmpty();
@@ -95,17 +98,19 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void setConnectPackage(ConnectReqPackage connectPackage) {
+        LOG.debug("set connect package ...");
         this.connectPackage = connectPackage;
     }
 
     public void addSendPackage(DefaultDataPackage dataPackage) {
+        LOG.debug("add send package ...");
         sendQueue.add(dataPackage);
     }
 
     public List<Package> drainSendPackages() {
         List<Package> avaliablePackages = new LinkedList<>();
         sendQueue.drainTo(avaliablePackages);
-        System.out.println(avaliablePackages.size());
+        //System.out.println(avaliablePackages.size());
         return avaliablePackages;
     }
     //isFull()
@@ -121,6 +126,10 @@ public class Tunnel extends BasicWriteableImpl {
         this.shouldClose = true;
     }
 
+    public boolean shouldClose() {
+        return shouldClose;
+    }
+
     public void setConnect(boolean connect) {
         this.connected = connect;
     }
@@ -133,6 +142,35 @@ public class Tunnel extends BasicWriteableImpl {
         recvQueue.add(pkg);
     }
 
+    public Connection getBindConnection() {
+        return bindConnection;
+    }
+
+    public void setBindConnection(Connection bindConnection) {
+        this.bindConnection = bindConnection;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Tunnel tunnel = (Tunnel) o;
+
+        if (sendQueueSize != tunnel.sendQueueSize) return false;
+        if (recvQueueSize != tunnel.recvQueueSize) return false;
+        if (!channel.equals(tunnel.channel)) return false;
+        return connId.equals(tunnel.connId);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = sendQueueSize;
+        result = 31 * result + recvQueueSize;
+        result = 31 * result + channel.hashCode();
+        result = 31 * result + connId.hashCode();
+        return result;
+    }
 
     /** sendable **/
 
@@ -163,5 +201,17 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public List<Package> getWritePackages() {
         return drainSendPackages();
+    }
+
+    public long getLastTouch() {
+        return lastTouch;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public Integer getCorrespondConnId() {
+        return correspondConnId;
     }
 }

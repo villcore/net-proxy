@@ -1,7 +1,9 @@
 package com.villcore.net.proxy.v3.client;
 
-import com.villcore.net.proxy.v2.pkg.*;
-import com.villcore.net.proxy.v2.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.ConnectRespPackage;
+import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.PackageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -23,7 +25,7 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-//        LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
+        //LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
         if (packageLen > 0) {
 //            LOG.debug("pkg len = {}", packageLen);
             if (in.readableBytes() >= packageLen - 4) {

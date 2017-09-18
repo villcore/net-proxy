@@ -1,10 +1,10 @@
 package com.villcore.net.proxy.v3.server;
 
-import com.villcore.net.proxy.v2.client.ConnectionManager;
-import com.villcore.net.proxy.v2.client.PackageQeueu;
-import com.villcore.net.proxy.v2.server.PackageDecoder;
-import com.villcore.net.proxy.v2.server.PackageGatherHandler;
-import com.villcore.net.proxy.v2.server.ServerChannelSendService;
+import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
+import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
+import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
+import com.villcore.net.proxy.v3.common.Connection;
+import com.villcore.net.proxy.v3.common.ConnectionManager;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -18,26 +18,17 @@ import org.slf4j.LoggerFactory;
 public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChannel> {
     private static final Logger LOG = LoggerFactory.getLogger(ServerChildHandlerInitlizer.class);
 
-    private ChannelInboundHandlerAdapter packageGather;
-    private PackageQeueu packageQeueu;
     private ConnectionManager connectionManager;
-    private com.villcore.net.proxy.v2.server.ServerChannelSendService serverChannelSendService;
 
-    public ServerChildHandlerInitlizer(PackageQeueu packageQeueu, ConnectionManager connectionManager, ServerChannelSendService serverChannelSendService) {
-        this.packageQeueu = packageQeueu;
+    public ServerChildHandlerInitlizer(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
-        packageGather = new PackageGatherHandler(packageQeueu);
-        this.serverChannelSendService = serverChannelSendService;
     }
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
-        serverChannelSendService.setClientChannel((NioSocketChannel) ch);
-        serverChannelSendService.start();
-        new Thread(serverChannelSendService, "server-write-service").start();
-
-        LOG.debug("server get client channel [{}]...", ch.remoteAddress());
-        ch.pipeline().addLast(new PackageDecoder());
-        ch.pipeline().addLast(packageGather);
+        connectionManager.acceptConnectTo(ch);
+        ch.pipeline().addLast(new ClientPackageDecoder());
+        ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
+        ch.pipeline().addLast(new PackageToByteBufOutHandler());
     }
 }

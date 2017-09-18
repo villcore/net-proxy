@@ -38,7 +38,7 @@ public class PackageUtils {
         return pkg;
     }
 
-    public static ChannelClosePackage buildChannelClosePackage(int localConnId, int remoteConnId, long userFlag){
+    public static ChannelClosePackage buildChannelClosePackage(int localConnId, int remoteConnId, long userFlag) {
         ByteBuf header = ChannelClosePackage.newHeader(localConnId, remoteConnId, userFlag);
         header.writerIndex(header.capacity());
         header.readerIndex(0);
@@ -56,5 +56,37 @@ public class PackageUtils {
     public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
         //ByteBuf byteBuf2 = byteBuf.copy();
         return byteBuf.toString(Charset.forName("utf-8"));
+    }
+
+    public static Package convertCorrectPackage(Package pkg) {
+        ByteBuf header = pkg.getHeader();
+        ByteBuf body = pkg.getBody();
+
+        Package correctPkg = null;
+
+        switch (pkg.getPkgType()) {
+            case PackageType.PKG_BASIC:
+                break;
+            case PackageType.PKG_CONNECT_REQ:
+                correctPkg = new ConnectReqPackage();
+                break;
+            case PackageType.PKG_CONNECT_RESP:
+                correctPkg = new ConnectRespPackage();
+                break;
+            case PackageType.PKG_DEFAULT_DATA:
+                correctPkg = new DefaultDataPackage();
+                break;
+            case PackageType.PKG_CHANNEL_CLOSE:
+                correctPkg = new ChannelClosePackage();
+                break;
+                default:
+                    correctPkg = pkg;
+                    break;
+        }
+        if(correctPkg != pkg) {
+            correctPkg.setHeader(header);
+            correctPkg.setBody(body);
+        }
+        return correctPkg;
     }
 }
