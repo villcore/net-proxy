@@ -76,7 +76,7 @@ public class ClientReadableSelectProcessor extends DefaultSelectProcessor {
         byteBuffer.flip();
         byteBuffer.putInt(0, byteBuffer.limit());
         byteBuffer.rewind();
-        //send to data queue
+        //write to data queue
         try {
             dataQueue.putRequest(Bundle.valueOf(byteBuffer));
             LOG.debug("local recv request  = \n{}", ByteBufferUtil.getContent(byteBuffer));

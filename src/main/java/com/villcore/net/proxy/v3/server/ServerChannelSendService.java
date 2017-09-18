@@ -1,9 +1,10 @@
-package com.villcore.net.proxy.v2.server;
+package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v2.client.ConnectionManager;
 import com.villcore.net.proxy.v2.client.PackageQeueu;
 import com.villcore.net.proxy.v2.pkg.*;
 import com.villcore.net.proxy.v2.pkg.Package;
+import com.villcore.net.proxy.v2.server.DNS;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

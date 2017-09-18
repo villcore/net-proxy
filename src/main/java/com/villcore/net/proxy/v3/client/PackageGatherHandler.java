@@ -1,5 +1,7 @@
-package com.villcore.net.proxy.v2.client;
+package com.villcore.net.proxy.v3.client;
 
+import com.villcore.net.proxy.v2.client.ConnectionManager;
+import com.villcore.net.proxy.v2.client.PackageQeueu;
 import com.villcore.net.proxy.v2.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v2.pkg.Package;
 import io.netty.channel.*;
@@ -8,33 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ChannelHandler.Sharable
-//public class PackageGatherHandler extends SimpleChannelInboundHandler<Package> {
-//    private static final Logger LOG = LoggerFactory.getLogger(PackageGatherHandler.class);
-//
-//    public static final String HANDLER_NAME = "pkg-gather";
-//    public long count = 0;
-//
-//    private PackageQeueu packageQeueu;
-//    public PackageGatherHandler(PackageQeueu packageQeueu) {
-//        this.packageQeueu = packageQeueu;
-//    }
-//
-//    @Override
-//    protected void channelRead0(ChannelHandlerContext ctx, Package msg) throws Exception {
-//        LOG.debug("gather packge = {}, total = {}", msg.toString(), ++count);
-////        packageQeueu.putPackage(msg);
-////        ctx.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
-//    }
-//}
 
 public class PackageGatherHandler extends ChannelInboundHandlerAdapter{
     private static final Logger LOG = LoggerFactory.getLogger(PackageGatherHandler.class);
 
-    public static final String HANDLER_NAME = "pkg-gather";
     public long count = 0;
 
-    private ConnectionManager connectionManager;
-    private PackageQeueu sendPackage;
+    private com.villcore.net.proxy.v2.client.ConnectionManager connectionManager;
+    private com.villcore.net.proxy.v2.client.PackageQeueu sendPackage;
 
     public PackageGatherHandler(ConnectionManager connectionManager, PackageQeueu sendPackage) {
         this.connectionManager = connectionManager;

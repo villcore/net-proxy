@@ -1,7 +1,10 @@
-package com.villcore.net.proxy.v2.server;
+package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v2.client.ConnectionManager;
 import com.villcore.net.proxy.v2.client.PackageQeueu;
+import com.villcore.net.proxy.v2.server.PackageDecoder;
+import com.villcore.net.proxy.v2.server.PackageGatherHandler;
+import com.villcore.net.proxy.v2.server.ServerChannelSendService;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -18,7 +21,7 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
     private ChannelInboundHandlerAdapter packageGather;
     private PackageQeueu packageQeueu;
     private ConnectionManager connectionManager;
-    private ServerChannelSendService serverChannelSendService;
+    private com.villcore.net.proxy.v2.server.ServerChannelSendService serverChannelSendService;
 
     public ServerChildHandlerInitlizer(PackageQeueu packageQeueu, ConnectionManager connectionManager, ServerChannelSendService serverChannelSendService) {
         this.packageQeueu = packageQeueu;

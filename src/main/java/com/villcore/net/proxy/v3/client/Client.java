@@ -1,5 +1,10 @@
-package com.villcore.net.proxy.v2.client;
+package com.villcore.net.proxy.v3.client;
 
+import com.villcore.net.proxy.v3.common.Connection;
+import com.villcore.net.proxy.v3.common.PackageProcessService;
+import com.villcore.net.proxy.v3.common.WriteService;
+import com.villcore.net.proxy.v3.common.TunnelManager;
+import com.villcore.net.proxy.v3.util.ThreadUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -24,24 +29,26 @@ public class Client {
         String remoteAddress = "45.63.120.186";
         String remotePort = "20081";
 
+        //核心的运行任务
+        //Connection, tunnelManager
+        Connection connection = new Connection();
 
-        /**
-         * 客户端读写压力不大，worker与boss共用eventLoopGroup
-         */
-        EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+        //TunnelManager
+        TunnelManager tunnelManager = new TunnelManager();
 
-        PackageQeueu sendQueue = new PackageQeueu(1 * 100000);
-        PackageQeueu recvQueue = new PackageQeueu(1 * 100000);
-        PackageQeueu failQueue = new PackageQeueu(1 * 100000);
+        //ProcessService
+        PackageProcessService packageProcessService = new PackageProcessService(tunnelManager);
+        packageProcessService.start();
+        ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 
-        ConnectionManager connectionManager = new ConnectionManager();
-        connectionManager.start();
-        new Thread(connectionManager, "connection-manager").start();
+        //WriteService
+        WriteService writeService = new WriteService();
+        writeService.start();
+        ThreadUtils.newThread("write-service", writeService, false).start();
 
-        ClientChannelSendService clientChannelSendService = new ClientChannelSendService(connectionManager, sendQueue, recvQueue, failQueue, eventLoopGroup, remoteAddress, Integer.valueOf(remotePort));
-        clientChannelSendService.start();
-        new Thread(clientChannelSendService, "client-write-service").start();
+        tunnelManager.setWriteService(writeService);
 
+        EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(eventLoopGroup)
@@ -51,7 +58,7 @@ public class Client {
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
-                    .childHandler(new ChildHandlerInitlizer(connectionManager, sendQueue));
+                    .childHandler(new ClientChildChannelHandlerInitlizer(eventLoopGroup, tunnelManager, packageProcessService, writeService));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);

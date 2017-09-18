@@ -89,7 +89,7 @@ public class ProxyReadableSelectProcessor extends DefaultSelectProcessor {
         byteBuffer.flip();
         byteBuffer.putInt(0, byteBuffer.limit());
         byteBuffer.rewind();
-        //send to data queue
+        //write to data queue
         try {
             dataQueue.putResp(Bundle.valueOf(byteBuffer));
         } catch (InterruptedException e) {

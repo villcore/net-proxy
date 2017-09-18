@@ -1,5 +1,8 @@
-package com.villcore.net.proxy.v2.client;
+package com.villcore.net.proxy.v3.client;
 
+import com.villcore.net.proxy.v2.client.ClientPackageDecoder;
+import com.villcore.net.proxy.v2.client.ConnectionManager;
+import com.villcore.net.proxy.v2.client.PackageQeueu;
 import com.villcore.net.proxy.v2.pkg.*;
 import com.villcore.net.proxy.v2.pkg.Package;
 import io.netty.bootstrap.Bootstrap;
@@ -33,11 +36,11 @@ public class ClientChannelSendService implements Runnable {
     private static final long IDLE_SLEEP_MICROSECONDS = 50;
     private volatile boolean running;
 
-    private ConnectionManager connectionManager;
+    private com.villcore.net.proxy.v2.client.ConnectionManager connectionManager;
 
-    private PackageQeueu sendPackage;
-    private PackageQeueu recvPackage;
-    private PackageQeueu failedSendPackage;
+    private com.villcore.net.proxy.v2.client.PackageQeueu sendPackage;
+    private com.villcore.net.proxy.v2.client.PackageQeueu recvPackage;
+    private com.villcore.net.proxy.v2.client.PackageQeueu failedSendPackage;
 
     private EventLoopGroup eventExecutors;
     private NioSocketChannel remoteSocketChannel;
@@ -60,7 +63,7 @@ public class ClientChannelSendService implements Runnable {
         //LOG.debug("write pkg, total = {}", sendCnt.incrementAndGet());
     }
 
-    public ClientChannelSendService(ConnectionManager connectionManager, PackageQeueu sendPackage, PackageQeueu recvPackage, PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
+    public ClientChannelSendService(com.villcore.net.proxy.v2.client.ConnectionManager connectionManager, com.villcore.net.proxy.v2.client.PackageQeueu sendPackage, com.villcore.net.proxy.v2.client.PackageQeueu recvPackage, com.villcore.net.proxy.v2.client.PackageQeueu failedSendPackage, EventLoopGroup eventExecutors, String remoteAddr, int port) {
         this.connectionManager = connectionManager;
         this.sendPackage = sendPackage;
         this.recvPackage = recvPackage;
@@ -90,11 +93,11 @@ public class ClientChannelSendService implements Runnable {
     //远程读取handler
     @ChannelHandler.Sharable
     private static class RemoteReadHandler extends ChannelInboundHandlerAdapter {
-        private ConnectionManager connectionManager;
-        private PackageQeueu sendQueue;
-        private PackageQeueu recvQueue;
+        private com.villcore.net.proxy.v2.client.ConnectionManager connectionManager;
+        private com.villcore.net.proxy.v2.client.PackageQeueu sendQueue;
+        private com.villcore.net.proxy.v2.client.PackageQeueu recvQueue;
 
-        public RemoteReadHandler(ConnectionManager connectionManager, PackageQeueu sendQueue, PackageQeueu recvQueue) {
+        public RemoteReadHandler(ConnectionManager connectionManager, com.villcore.net.proxy.v2.client.PackageQeueu sendQueue, PackageQeueu recvQueue) {
             this.connectionManager = connectionManager;
             this.sendQueue = sendQueue;
             this.recvQueue = recvQueue;

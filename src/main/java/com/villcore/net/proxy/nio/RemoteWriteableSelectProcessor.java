@@ -47,7 +47,7 @@ public class RemoteWriteableSelectProcessor extends DefaultSelectProcessor {
                 byteBuffer = bundle.getByteBuffer();
                 byteBuffer.rewind();
                 //byteBuffer.position(headerLen);
-                LOG.debug("send to server request = \n{}", ByteBufferUtil.getContent(byteBuffer));
+                LOG.debug("write to server request = \n{}", ByteBufferUtil.getContent(byteBuffer));
             }
         }
 

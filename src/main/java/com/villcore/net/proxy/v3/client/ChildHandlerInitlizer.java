@@ -1,4 +1,4 @@
-package com.villcore.net.proxy.v2.client;
+package com.villcore.net.proxy.v3.client;
 
 import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import com.villcore.net.proxy.v2.Html404;

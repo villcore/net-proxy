@@ -7,7 +7,7 @@ public class Connection {
     //管理连接，网络情况差时能主动重连（client端）
     //定期任务，定时清理关闭和无响应的tunnel
 
-    //主要run方法， send recv
+    //主要run方法， write recv
 
     //tunnels
         //connId -> tunnel
@@ -19,7 +19,7 @@ public class Connection {
     //addTunnel
     //closeTunnel
 
-    //send
+    //write
         //tunnel gather
 
     //read
