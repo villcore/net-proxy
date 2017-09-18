@@ -130,8 +130,15 @@ public class TunnelManager implements Runnable {
         }
     }
 
-    public void tunnelClose(ChannelClosePackage channelClosePackage) {
-        int connId = channelClosePackage.getLocalConnId();
+    //    public void tunnelClose(ChannelClosePackage channelClosePackage) {
+//        int connId = channelClosePackage.getLocalConnId();
+//        Tunnel tunnel = connIdTunnelMap.get(Integer.valueOf(connId));
+//        if (tunnel != null) {
+//            tunnel.needClose();
+//            writeService.removeWrite(tunnel);
+//        }
+//    }
+    public void tunnelClose(int connId) {
         Tunnel tunnel = connIdTunnelMap.get(Integer.valueOf(connId));
         if (tunnel != null) {
             tunnel.needClose();

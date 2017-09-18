@@ -22,7 +22,7 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        LOG.debug("recv pkg...{}", msg.getClass().toString());
+        //LOG.debug("recv pkg...{}", msg.getClass().toString());
 
         Connection connection = connectionManager.channelFor(ctx.channel());
         if(msg instanceof Package) {

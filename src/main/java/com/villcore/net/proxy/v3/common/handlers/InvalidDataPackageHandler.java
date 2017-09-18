@@ -1,5 +1,9 @@
-package com.villcore.net.proxy.v3.common;
+package com.villcore.net.proxy.v3.common.handlers;
 
+import com.villcore.net.proxy.v3.common.Connection;
+import com.villcore.net.proxy.v3.common.PackageHandler;
+import com.villcore.net.proxy.v3.common.Tunnel;
+import com.villcore.net.proxy.v3.common.TunnelManager;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.Package;
@@ -7,7 +11,6 @@ import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +23,11 @@ public class InvalidDataPackageHandler implements PackageHandler {
 
     private TunnelManager tunnelManager;
     private Connection connection;
+
+    public InvalidDataPackageHandler(TunnelManager tunnelManager, Connection connection) {
+        this.tunnelManager = tunnelManager;
+        this.connection = connection;
+    }
 
     @Override
     public List<Package> handlePackage(List<Package> packages) {

@@ -11,6 +11,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * remote vps server side
  */
@@ -42,6 +45,12 @@ public class Server {
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
+        //authorized handler
+        //connect req handler
+        //channel close handler
+        //data handler
+        List<PackageHandler> packageHandlers = new LinkedList<>();
+
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 
