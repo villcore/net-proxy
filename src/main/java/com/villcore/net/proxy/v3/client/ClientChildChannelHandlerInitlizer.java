@@ -35,11 +35,11 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
         channel.pipeline().addLast(new PackageToByteBufOutHandler());
     }
 
-    private static class TestReader extends ChannelInboundHandlerAdapter {
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            ByteBuf byteBuf = (ByteBuf) msg;
-            System.out.println(PackageUtils.toString(byteBuf));
-        }
-    };
+//    private static class TestReader extends ChannelInboundHandlerAdapter {
+//        @Override
+//        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+//            ByteBuf byteBuf = (ByteBuf) msg;
+//            System.out.println(PackageUtils.toString(byteBuf));
+//        }
+//    };
 }

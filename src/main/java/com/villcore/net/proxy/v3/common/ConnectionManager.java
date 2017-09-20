@@ -1,7 +1,7 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v2.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ClientChannelSendService;
+import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -34,7 +34,6 @@ public class ConnectionManager implements Runnable {
 
     private static final short MAX_RETRY_COUNT = 50;
 
-    private Bootstrap bootstrap = new Bootstrap();
     private EventLoopGroup eventLoopGroup;
     private TunnelManager tunnelManager;
 
@@ -52,7 +51,8 @@ public class ConnectionManager implements Runnable {
         initBootstrap();
     }
 
-    private void initBootstrap() {
+    private Bootstrap initBootstrap() {
+        Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(this.eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
@@ -70,6 +70,7 @@ public class ConnectionManager implements Runnable {
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
                     }
                 });
+        return bootstrap;
     };
 
     public Connection acceptConnectTo(Channel channel) {
@@ -78,6 +79,7 @@ public class ConnectionManager implements Runnable {
         int port = address.getPort();
 
         Connection connection = new Connection(address.getHostName(), address.getPort(), tunnelManager);
+        connection.setRemoteChannel(channel);
         connection.setConnected(true);
         connection.connectionTouch(System.currentTimeMillis());
 
@@ -90,6 +92,7 @@ public class ConnectionManager implements Runnable {
             }
         });
         connectionMap.put(addrAndPortKey(addr, port), connection);
+        writeService.addWrite(connection);
         return connection;
     }
 
@@ -108,12 +111,10 @@ public class ConnectionManager implements Runnable {
         tunnelManager.addConnection(connection);
 
         try {
-            Channel channel = bootstrap.connect(addr, port).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
+            Channel channel = initBootstrap().connect(addr, port).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override
                 public void operationComplete(Future<? super Void> future) throws Exception {
                     if(future.isSuccess()) {
-                        Channel channel = (Channel) future.get();
-                        System.out.println(future.get());
                         //TODO success
                         LOG.debug("connect to remote [{}:{}] server success...", addr, port);
                         connection.setConnected(true);

@@ -6,13 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Package 处理服务，主要针对发送的Package与接收的Package进行处理，通过添加Handler进行逻辑处理
+ *
  */
 public class PackageProcessService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(PackageProcessService.class);
@@ -22,22 +21,8 @@ public class PackageProcessService extends LoopTask {
     private TunnelManager tunnelManager;
     private ConnectionManager connectionManager;
 
-    private List<PackageHandler> sendHandlers = new LinkedList<>();
-    private List<PackageHandler> recvHandlers = new LinkedList<>();
-
-    //sendQueue
-    //recvQueue
-    //tunnelManager
-
-    //sendPackageHandlers
-    //recvPackageHandlers
-
-    //addSendHandlers
-    //addRecvHandlers
-
-    //负责更新lastTouch
-    //负责对接收到Package进行判断与相应执行动作
-
+    private Set<PackageHandler> sendHandlers = new HashSet<>();
+    private Set<PackageHandler> recvHandlers = new HashSet<>();
 
     private long time;
 
@@ -46,12 +31,29 @@ public class PackageProcessService extends LoopTask {
         this.connectionManager = connectionManager;
     }
 
+    public void addSendHandler(PackageHandler packageHandler) {
+        sendHandlers.add(packageHandler);
+    }
+
+    public void addSendHandler(PackageHandler... packageHandler) {
+        sendHandlers.addAll(Arrays.asList(packageHandler));
+    }
+
+    public void addRecvHandler(PackageHandler packageHandler) {
+        recvHandlers.add(packageHandler);
+    }
+
+    public void addRecvHandler(PackageHandler... packageHandler) {
+        recvHandlers.addAll(Arrays.asList(packageHandler));
+    }
+
     @Override
     public void loop() throws InterruptedException {
         //LOG.debug("package process service loop ...");
         time = System.currentTimeMillis();
 
         List<Connection> connections = connectionManager.allConnected();
+        //LOG.debug("connected connection size = {}", connections.size());
         //*********************************************************此处判断为connection list ***********************/
         //进行判断，是否connection可以发送
         connections.forEach(connection -> {
@@ -59,25 +61,27 @@ public class PackageProcessService extends LoopTask {
             if (connection.sendPackageReady()) {
                 //Connection#getAvaliableSendPackages
                 List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
-                //LOG.debug(">>{}", avaliableSendPackages.size());
+//                LOG.debug(">>{}", avaliableSendPackages.size());
                 avaliableSendPackages.stream().forEach(pkg -> {
                     try {
-                        LOG.debug("pkg = {}", pkg.toString());
-                        LOG.debug(PackageUtils.toString(pkg));
+//                        LOG.debug("pkg = {}", pkg.toString());
+//                        LOG.debug(PackageUtils.toString(pkg));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
 
                 for (PackageHandler handler : sendHandlers) {
-                    avaliableSendPackages = handler.handlePackage(avaliableSendPackages);
+                    avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
                 }
+//                LOG.debug("avaliable send packages len = {}", avaliableSendPackages.size());
                 connection.addSendPackages(avaliableSendPackages);
             }
         });
 
 
         connections.forEach(connection -> {
+            //LOG.debug(">>>---");
             List<Package> avaliableRecvPackages = connection.getRecvPackages();
             if(!avaliableRecvPackages.isEmpty()) {
                 LOG.debug("handle recv package ...");
@@ -87,7 +91,9 @@ public class PackageProcessService extends LoopTask {
             //channel close handler
             //data handler
             for (PackageHandler handler : recvHandlers) {
-                avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages);
+                if(!avaliableRecvPackages.isEmpty())
+                LOG.debug("recv handlers handle ...");
+                avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
             }
 
             tunnelManager.scatterRecvPackage(avaliableRecvPackages);

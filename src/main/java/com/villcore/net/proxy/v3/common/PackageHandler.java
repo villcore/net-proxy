@@ -11,5 +11,5 @@ import java.util.Optional;
  * 需要线程安全考虑
  */
 public interface PackageHandler {
-    List<Package> handlePackage(List<Package> packages);
+    List<Package> handlePackage(List<Package> packages, Connection connection);
 }

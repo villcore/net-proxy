@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class WriteService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(WriteService.class);
 
-    private static final long SLEEP_INTERVAL = 50;
+    private static final long SLEEP_INTERVAL = 500;
 
     private Set<Writeable> writeables = Collections.synchronizedSet(new HashSet<>());
 

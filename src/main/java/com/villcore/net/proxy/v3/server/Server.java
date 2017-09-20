@@ -2,7 +2,12 @@ package com.villcore.net.proxy.v3.server;
 
 
 import com.villcore.net.proxy.v3.common.*;
+import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.server.ConnectReqPackageHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -10,9 +15,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * remote vps server side
@@ -27,6 +29,7 @@ public class Server {
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
         ScheduleService scheduleService = new ScheduleService();
+        Bootstrap bootstrap = new Bootstrap();
 
         //核心的运行任务
         //WriteService
@@ -46,11 +49,11 @@ public class Server {
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
         //authorized handler
-        //connect req handler
-        //channel close handler
-        //data handler
-        List<PackageHandler> packageHandlers = new LinkedList<>();
-
+        //connect req handler //channel close handler  // invalid data handler
+        PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
+//        PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
+//        PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
+        packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 

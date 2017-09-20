@@ -27,7 +27,7 @@ public class PackageUtils {
         return pkg;
     }
 
-    public static ConnectRespPackage buildConnectRespPackage(int localConnId, int remoteConnId, long userFlag) throws UnsupportedEncodingException {
+    public static ConnectRespPackage buildConnectRespPackage(int localConnId, int remoteConnId, long userFlag) {
         ByteBuf header = ConnectRespPackage.newHeader(localConnId, remoteConnId, userFlag);
         header.writerIndex(header.capacity());
         header.readerIndex(0);

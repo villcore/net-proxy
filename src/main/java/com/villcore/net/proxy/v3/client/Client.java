@@ -1,6 +1,9 @@
 package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.*;
+import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
@@ -47,6 +50,10 @@ public class Client {
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
+        PackageHandler connectRespHandler = new ConnectRespPackageHandler(tunnelManager);
+        PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
+        PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
+        packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 

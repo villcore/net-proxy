@@ -22,17 +22,17 @@ import java.util.stream.Collectors;
 /**
  * server side handler
  */
-public class ConnectResqPackageHandler implements PackageHandler {
+public class ConnectRespPackageHandler implements PackageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectReqPackage.class);
 
     private TunnelManager tunnelManager;
 
-    public ConnectResqPackageHandler(TunnelManager tunnelManager) {
+    public ConnectRespPackageHandler(TunnelManager tunnelManager) {
         this.tunnelManager = tunnelManager;
     }
 
     @Override
-    public List<Package> handlePackage(List<Package> packages) {
+    public List<Package> handlePackage(List<Package> packages, Connection connection) {
         List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_RESP).collect(Collectors.toList());
         connectReqPackage.stream()
                 .map(pkg -> ConnectRespPackage.class.cast(pkg))
@@ -40,6 +40,7 @@ public class ConnectResqPackageHandler implements PackageHandler {
                 .forEach(pkg -> {
                     int connId = pkg.getLocalConnId();
                     int corrspondId = pkg.getRemoteConnId();
+                    LOG.debug("connect resp ... [{}:{}]", connId, corrspondId);
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
                     tunnel.setCorrespondConnId(corrspondId);
                     tunnel.setConnect(true);

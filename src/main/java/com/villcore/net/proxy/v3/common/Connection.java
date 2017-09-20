@@ -130,14 +130,14 @@ public class Connection extends BasicWriteableImpl {
     /** sendable **/
     @Override
     public boolean canWrite() {
-        LOG.debug("connection can write...{}", connected);
+        //LOG.debug("connection can write...{}", connected);
         return connected;
     }
 
     @Override
     public boolean write(Package pkg) {
         if(remoteChannel == null || !remoteChannel.isOpen()) {
-            LOG.debug("connection write...{}", false);
+            LOG.debug("connection write...{}, remoteChannel == null ? {}", false, remoteChannel == null);
             return false;
         }
         remoteChannel.write(pkg);
@@ -150,14 +150,14 @@ public class Connection extends BasicWriteableImpl {
     public void touch(Package pkg) {
         lastTouch = System.currentTimeMillis();
         tunnelManager.touch(pkg);
-        LOG.debug("connection touch...{}", true);
+        //LOG.debug("connection touch...{}", true);
     }
 
     @Override
     public void failWrite(Package pkg) {
         waterMarker ++;
         sendQueue.addFirst(pkg);
-        LOG.debug("connection faile write ...{}", true);
+        //LOG.debug("connection faile write ...{}", true);
     }
 
     @Override

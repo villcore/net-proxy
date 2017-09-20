@@ -102,7 +102,7 @@ public class Tunnel extends BasicWriteableImpl {
         this.connectPackage = connectPackage;
     }
 
-    public void addSendPackage(DefaultDataPackage dataPackage) {
+    public void addSendPackage(Package dataPackage) {
         LOG.debug("add send package ...");
         sendQueue.add(dataPackage);
     }

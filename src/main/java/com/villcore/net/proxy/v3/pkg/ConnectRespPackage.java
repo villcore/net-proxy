@@ -34,7 +34,7 @@ public class ConnectRespPackage extends Package {
         return remoteConnId;
     }
 
-    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) throws UnsupportedEncodingException {
+    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) {
         //localConnId[4] + remoteConnId[4] + userFlag[8];
         ByteBuf header = Unpooled.buffer(4 + 4 + 8);
 

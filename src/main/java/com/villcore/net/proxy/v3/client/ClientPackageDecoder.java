@@ -1,9 +1,7 @@
 package com.villcore.net.proxy.v3.client;
 
-import com.villcore.net.proxy.v3.pkg.ConnectRespPackage;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -41,6 +39,14 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                 ByteBuf body = pkg.getBody().copy();
 
                 switch (pkg.getPkgType()) {
+                    case PackageType.PKG_CONNECT_REQ:
+                        ConnectReqPackage connectReqPackage = new ConnectReqPackage();
+//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        connectReqPackage.setHeader(header);
+                        connectReqPackage.setBody(body);
+//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
+                        pkg = connectReqPackage;
+                        break;
                     case PackageType.PKG_CONNECT_RESP:
                         ConnectRespPackage connectRespPackage = new ConnectRespPackage();
 //                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
@@ -48,6 +54,14 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                         connectRespPackage.setBody(body);
 //                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
                         pkg = connectRespPackage;
+                        break;
+                    case PackageType.PKG_CHANNEL_CLOSE:
+                        ChannelClosePackage channelClosePackage = new ChannelClosePackage();
+//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        channelClosePackage.setHeader(header);
+                        channelClosePackage.setBody(body);
+//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
+                        pkg = channelClosePackage;
                         break;
                     case PackageType.PKG_DEFAULT_DATA:
                         DefaultDataPackage defaultDataPackage = new DefaultDataPackage();

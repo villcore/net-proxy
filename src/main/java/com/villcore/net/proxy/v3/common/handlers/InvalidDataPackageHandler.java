@@ -22,15 +22,13 @@ public class InvalidDataPackageHandler implements PackageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(InvalidDataPackageHandler.class);
 
     private TunnelManager tunnelManager;
-    private Connection connection;
 
-    public InvalidDataPackageHandler(TunnelManager tunnelManager, Connection connection) {
+    public InvalidDataPackageHandler(TunnelManager tunnelManager) {
         this.tunnelManager = tunnelManager;
-        this.connection = connection;
     }
 
     @Override
-    public List<Package> handlePackage(List<Package> packages) {
+    public List<Package> handlePackage(List<Package> packages, Connection connection) {
         return packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage).map(pkg -> (DefaultDataPackage)pkg)
                 .filter(pkg -> {
                     int connId = pkg.getLocalConnId();

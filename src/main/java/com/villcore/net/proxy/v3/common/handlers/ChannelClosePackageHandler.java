@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v3.common.handlers;
 
+import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
@@ -24,7 +25,7 @@ public class ChannelClosePackageHandler implements PackageHandler {
     }
 
     @Override
-    public List<Package> handlePackage(List<Package> packages) {
+    public List<Package> handlePackage(List<Package> packages, Connection connection) {
         List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CHANNEL_CLOSE).collect(Collectors.toList());
         connectReqPackage.stream()
                 .map(pkg -> ChannelClosePackage.class.cast(pkg))

@@ -77,6 +77,7 @@ public class TunnelManager implements Runnable {
     }
 
     public List<Package> gatherSendPackages(Connection connection) {
+        //LOG.debug(connectionSetMap.get(connection).toString());
         return connectionSetMap.getOrDefault(connection, Collections.emptySet()).stream().flatMap(t -> {
             List<Package> packages = Collections.emptyList();
             if (t.getConnected()) {
@@ -130,14 +131,6 @@ public class TunnelManager implements Runnable {
         }
     }
 
-    //    public void tunnelClose(ChannelClosePackage channelClosePackage) {
-//        int connId = channelClosePackage.getLocalConnId();
-//        Tunnel tunnel = connIdTunnelMap.get(Integer.valueOf(connId));
-//        if (tunnel != null) {
-//            tunnel.needClose();
-//            writeService.removeWrite(tunnel);
-//        }
-//    }
     public void tunnelClose(int connId) {
         Tunnel tunnel = connIdTunnelMap.get(Integer.valueOf(connId));
         if (tunnel != null) {
@@ -164,7 +157,7 @@ public class TunnelManager implements Runnable {
         }
 
         Tunnel tunnel = tunnelFor(connId);
-        if (tunnel == null && tunnel.shouldClose()) {
+        if (tunnel != null && !tunnel.shouldClose()) {
             tunnel.touch(pkg);
         }
     }
