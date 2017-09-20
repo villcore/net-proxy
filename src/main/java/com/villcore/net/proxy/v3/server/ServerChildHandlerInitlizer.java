@@ -3,6 +3,8 @@ package com.villcore.net.proxy.v3.server;
 import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
+import com.villcore.net.proxy.v3.common.ConnIdConvertChannelHandler;
+import com.villcore.net.proxy.v3.common.ConnIdConvertChannelHandler2;
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.ConnectionManager;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -27,9 +29,11 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         connectionManager.acceptConnectTo(ch);
-        //ch.pipeline().addLast(new ClientPackageDecoder());
-        ch.pipeline().addLast(new ConnectionPackageDecoder());
+        ch.pipeline().addLast(new ClientPackageDecoder());
+        //ch.pipeline().addLast(new ConnectionPackageDecoder());
+        ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
+        //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
         ch.pipeline().addLast(new PackageToByteBufOutHandler());
     }
 }

@@ -66,7 +66,9 @@ public class ConnectionManager implements Runnable {
                         //TODO
                         //connection bind channel, addr, port etc...
                         ch.pipeline().addLast(new ClientPackageDecoder());
+                        ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
+                        //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
                     }
                 });

@@ -57,16 +57,16 @@ public class ConnectReqPackageHandler implements PackageHandler {
         List<Package> connectReqPackage = packages.stream()
                 .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ)
                 .collect(Collectors.toList());
-        
+        //LOG.debug("{}, {}", packages.size(), connectReqPackage.size());
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
-                    Integer connId = pkg.getConnId();
+                    Integer correspondConnId = pkg.getConnId();
                     String hostname = pkg.getHostname();
                     int port = pkg.getPort();
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
-                    connectToDst(hostname, port, connId, connection);
+                    connectToDst(hostname, port, correspondConnId, connection);
                 });
         
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
@@ -74,6 +74,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
     }
 
     private void connectToDst(String hostname, int port, int correspondConnId, Connection connection) {
+        //LOG.debug("这里很奇怪，日志表明，这里调用了两次...");
         Bootstrap bootstrap = initBoostrap();
         String[] addrInfo = DNS.parseIp(hostname, port);
         String ip = addrInfo[0] == null || addrInfo[0].isEmpty() ? hostname : addrInfo[0];
@@ -93,6 +94,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                             //server 构建 resp package ...
 //                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), tunnel[0].getConnId(), 1L);
                             ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getConnId(), correspondConnId, 1L);
+                            LOG.debug("connect resp [CID{}:CCID{}]", tunnel[0].getConnId(), correspondConnId);
                             tunnel[0].addSendPackage(connectRespPackage);
                             LOG.debug("connect [{}:{}] success ...", hostname, port);
                         }
@@ -105,6 +107,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
 //                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
                             ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
                             tunnel[0].addSendPackage(connectRespPackage);
+                            LOG.debug("connect resp [CID{}:CCID{}]", tunnel[0].getConnId(), -1);
                             LOG.debug("connect [{}:{}] failed ...", hostname, port);
                         }
                     }
@@ -123,6 +126,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
 //                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
                             ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
                             tunnel[0].addSendPackage(connectRespPackage);
+                            LOG.debug("connect resp [CID{}:CCID{}]", tunnel[0].getConnId(), -1);
                             LOG.debug("connect [{}:{}] failed ...", hostname, port);
                         }
                     }
@@ -144,6 +148,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
 //          ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
             ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
             tunnel[0].addSendPackage(connectRespPackage);
+            LOG.debug("connect resp [CID{}:CCID{}]", tunnel[0].getConnId(), -1);
             LOG.debug("connect [{}:{}] failed ...", hostname, port);
         }
     }

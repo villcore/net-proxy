@@ -4,6 +4,7 @@ import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +15,24 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 此类将服务端接收到的 ByteBuf 还原成对应的Package, 该类不可共享
  */
-public class ConnectionPackageDecoder extends ByteToMessageDecoder {
+public class ConnectionPackageDecoder extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionPackageDecoder.class);
 
     private int packageLen = 0;
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        LOG.debug("connection package decoder , msg = {}, {}", msg.getClass().toString(), !(msg instanceof ByteBuf));
+        if(!(msg instanceof ByteBuf)) {
+            ctx.fireChannelRead(msg);
+            return;
+        }
+
+        ByteBuf in = (ByteBuf) msg;
+
         if (packageLen > 0) {
             if (in.readableBytes() >= packageLen - 4) {
+                LOG.debug("package bytebuf to package ...");
                 ByteBuf byteBuf = in.slice(in.readerIndex(), packageLen - 4);
                 in.readerIndex(in.readerIndex() + packageLen - 4);
                 Package pkg = Package.valueOf(byteBuf);
@@ -58,6 +68,7 @@ public class ConnectionPackageDecoder extends ByteToMessageDecoder {
                     default:
                         break;
                 }
+                LOG.debug("{}", pkg.getClass().toString());
                 ctx.fireChannelRead(pkg);
                 packageLen = 0;
             } else {
@@ -67,6 +78,7 @@ public class ConnectionPackageDecoder extends ByteToMessageDecoder {
 
         if (in.readableBytes() >= 4) {
             packageLen = in.readInt();
+            //LOG.debug("package len = {}, {}", packageLen, in.readableBytes());
         }
     }
 }

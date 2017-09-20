@@ -39,7 +39,7 @@ public class Client {
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
-        TunnelManager tunnelManager = new TunnelManager();
+        TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
         scheduleService.scheduleTaskAtFixedRate(tunnelManager, 1 * 60 * 1000, 1 * 60 * 1000);
 

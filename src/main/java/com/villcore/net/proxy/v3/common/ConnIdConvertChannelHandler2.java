@@ -4,6 +4,7 @@ import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
@@ -16,11 +17,11 @@ import org.slf4j.LoggerFactory;
  * <p>
  * connId, dorspondConnId
  */
-public class ConnIdConvertChannelHandler extends ChannelOutboundHandlerAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(ConnIdConvertChannelHandler.class);
+public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(ConnIdConvertChannelHandler2.class);
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         LOG.debug(">>>>>>>>>>>>>>>>> conver running...{}", msg.getClass().toString());
         if (msg instanceof Package) {
 
@@ -75,8 +76,9 @@ public class ConnIdConvertChannelHandler extends ChannelOutboundHandlerAdapter {
                 default:
                     break;
             }
-            ctx.write(pkg);
+            ctx.fireChannelRead(pkg);
+        } else {
+            ctx.fireChannelRead(msg);
         }
-        ctx.write(msg);
     }
 }

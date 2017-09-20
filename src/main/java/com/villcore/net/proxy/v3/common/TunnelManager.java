@@ -20,7 +20,7 @@ public class TunnelManager implements Runnable {
 
     private static final long MAX_TOUCH_INTERVAL = 1 * 60 * 1000L;
 
-    private ConnIdGenerator connIdGenerator = new ConnIdGenerator();
+    private ConnIdGenerator connIdGenerator;
 
     /**
      * Tunnel相关状态字段
@@ -34,6 +34,10 @@ public class TunnelManager implements Runnable {
     private Object tunnelStateLock = new Object();
 
     private WriteService writeService;
+
+    public TunnelManager(int idStart) {
+        connIdGenerator = new ConnIdGenerator(idStart);
+    }
 
     public Tunnel newTunnel(Channel channel) {
         //分配connId
@@ -140,6 +144,7 @@ public class TunnelManager implements Runnable {
     }
 
     public Tunnel tunnelFor(int connId) {
+        LOG.debug("connIdTunnel map = {}", connIdTunnelMap.toString());
         return connIdTunnelMap.get(Integer.valueOf(connId));
     }
 
