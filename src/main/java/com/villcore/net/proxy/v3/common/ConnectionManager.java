@@ -177,7 +177,6 @@ public class ConnectionManager implements Runnable {
     }
 
     public void waitForConnect() {
-
     }
 
     public void closeConnection(Connection connection) {

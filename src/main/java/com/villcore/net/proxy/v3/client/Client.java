@@ -53,7 +53,7 @@ public class Client {
         PackageHandler connectRespHandler = new ConnectRespPackageHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
-        packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 

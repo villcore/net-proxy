@@ -40,7 +40,7 @@ public class DefaultDataPackage extends Package {
         header.readerIndex(oriReadIndex);
     }
 
-    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) throws UnsupportedEncodingException {
+    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) {
         //localConnId[4] + remoteConnid[4] + userFlag[8]
         ByteBuf header = Unpooled.buffer(4 + 4 + 8);
 

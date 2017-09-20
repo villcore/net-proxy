@@ -34,6 +34,7 @@ public class ConnectRespPackageHandler implements PackageHandler {
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
         List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_RESP).collect(Collectors.toList());
+
         connectReqPackage.stream()
                 .map(pkg -> ConnectRespPackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -43,9 +44,11 @@ public class ConnectRespPackageHandler implements PackageHandler {
                     LOG.debug("connect resp ... [{}:{}]", connId, corrspondId);
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
                     tunnel.setCorrespondConnId(corrspondId);
+                    tunnel.rebuildSendPackages(corrspondId);
                     tunnel.setConnect(true);
                     tunnel.touch(pkg);
                 });
+
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_RESP).collect(Collectors.toList());
         return otherPackage;
     }

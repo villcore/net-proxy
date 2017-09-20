@@ -51,8 +51,8 @@ public class Server {
         //authorized handler
         //connect req handler //channel close handler  // invalid data handler
         PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
-//        PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
-//        PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
+        PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
+        PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
         packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();

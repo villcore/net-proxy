@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class ConnectReqPackageHandler implements PackageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectReqPackage.class);
 
-    //private Bootstrap bootstrap;
     private EventLoopGroup eventLoopGroup;
 
     private WriteService writeService;
@@ -38,8 +37,6 @@ public class ConnectReqPackageHandler implements PackageHandler {
         this.writeService = writeService;
         this.tunnelManager = tunnelManager;
         this.connectionManager = connectionManager;
-        //TODO init
-        initBoostrap();
     }
 
     private Bootstrap initBoostrap() {
@@ -57,7 +54,10 @@ public class ConnectReqPackageHandler implements PackageHandler {
 
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
-        List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
+        List<Package> connectReqPackage = packages.stream()
+                .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ)
+                .collect(Collectors.toList());
+        
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -68,11 +68,12 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     connectToDst(hostname, port, connId, connection);
                 });
+        
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
         return otherPackage;
     }
 
-    private void connectToDst(String hostname, int port, int connId, Connection connection) {
+    private void connectToDst(String hostname, int port, int correspondConnId, Connection connection) {
         Bootstrap bootstrap = initBoostrap();
         String[] addrInfo = DNS.parseIp(hostname, port);
         String ip = addrInfo[0] == null || addrInfo[0].isEmpty() ? hostname : addrInfo[0];
@@ -86,20 +87,23 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     if(future.isSuccess()) {
                         if (tunnel[0] != null) {
                             tunnel[0].setConnect(true);
-                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), tunnel[0].getConnId(), 1L);
-                            //connection.addSendPackages(Collections.singletonList(connectRespPackage));
-                            tunnel[0].setCorrespondConnId(connId);
+                            tunnel[0].setCorrespondConnId(correspondConnId);
                             tunnelManager.bindConnection(connection, tunnel[0]);
+
+                            //server 构建 resp package ...
+//                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), tunnel[0].getConnId(), 1L);
+                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getConnId(), correspondConnId, 1L);
                             tunnel[0].addSendPackage(connectRespPackage);
                             LOG.debug("connect [{}:{}] success ...", hostname, port);
                         }
                     } else {
                         if (tunnel[0] != null) {
                             tunnel[0].setConnect(false);
-                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
-                            //connection.addSendPackages(Collections.singletonList(connectRespPackage));
-                            tunnel[0].setCorrespondConnId(connId);
+                            tunnel[0].setCorrespondConnId(correspondConnId);
                             tunnelManager.bindConnection(connection, tunnel[0]);
+
+//                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
+                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
                             tunnel[0].addSendPackage(connectRespPackage);
                             LOG.debug("connect [{}:{}] failed ...", hostname, port);
                         }
@@ -113,10 +117,11 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     if(future.isSuccess()) {
                         if (tunnel[0] != null) {
                             tunnel[0].setConnect(false);
-                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
-                            //connection.addSendPackages(Collections.singletonList(connectRespPackage));
-                            tunnel[0].setCorrespondConnId(connId);
+                            tunnel[0].setCorrespondConnId(correspondConnId);
                             tunnelManager.bindConnection(connection, tunnel[0]);
+
+//                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
+                            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
                             tunnel[0].addSendPackage(connectRespPackage);
                             LOG.debug("connect [{}:{}] failed ...", hostname, port);
                         }
@@ -125,17 +130,19 @@ public class ConnectReqPackageHandler implements PackageHandler {
             });
 
             tunnel[0] = tunnelManager.newTunnel(channel);
+            tunnel[0].setBindConnection(connection);
             tunnel[0].setConnect(false);
-            tunnel[0].setCorrespondConnId(connId);
+            tunnel[0].setCorrespondConnId(correspondConnId);
             tunnelManager.bindConnection(connection, tunnel[0]);
             writeService.addWrite(tunnel[0]);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             tunnel[0].setConnect(false);
-            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
-            //connection.addSendPackages(Collections.singletonList(connectRespPackage));
-            tunnel[0].setCorrespondConnId(connId);
+            tunnel[0].setCorrespondConnId(correspondConnId);
             tunnelManager.bindConnection(connection, tunnel[0]);
+
+//          ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel[0].getCorrespondConnId(), -1, 1L);
+            ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
             tunnel[0].addSendPackage(connectRespPackage);
             LOG.debug("connect [{}:{}] failed ...", hostname, port);
         }

@@ -3,6 +3,8 @@ package com.villcore.net.proxy.v3.common;
 import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
  * client 与 server 对每个连接的代理通道
@@ -18,22 +21,22 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    //tunnelManager
-    private TunnelManager tunnelManager;
-
-    //sendQueueSize
-    private int sendQueueSize;
-    private int recvQueueSize;
-
-    //代理通道 Channel
-    private Channel channel;
-
     //本地端对应的connId
     private Integer connId;
 
     //远端对应的ConnId
     private Integer correspondConnId = -1;
 
+    //tunnelManager
+    private TunnelManager tunnelManager;
+
+    //sendQueueSize
+    private int sendQueueSize;
+
+    //recvQueueSize
+    private int recvQueueSize;
+
+    //client side 用于建立连接的Package
     private ConnectReqPackage connectPackage;
 
     //数据队列（线程安全的双端队列）
@@ -41,6 +44,9 @@ public class Tunnel extends BasicWriteableImpl {
 
     //接收到的Package, 由send service 写入channel
     private BlockingQueue<Package> recvQueue;
+
+    //代理通道 Channel
+    private Channel channel;
 
     //lasttouch
     private volatile long lastTouch;
@@ -75,7 +81,6 @@ public class Tunnel extends BasicWriteableImpl {
     public Integer getConnId() {
         return connId;
     }
-
 
     public boolean sendQueueIsFull() {
         return sendQueue.isEmpty();
@@ -113,13 +118,6 @@ public class Tunnel extends BasicWriteableImpl {
         //System.out.println(avaliablePackages.size());
         return avaliablePackages;
     }
-    //isFull()
-    //readPackage(Package) -> sendQueue
-    //writePackage() 返回已经准备好的package，如果connedted == false， 只返回连接请求package
-
-    //channelOpen()
-
-    //avaliableSendPackage
 
 
     public void needClose() {
@@ -213,5 +211,16 @@ public class Tunnel extends BasicWriteableImpl {
 
     public Integer getCorrespondConnId() {
         return correspondConnId;
+    }
+
+    public void rebuildSendPackages(int correspondConnId) {
+        drainSendPackages().stream().map(pkg -> DefaultDataPackage.class.cast(pkg))
+                .collect(Collectors.toList())
+                .forEach(pkg -> {
+                    int localConnId = pkg.getLocalConnId();
+                    ByteBuf data = pkg.getBody();
+                    Package correctPkg = PackageUtils.buildDataPackage(localConnId, correspondConnId, 1L, data);
+                    sendQueue.add(correctPkg);
+                });
     }
 }

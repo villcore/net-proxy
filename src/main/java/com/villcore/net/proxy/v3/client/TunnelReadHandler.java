@@ -155,6 +155,6 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         boolean sendQueueFull = curTunnel.sendQueueIsFull();
         boolean connected = curTunnel.getConnected();
 
-        return shouldClose && sendQueueFull && connected;
+        return !shouldClose && !sendQueueFull && connected;
     }
 }

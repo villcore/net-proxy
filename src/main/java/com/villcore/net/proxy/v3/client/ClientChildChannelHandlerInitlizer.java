@@ -28,18 +28,9 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
         LOG.debug("init channel [{}]...", channel.remoteAddress().toString());
 
         Tunnel tunnel = tunnelManager.newTunnel(channel);
+        tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
-        //channel add handler
-        //TunnelReadHandler 解析proxy，打包Package，这里需要对不再读取的三种情形做判断
         channel.pipeline().addLast(new TunnelReadHandler(tunnelManager));
         channel.pipeline().addLast(new PackageToByteBufOutHandler());
     }
-
-//    private static class TestReader extends ChannelInboundHandlerAdapter {
-//        @Override
-//        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-//            ByteBuf byteBuf = (ByteBuf) msg;
-//            System.out.println(PackageUtils.toString(byteBuf));
-//        }
-//    };
 }

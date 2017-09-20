@@ -22,14 +22,12 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        //LOG.debug("recv pkg...{}", msg.getClass().toString());
-
+        //TODO connection == null ?
         Connection connection = connectionManager.channelFor(ctx.channel());
+
         if(msg instanceof Package) {
             Package pkg = Package.class.cast(msg);
-//            Package correctpkg = PackageUtils.convertCorrectPackage(pkg);
             LOG.debug("get pkg = {}", PackageUtils.toString(pkg));
-
             Package correctpkg = pkg;
             connection.addRecvPackages(Collections.singletonList(correctpkg));
             connection.connectionTouch(System.currentTimeMillis());

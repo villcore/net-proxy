@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 /**
  * 该handler 过滤掉发往为空的Tunnel或shouldClose的Tunnel，并将重建channelClose Package 发往Connection的 sendQueue
  */
+
 public class InvalidDataPackageHandler implements PackageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(InvalidDataPackageHandler.class);
 
@@ -29,7 +30,8 @@ public class InvalidDataPackageHandler implements PackageHandler {
 
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
-        return packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage).map(pkg -> (DefaultDataPackage)pkg)
+        return packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
+                .map(pkg -> (DefaultDataPackage)pkg)
                 .filter(pkg -> {
                     int connId = pkg.getLocalConnId();
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);

@@ -71,8 +71,6 @@ public class Package implements Serializable {
         fixed.writerIndex(FIXED_LEN);
     }
 
-
-
     public void setPkgType(short type) {
         this.fixed.setShort(4 + 4 + 4, type);
     }
@@ -80,7 +78,6 @@ public class Package implements Serializable {
     public ByteBuf toByteBuf() {
         return Unpooled.wrappedBuffer(fixed, header, body);
     }
-
 
     @Override
     public boolean equals(Object o) {

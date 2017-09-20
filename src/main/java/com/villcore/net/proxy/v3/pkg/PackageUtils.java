@@ -16,7 +16,7 @@ public class PackageUtils {
         return pkg;
     }
 
-    public static DefaultDataPackage buildDataPackage(int localConnId, int remoteConnId, long userFlag, ByteBuf data) throws UnsupportedEncodingException {
+    public static DefaultDataPackage buildDataPackage(int localConnId, int remoteConnId, long userFlag, ByteBuf data) {
         ByteBuf header = DefaultDataPackage.newHeader(localConnId, remoteConnId, userFlag);
         header.writerIndex(header.capacity());
         header.readerIndex(0);

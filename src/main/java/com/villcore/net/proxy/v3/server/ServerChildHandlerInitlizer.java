@@ -27,7 +27,8 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         connectionManager.acceptConnectTo(ch);
-        ch.pipeline().addLast(new ClientPackageDecoder());
+        //ch.pipeline().addLast(new ClientPackageDecoder());
+        ch.pipeline().addLast(new ConnectionPackageDecoder());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
         ch.pipeline().addLast(new PackageToByteBufOutHandler());
     }
