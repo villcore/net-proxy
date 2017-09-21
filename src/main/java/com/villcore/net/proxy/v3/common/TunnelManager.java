@@ -2,6 +2,9 @@ package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +30,12 @@ public class TunnelManager implements Runnable {
      **/
     private Map<Integer, Tunnel> connIdTunnelMap = new ConcurrentHashMap<>();
     private Map<Channel, Tunnel> channelTunnelMap = new ConcurrentHashMap<>();
-    private Map<Integer, Tunnel> correspondConnIdTunnelMap = new ConcurrentHashMap<>();
+    //private Map<Integer, Tunnel> correspondConnIdTunnelMap = new ConcurrentHashMap<>();
     private Map<Connection, Set<Tunnel>> connectionSetMap = new ConcurrentHashMap<>();
 
     //用于再清理中加锁，可能不需要
     private Object tunnelStateLock = new Object();
+
 
     private WriteService writeService;
 
@@ -39,6 +43,7 @@ public class TunnelManager implements Runnable {
         connIdGenerator = new ConnIdGenerator(idStart);
     }
 
+    //TODO need sync
     public Tunnel newTunnel(Channel channel) {
         //分配connId
         Integer connId = connIdGenerator.generateConnId();
@@ -51,6 +56,7 @@ public class TunnelManager implements Runnable {
         return tunnel;
     }
 
+    //TODO need sync
     public void bindConnection(Connection connection, Tunnel tunnel) {
         Set<Tunnel> tunnels = connectionSetMap.getOrDefault(connection, new HashSet<>());
         tunnels.add(tunnel);
@@ -61,6 +67,7 @@ public class TunnelManager implements Runnable {
         this.writeService = writeService;
     }
 
+    //TODO need sync
     /**
      * 清理不响应的Tunnel
      */
@@ -70,16 +77,18 @@ public class TunnelManager implements Runnable {
         //清理Tunnel相关状态
     }
 
-    public void markConnected(int connId, int correspondConnId) {
-        Tunnel tunnel = connIdTunnelMap.get(new Integer((connId)));
-        tunnel.markConnected(correspondConnId);
-        correspondConnIdTunnelMap.put(new Integer((correspondConnId)), tunnel);
-    }
+//    public void markConnected(int connId, int correspondConnId) {
+//        Tunnel tunnel = connIdTunnelMap.get(new Integer((connId)));
+//        tunnel.markConnected(correspondConnId);
+//        correspondConnIdTunnelMap.put(new Integer((correspondConnId)), tunnel);
+//    }
 
+    //TODO maybe need sync
     public Tunnel tunnelFor(Channel channel) {
         return channelTunnelMap.get(channel);
     }
 
+    //TODO need sync
     public List<Package> gatherSendPackages(Connection connection) {
         //LOG.debug(connectionSetMap.get(connection).toString());
         return connectionSetMap.getOrDefault(connection, Collections.emptySet()).stream().flatMap(t -> {
@@ -104,6 +113,7 @@ public class TunnelManager implements Runnable {
         }).collect(Collectors.toList());
     }
 
+    //TODO need sync
     public void scatterRecvPackage(List<Package> avaliableRecvPackages) {
         avaliableRecvPackages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
                 .map(pkg -> DefaultDataPackage.class.cast(pkg))
@@ -115,7 +125,7 @@ public class TunnelManager implements Runnable {
 
                     Tunnel tunnel = tunnelFor(connId);
                     try {
-                        LOG.debug("connId = {}, corrspondConnId = {}, recv {}", connId, corrspondConnId, PackageUtils.toString(pkg));
+                        LOG.debug("connId = {}, corrspondConnId = {}, recv {x}", connId, corrspondConnId/*, PackageUtils.toString(pkg)*/);
                         LOG.debug("search tunnel = {}", tunnel == null ? " null" : tunnel.getConnId());
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -126,6 +136,7 @@ public class TunnelManager implements Runnable {
                         LOG.debug("tunnel == null or tunnel should close...");
                     } else {
                         tunnel.addRecvPackage(pkg);
+                        //tunnel.getChannel().writeAndFlush(pkg.getBody());
                         LOG.debug("tunnel[{}] connected [{}] add recv package ...", tunnel.getConnId(), tunnel.getConnected());
                     }
                 });
@@ -133,20 +144,20 @@ public class TunnelManager implements Runnable {
         //tunnel#putRecvQueue
     }
 
-    public void tunnelResp(ConnectRespPackage connectRespPackage) {
-        int connId = connectRespPackage.getLocalConnId();
-        int correspondConnId = connectRespPackage.getRemoteConnId();
-
-        Tunnel tunnel = channelTunnelMap.get(new Integer((connId)));
-        if (tunnel != null) {
-            if (correspondConnId >= 0) {
-                tunnel.setConnect(true);
-                tunnel.setCorrespondConnId(correspondConnId);
-            } else {
-                tunnel.needClose();
-            }
-        }
-    }
+//    public void tunnelResp(ConnectRespPackage connectRespPackage) {
+//        int connId = connectRespPackage.getLocalConnId();
+//        int correspondConnId = connectRespPackage.getRemoteConnId();
+//
+//        Tunnel tunnel = channelTunnelMap.get(new Integer((connId)));
+//        if (tunnel != null) {
+//            if (correspondConnId >= 0) {
+//                tunnel.setConnect(true);
+//                tunnel.setCorrespondConnId(correspondConnId);
+//            } else {
+//                tunnel.needClose();
+//            }
+//        }
+//    }
 
     public void tunnelClose(int connId) {
         Tunnel tunnel = connIdTunnelMap.get(new Integer((connId)));

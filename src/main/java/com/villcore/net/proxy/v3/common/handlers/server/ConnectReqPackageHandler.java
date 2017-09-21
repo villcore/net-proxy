@@ -4,10 +4,8 @@ import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.server.DNS;
-import com.villcore.net.proxy.v3.server.ServerChannelSendService;
 import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -17,11 +15,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler.dummyReq;
 
 /**
  * server side handler

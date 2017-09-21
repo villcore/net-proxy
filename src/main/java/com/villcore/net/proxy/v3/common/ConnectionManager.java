@@ -1,23 +1,21 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.client.ClientChannelSendService;
 import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,18 +61,23 @@ public class ConnectionManager implements Runnable {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        //TODO
-                        //connection bind channel, addr, port etc...
                         ch.pipeline().addLast(new ClientPackageDecoder());
                         ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
-                        //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
                     }
                 });
         return bootstrap;
     };
 
+    //TODO need sync
+    /**
+     *
+     * server side invoke
+     *
+     * @param channel
+     * @return
+     */
     public Connection acceptConnectTo(Channel channel) {
         InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
         String addr = address.getHostName();
@@ -98,6 +101,7 @@ public class ConnectionManager implements Runnable {
         return connection;
     }
 
+    //TODO need sync
     /**
      * client side invoke, 客户端调用
      *
@@ -106,8 +110,6 @@ public class ConnectionManager implements Runnable {
      * @return
      */
     public Connection connectTo(String addr, int port) {
-        //success -> acceptConnecttO(channel)
-
         Connection connection = connectionMap.getOrDefault(addrAndPortKey(addr, port), new Connection(addr, port, tunnelManager));
         connectionMap.putIfAbsent(addrAndPortKey(addr, port), connection);
         tunnelManager.addConnection(connection);
@@ -211,7 +213,10 @@ public class ConnectionManager implements Runnable {
 //        }
     }
 
+    //TODO need sync
     public List<Connection> allConnected() {
-        return connectionMap.values().stream().filter(conn -> conn.isConnected()).collect(Collectors.toList());
+        return connectionMap.values().stream()
+                .filter(conn -> conn.isConnected())
+                .collect(Collectors.toList());
     }
 }

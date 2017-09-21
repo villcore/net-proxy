@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,9 +29,6 @@ public class Tunnel extends BasicWriteableImpl {
 
     //远端对应的ConnId
     private Integer correspondConnId = -1;
-
-    //tunnelManager
-    private TunnelManager tunnelManager;
 
     //sendQueueSize
     private int sendQueueSize;
@@ -71,13 +69,8 @@ public class Tunnel extends BasicWriteableImpl {
         this.sendQueueSize = sendQueueSize;
         this.recvQueueSize = recvQueueSize > 0 ? recvQueueSize : Integer.MAX_VALUE;
 
-        this.sendQueue = new LinkedBlockingQueue<>(sendQueueSize);
+        this.sendQueue = new LinkedBlockingQueue<>(sendQueueSize + 2); //extra two more space);
         this.recvQueue = new LinkedBlockingQueue<>(recvQueueSize);
-    }
-
-    public void markConnected(int correspondConnId) {
-        this.correspondConnId = correspondConnId;
-        this.connected = true;
     }
 
     public Integer getConnId() {
@@ -85,7 +78,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public boolean sendQueueIsFull() {
-        return sendQueue.isEmpty();
+        return sendQueue.size() >= sendQueueSize ;
     }
 
     public boolean getConnected() {
@@ -110,7 +103,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void addSendPackage(Package dataPackage) {
-        LOG.debug("add send package for [{}]...,", connId);
+        //LOG.debug("add send package for [{}]...,", connId);
         sendQueue.add(dataPackage);
     }
 
@@ -134,7 +127,6 @@ public class Tunnel extends BasicWriteableImpl {
         return avaliablePackages;
     }
 
-
     public void needClose() {
         this.shouldClose = true;
     }
@@ -146,6 +138,9 @@ public class Tunnel extends BasicWriteableImpl {
     public void setConnect(boolean connect) {
         LOG.debug("cur tunnel send queue size = {}", sendQueue.size());
         this.connected = connect;
+        if(connect) {
+            channel.config().setAutoRead(true);
+        }
     }
 
     public void setCorrespondConnId(int correspondConnId) {
@@ -195,17 +190,19 @@ public class Tunnel extends BasicWriteableImpl {
 
     @Override
     public boolean write(Package pkg) {
-        LOG.debug("write pkg ...");
+        //LOG.debug("write pkg ...");
         if(channel == null || !channel.isOpen()) {
-            LOG.debug("write pkg ...failed ...");
+            //LOG.debug("write pkg ...failed ...");
             pkg.toByteBuf().release();
         } else {
             channel.writeAndFlush(pkg.getBody());
-            try {
-                LOG.debug("write pkg [{}]... success...", PackageUtils.toString(pkg));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+            DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
+            LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
+//            try {
+//                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
         }
         return true;
     }
@@ -223,7 +220,6 @@ public class Tunnel extends BasicWriteableImpl {
     public List<Package> getWritePackages() {
         return drainRecvPackages();
     }
-
 
     public long getLastTouch() {
         return lastTouch;

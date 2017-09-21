@@ -54,6 +54,8 @@ public class Server {
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
         packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
+        //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
+
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
 

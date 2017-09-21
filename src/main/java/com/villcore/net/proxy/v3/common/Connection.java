@@ -26,9 +26,6 @@ public class Connection extends BasicWriteableImpl {
     private int remotePort;
     private Channel remoteChannel;
 
-    //EventLoop
-    private EventLoopGroup eventLoopGroup;
-
     //TunnelManager
     private TunnelManager tunnelManager;
 
@@ -38,22 +35,6 @@ public class Connection extends BasicWriteableImpl {
     //RecvQueue
     private BlockingQueue<Package> recvQueue = new LinkedBlockingQueue<>();
 
-    //authorized
-    //负责管理与远端的连接,重试
-    //维护sendQueue
-    //提供drainSendPcakges
-    //提供sendPackages方法供SendService调用，该方法在链路断开后会直接返回
-    //
-
-    //drainRecvPackage
-    //addSendPackage
-
-    //isReady()
-
-    //AvaliableSendPackages() 调用TunnelManager#avaliablePackages
-
-    //connectRemoteServer()
-    //closeHandler
     private volatile int waterMarker = 0;
 
     private long lastTouch;
@@ -140,7 +121,7 @@ public class Connection extends BasicWriteableImpl {
             LOG.debug("connection write...{}, remoteChannel == null ? {}", false, remoteChannel == null);
             return false;
         }
-        remoteChannel.write(pkg);
+        remoteChannel.writeAndFlush(pkg);
         connectionTouch(System.currentTimeMillis());
         LOG.debug("connection write...{}", true);
         return true;

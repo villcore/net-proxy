@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,9 +15,9 @@ import java.util.concurrent.TimeUnit;
 public class WriteService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(WriteService.class);
 
-    private static final long SLEEP_INTERVAL = 500;
+    private static final long SLEEP_INTERVAL = 50;
 
-    private Set<Writeable> writeables = Collections.synchronizedSet(new HashSet<>());
+    private CopyOnWriteArrayList<Writeable> writeables = new CopyOnWriteArrayList<>();
 
     private long time;
 
@@ -33,9 +34,7 @@ public class WriteService extends LoopTask {
         //LOG.debug("write service loop ...");
         time = System.currentTimeMillis();
         //主要的遍历writable
-        writeables.stream()
-                .map(writeable -> BasicWriteableImpl.class.cast(writeable))
-                .forEach(writeable -> writeable.write());
+        writeables.forEach(writeable -> writeable.write());
 
         long workTime = System.currentTimeMillis() - time;
         if(workTime < SLEEP_INTERVAL) {

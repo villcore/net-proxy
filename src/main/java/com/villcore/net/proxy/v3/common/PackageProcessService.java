@@ -55,7 +55,6 @@ public class PackageProcessService extends LoopTask {
 
         List<Connection> connections = connectionManager.allConnected();
         //LOG.debug("connected connection size = {}", connections.size());
-        //*********************************************************此处判断为connection list ***********************/
         //进行判断，是否connection可以发送
         connections.forEach(connection -> {
             //LOG.debug("connection send ready = {}", connection.sendPackageReady());
@@ -63,14 +62,9 @@ public class PackageProcessService extends LoopTask {
                 //Connection#getAvaliableSendPackages
                 List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
                 //LOG.debug(">>{}", avaliableSendPackages.size());
-                avaliableSendPackages.stream().forEach(pkg -> {
-                    try {
-                        //LOG.debug("pkg corspondId = {}, {}", DefaultDataPackage.class.cast(pkg).getRemoteConnId(), pkg.toString());
-                        LOG.debug(PackageUtils.toString(pkg));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+//                avaliableSendPackages.stream().forEach(pkg -> {
+//                    printDebug(pkg);
+//                });
 
                 for (PackageHandler handler : sendHandlers) {
                     avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
@@ -108,6 +102,15 @@ public class PackageProcessService extends LoopTask {
         long workTime = System.currentTimeMillis() - time;
         if(workTime < SLEEP_INTERVAL) {
             TimeUnit.MILLISECONDS.sleep(SLEEP_INTERVAL - workTime);
+        }
+    }
+
+    private void printDebug(Package pkg) {
+        try {
+            LOG.debug("pkg corspondId = {}, {}", DefaultDataPackage.class.cast(pkg).getRemoteConnId(), pkg.toString());
+            LOG.debug(PackageUtils.toString(pkg));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

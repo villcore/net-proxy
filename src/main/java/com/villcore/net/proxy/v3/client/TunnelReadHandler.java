@@ -44,9 +44,9 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         this.tunnelManager = tunnelManager;
     }
 
+    //TODO 此处需要考虑和重新设计
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        //LOG.debug("read......");
         ChannelPipeline pipeline = ctx.pipeline();
         Channel channel = pipeline.channel();
         Tunnel curTunnel = tunnelManager.tunnelFor(channel);
@@ -58,18 +58,22 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         }
 
         ByteBuf byteBuf = (ByteBuf) msg;
+        LOG.debug("read ================================{}", byteBuf.readableBytes());
 
         if(detectedProxy) {
             LOG.debug("tunnel read ready ...{}", tunnelReady(curTunnel));
+            LOG.debug("connId = {}, correspondConnId = {}", curTunnel.getConnId(), curTunnel.getCorrespondConnId());
             if (!tunnelReady(curTunnel)) {
+                DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, byteBuf);
+                curTunnel.addSendPackage(dataPackage);
+                return;
+            } else {
+                ByteBuf data = byteBuf;
+                DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, data);
+                //ctx.fireChannelRead(dataPackage);
+                curTunnel.addSendPackage(dataPackage);
                 return;
             }
-
-            ByteBuf data = byteBuf;
-            DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, data);
-            //ctx.fireChannelRead(dataPackage);
-            curTunnel.addSendPackage(dataPackage);
-            return;
         }
 
         int readerIndex = byteBuf.readerIndex();
@@ -97,7 +101,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
 //                    ctx.fireChannelRead(dataPackage);
                     curTunnel.setConnectPackage(connectReqPackage);
                     curTunnel.addSendPackage(dataPackage);
-
+                    channel.config().setAutoRead(false);
                     if(connectReqPackage == null) {
                         LOG.debug("!!!!connect pkg == null {}", "");
                     }
@@ -115,10 +119,10 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
             if(procotol.contains(CONNECT)) {
 
                 channel.closeFuture();
-                int a = 0;
-                if(a == 0) {
-                    return;
-                }
+//                int a = 0;
+//                if(a == 0) {
+//                    return;
+//                }
 
                 int lastIndex = writerIndex;
                 int last = byteBuf.getByte(lastIndex - 1);
@@ -138,6 +142,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
                     //ctx.fireChannelRead(connectReqPackage);
                     curTunnel.setConnectPackage(connectReqPackage);
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
+                    channel.config().setAutoRead(false);
                     if(connectReqPackage == null) {
                         LOG.debug("!!!!connect pkg == null {}", "");
                     }
@@ -156,6 +161,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
      * @return
      */
     private boolean tunnelReady(Tunnel curTunnel) {
+
         //1.tunnel should close
         //2.tunnel write queue full
         //3.connect false
@@ -165,5 +171,6 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         boolean connected = curTunnel.getConnected();
 
         return !shouldClose && !sendQueueFull && connected;
+        //return true;
     }
 }

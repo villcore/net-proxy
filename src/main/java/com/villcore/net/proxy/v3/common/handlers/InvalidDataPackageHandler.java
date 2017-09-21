@@ -36,7 +36,7 @@ public class InvalidDataPackageHandler implements PackageHandler {
                     int connId = pkg.getLocalConnId();
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
-                    if(tunnel == null && tunnel.shouldClose()) {
+                    if(tunnel == null || tunnel.shouldClose()) {
                         ChannelClosePackage channelClosePackage = PackageUtils.buildChannelClosePackage(connId, pkg.getRemoteConnId(), 1L);
                         connection.addSendPackages(Collections.singletonList(channelClosePackage));
                         return false;
