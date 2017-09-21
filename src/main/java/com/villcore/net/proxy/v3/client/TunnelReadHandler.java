@@ -46,6 +46,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        //LOG.debug("read......");
         ChannelPipeline pipeline = ctx.pipeline();
         Channel channel = pipeline.channel();
         Tunnel curTunnel = tunnelManager.tunnelFor(channel);
@@ -59,6 +60,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = (ByteBuf) msg;
 
         if(detectedProxy) {
+            LOG.debug("tunnel read ready ...{}", tunnelReady(curTunnel));
             if (!tunnelReady(curTunnel)) {
                 return;
             }
@@ -111,6 +113,13 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
             ByteBuf httpsProcotol = byteBuf.slice(0, CONNECT.length());
             String procotol = httpsProcotol.toString(Charset.forName("utf-8"));
             if(procotol.contains(CONNECT)) {
+
+                channel.closeFuture();
+                int a = 0;
+                if(a == 0) {
+                    return;
+                }
+
                 int lastIndex = writerIndex;
                 int last = byteBuf.getByte(lastIndex - 1);
                 int lastOne = byteBuf.getByte(lastIndex - 2);

@@ -7,6 +7,7 @@ import com.villcore.net.proxy.v3.server.DNS;
 import com.villcore.net.proxy.v3.server.ServerChannelSendService;
 import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler.dummyReq;
 
 /**
  * server side handler
@@ -97,6 +100,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                             LOG.debug("connect resp [CID{}:CCID{}]", tunnel[0].getConnId(), correspondConnId);
                             tunnel[0].addSendPackage(connectRespPackage);
                             LOG.debug("connect [{}:{}] success ...", hostname, port);
+                            //tunnel[0].getChannel().writeAndFlush(Unpooled.wrappedBuffer(dummyReq.getBytes()));
                         }
                     } else {
                         if (tunnel[0] != null) {

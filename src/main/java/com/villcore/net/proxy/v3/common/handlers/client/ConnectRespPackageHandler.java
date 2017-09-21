@@ -44,8 +44,8 @@ public class ConnectRespPackageHandler implements PackageHandler {
                         LOG.debug("connect resp ... [{}:{}]", connId, corrspondId);
                         Tunnel tunnel = tunnelManager.tunnelFor(connId);
                         tunnel.setCorrespondConnId(connId);
-                        tunnel.rebuildSendPackages(corrspondId);
                         tunnel.setConnect(true);
+                        tunnel.rebuildSendPackages(corrspondId);
                         tunnel.touch(pkg);
                     });
 

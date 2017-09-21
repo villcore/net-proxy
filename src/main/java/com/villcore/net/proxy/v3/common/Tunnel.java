@@ -9,6 +9,8 @@ import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -113,9 +115,22 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public List<Package> drainSendPackages() {
+        if(!connected) {
+            return Collections.emptyList();
+        }
         List<Package> avaliablePackages = new LinkedList<>();
         sendQueue.drainTo(avaliablePackages);
-        //System.out.println(avaliablePackages.size());
+        //LOG.debug("drain send package, size = {}", avaliablePackages.size());
+        return avaliablePackages;
+    }
+
+    public List<Package> drainRecvPackages() {
+        if(!connected) {
+            return Collections.emptyList();
+        }
+        List<Package> avaliablePackages = new LinkedList<>();
+        recvQueue.drainTo(avaliablePackages);
+        //LOG.debug("drain recv package, size = {}", avaliablePackages.size());
         return avaliablePackages;
     }
 
@@ -129,6 +144,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void setConnect(boolean connect) {
+        LOG.debug("cur tunnel send queue size = {}", sendQueue.size());
         this.connected = connect;
     }
 
@@ -179,10 +195,17 @@ public class Tunnel extends BasicWriteableImpl {
 
     @Override
     public boolean write(Package pkg) {
+        LOG.debug("write pkg ...");
         if(channel == null || !channel.isOpen()) {
+            LOG.debug("write pkg ...failed ...");
             pkg.toByteBuf().release();
         } else {
-            channel.writeAndFlush(pkg);
+            channel.writeAndFlush(pkg.getBody());
+            try {
+                LOG.debug("write pkg [{}]... success...", PackageUtils.toString(pkg));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
         return true;
     }
@@ -198,8 +221,9 @@ public class Tunnel extends BasicWriteableImpl {
 
     @Override
     public List<Package> getWritePackages() {
-        return drainSendPackages();
+        return drainRecvPackages();
     }
+
 
     public long getLastTouch() {
         return lastTouch;
@@ -214,6 +238,8 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void rebuildSendPackages(int correspondConnId) {
+        LOG.debug("rebuild send packages ... {}, queue size = {}", correspondConnId, sendQueue.size());
+        //LOG.debug("drain send package size = {}, connected = {}", drainSendPackages().size(), connected);
         drainSendPackages().stream().map(pkg -> DefaultDataPackage.class.cast(pkg))
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
@@ -221,6 +247,7 @@ public class Tunnel extends BasicWriteableImpl {
                     ByteBuf data = pkg.getBody();
                     Package correctPkg = PackageUtils.buildDataPackage(localConnId, correspondConnId, 1L, data);
                     sendQueue.add(correctPkg);
+                    LOG.debug("correct pkg = {}", correctPkg);
                 });
     }
 }

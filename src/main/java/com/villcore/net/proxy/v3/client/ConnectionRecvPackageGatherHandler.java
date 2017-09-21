@@ -27,7 +27,7 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
 
         if(msg instanceof Package) {
             Package pkg = Package.class.cast(msg);
-            LOG.debug("get pkg = {}", PackageUtils.toString(pkg));
+            //LOG.debug("get pkg = {}", PackageUtils.toString(pkg));
             Package correctpkg = pkg;
             connection.addRecvPackages(Collections.singletonList(correctpkg));
             connection.connectionTouch(System.currentTimeMillis());

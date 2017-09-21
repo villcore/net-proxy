@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v3.common;
 
+import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import org.slf4j.Logger;
@@ -61,11 +62,11 @@ public class PackageProcessService extends LoopTask {
             if (connection.sendPackageReady()) {
                 //Connection#getAvaliableSendPackages
                 List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
-//                LOG.debug(">>{}", avaliableSendPackages.size());
+                //LOG.debug(">>{}", avaliableSendPackages.size());
                 avaliableSendPackages.stream().forEach(pkg -> {
                     try {
-//                        LOG.debug("pkg = {}", pkg.toString());
-//                        LOG.debug(PackageUtils.toString(pkg));
+                        //LOG.debug("pkg corspondId = {}, {}", DefaultDataPackage.class.cast(pkg).getRemoteConnId(), pkg.toString());
+                        LOG.debug(PackageUtils.toString(pkg));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
