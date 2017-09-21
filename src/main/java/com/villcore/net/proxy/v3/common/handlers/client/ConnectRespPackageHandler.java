@@ -34,7 +34,7 @@ public class ConnectRespPackageHandler implements PackageHandler {
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
         List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_RESP).collect(Collectors.toList());
-
+            //
             connectReqPackage.stream()
                     .map(pkg -> ConnectRespPackage.class.cast(pkg))
                     .collect(Collectors.toList())
