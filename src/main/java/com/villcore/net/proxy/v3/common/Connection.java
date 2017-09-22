@@ -123,7 +123,7 @@ public class Connection extends BasicWriteableImpl {
         }
         remoteChannel.writeAndFlush(pkg);
         connectionTouch(System.currentTimeMillis());
-        LOG.debug("connection write...{}", true);
+        //LOG.debug("connection write...{}", true);
         return true;
     }
 

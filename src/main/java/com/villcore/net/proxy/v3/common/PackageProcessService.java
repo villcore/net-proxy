@@ -53,51 +53,56 @@ public class PackageProcessService extends LoopTask {
         //LOG.debug("package process service loop ...");
         time = System.currentTimeMillis();
 
-        List<Connection> connections = connectionManager.allConnected();
-        //LOG.debug("connected connection size = {}", connections.size());
-        //进行判断，是否connection可以发送
-        connections.forEach(connection -> {
-            //LOG.debug("connection send ready = {}", connection.sendPackageReady());
-            if (connection.sendPackageReady()) {
-                //Connection#getAvaliableSendPackages
-                List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
-                //LOG.debug(">>{}", avaliableSendPackages.size());
+        try {
+            //TODO connection waterMarker handle...
+            List<Connection> connections = connectionManager.allConnected();
+            //LOG.debug("connected connection size = {}", connections.size());
+            //进行判断，是否connection可以发送
+            connections.forEach(connection -> {
+                //LOG.debug("connection send ready = {}", connection.sendPackageReady());
+                if (connection.sendPackageReady()) {
+                    //Connection#getAvaliableSendPackages
+                    List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
+                    //LOG.debug(">>{}", avaliableSendPackages.size());
 //                avaliableSendPackages.stream().forEach(pkg -> {
 //                    printDebug(pkg);
 //                });
 
-                for (PackageHandler handler : sendHandlers) {
-                    avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
-                }
+                    for (PackageHandler handler : sendHandlers) {
+                        avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
+                    }
 //                LOG.debug("avaliable send packages len = {}", avaliableSendPackages.size());
-                connection.addSendPackages(avaliableSendPackages);
-            }
-        });
+                    connection.addSendPackages(avaliableSendPackages);
+                }
+            });
 
 
-        connections.forEach(connection -> {
-            //LOG.debug(">>>---");
-            List<Package> avaliableRecvPackages = connection.getRecvPackages();
-            if(!avaliableRecvPackages.isEmpty()) {
-                LOG.debug("handle recv package ...");
-            }
-            //authorized handler
-            //connect resp handler
-            //channel close handler
-            //data handler
-            for (PackageHandler handler : recvHandlers) {
-                if(!avaliableRecvPackages.isEmpty())
-                LOG.debug("recv handlers handle ...");
-                avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
-            }
+            connections.forEach(connection -> {
+                //LOG.debug(">>>---");
+                List<Package> avaliableRecvPackages = connection.getRecvPackages();
+                if (!avaliableRecvPackages.isEmpty()) {
+                    LOG.debug("handle recv package ...");
+                }
+                //authorized handler
+                //connect resp handler
+                //channel close handler
+                //data handler
+                for (PackageHandler handler : recvHandlers) {
+                    if (!avaliableRecvPackages.isEmpty())
+                        LOG.debug("recv handlers handle ...");
+                    avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
+                }
 
-            tunnelManager.scatterRecvPackage(avaliableRecvPackages);
-            //Connection#getAvalizableRecvPackages
-            //遍历recvHandler对package处理，
-            //1.对CONNECT_RESP处理，-1 Tunnel关闭，TunnelManager#needClose(), Tunnel#needClose() ,> 0, TunnelManager#markConnected(remoteConnId), Tunnel#markConnected();
-            //2.对DATA_处理，如果TunnelManager#getTunnel, Tunnel#shouldClose或当前Tunnel为空,丢弃包，并构建SHOULD_CLOSE 发送到 SendPackage
-            //如果一切正常，则将Package发送到Tunnel#putRecvPackage
-        });
+                tunnelManager.scatterRecvPackage(avaliableRecvPackages);
+                //Connection#getAvalizableRecvPackages
+                //遍历recvHandler对package处理，
+                //1.对CONNECT_RESP处理，-1 Tunnel关闭，TunnelManager#needClose(), Tunnel#needClose() ,> 0, TunnelManager#markConnected(remoteConnId), Tunnel#markConnected();
+                //2.对DATA_处理，如果TunnelManager#getTunnel, Tunnel#shouldClose或当前Tunnel为空,丢弃包，并构建SHOULD_CLOSE 发送到 SendPackage
+                //如果一切正常，则将Package发送到Tunnel#putRecvPackage
+            });
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+        }
 
         long workTime = System.currentTimeMillis() - time;
         if(workTime < SLEEP_INTERVAL) {

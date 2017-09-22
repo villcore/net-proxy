@@ -1,8 +1,6 @@
 package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.*;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +28,7 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
         Tunnel tunnel = tunnelManager.newTunnel(channel);
         tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
-        channel.pipeline().addLast(new TunnelReadHandler(tunnelManager));
+        channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager));
         channel.pipeline().addLast(new PackageToByteBufOutHandler());
     }
 }

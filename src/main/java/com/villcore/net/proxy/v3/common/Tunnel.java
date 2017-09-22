@@ -9,8 +9,6 @@ import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +22,9 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
+    public static final int MAX_READ_WATER_MARKER = 100;
+    private volatile int curReadWaterMarker = 0;
+
     //本地端对应的connId
     private Integer connId;
 
@@ -31,19 +32,19 @@ public class Tunnel extends BasicWriteableImpl {
     private Integer correspondConnId = -1;
 
     //sendQueueSize
-    private int sendQueueSize;
+    //private int sendQueueSize;
 
     //recvQueueSize
-    private int recvQueueSize;
+    //private int recvQueueSize;
 
     //client side 用于建立连接的Package
     private ConnectReqPackage connectPackage;
 
     //数据队列（线程安全的双端队列）
-    private BlockingQueue<Package> sendQueue;
+    private BlockingQueue<Package> sendQueue = new LinkedBlockingQueue<>();
 
     //接收到的Package, 由send service 写入channel
-    private BlockingQueue<Package> recvQueue;
+    private BlockingQueue<Package> recvQueue = new LinkedBlockingQueue<>();
 
     //代理通道 Channel
     private Channel channel;
@@ -66,20 +67,20 @@ public class Tunnel extends BasicWriteableImpl {
     public Tunnel(Channel channel, Integer connId, int sendQueueSize, int recvQueueSize) {
         this.channel = channel;
         this.connId = connId;
-        this.sendQueueSize = sendQueueSize;
-        this.recvQueueSize = recvQueueSize > 0 ? recvQueueSize : Integer.MAX_VALUE;
+        //this.sendQueueSize =
+        //this.recvQueueSize = recvQueueSize > 0 ? recvQueueSize : Integer.MAX_VALUE;
 
-        this.sendQueue = new LinkedBlockingQueue<>(sendQueueSize + 2); //extra two more space);
-        this.recvQueue = new LinkedBlockingQueue<>(recvQueueSize);
+        //this.sendQueue = new LinkedBlockingQueue<>(sendQueueSize + 2); //extra two more space);
+        //this.recvQueue = new LinkedBlockingQueue<>(recvQueueSize);
     }
 
     public Integer getConnId() {
         return connId;
     }
 
-    public boolean sendQueueIsFull() {
-        return sendQueue.size() >= sendQueueSize ;
-    }
+//    public boolean sendQueueIsFull() {
+//        return sendQueue.size() >= sendQueueSize ;
+//    }
 
     public boolean getConnected() {
         return connected;
@@ -105,15 +106,19 @@ public class Tunnel extends BasicWriteableImpl {
     public void addSendPackage(Package dataPackage) {
         //LOG.debug("add send package for [{}]...,", connId);
         sendQueue.add(dataPackage);
+        incReadWaterMarker(1);
+        resetReadState();
     }
 
     public List<Package> drainSendPackages() {
-        if(!connected) {
-            return Collections.emptyList();
-        }
+//        if(!connected) {
+//            return Collections.emptyList();
+//        }
         List<Package> avaliablePackages = new LinkedList<>();
         sendQueue.drainTo(avaliablePackages);
         //LOG.debug("drain send package, size = {}", avaliablePackages.size());
+        deincReadWaterMarker(avaliablePackages.size());
+        resetReadState();
         return avaliablePackages;
     }
 
@@ -138,9 +143,9 @@ public class Tunnel extends BasicWriteableImpl {
     public void setConnect(boolean connect) {
         LOG.debug("cur tunnel send queue size = {}", sendQueue.size());
         this.connected = connect;
-        if(connect) {
-            channel.config().setAutoRead(true);
-        }
+//        if(connect) {
+//            channel.config().setAutoRead(true);
+//        }
     }
 
     public void setCorrespondConnId(int correspondConnId) {
@@ -166,18 +171,16 @@ public class Tunnel extends BasicWriteableImpl {
 
         Tunnel tunnel = (Tunnel) o;
 
-        if (sendQueueSize != tunnel.sendQueueSize) return false;
-        if (recvQueueSize != tunnel.recvQueueSize) return false;
-        if (!channel.equals(tunnel.channel)) return false;
-        return connId.equals(tunnel.connId);
+        if (!connId.equals(tunnel.connId)) return false;
+        if (!sendQueue.equals(tunnel.sendQueue)) return false;
+        return recvQueue.equals(tunnel.recvQueue);
     }
 
     @Override
     public int hashCode() {
-        int result = sendQueueSize;
-        result = 31 * result + recvQueueSize;
-        result = 31 * result + channel.hashCode();
-        result = 31 * result + connId.hashCode();
+        int result = connId.hashCode();
+        result = 31 * result + sendQueue.hashCode();
+        result = 31 * result + recvQueue.hashCode();
         return result;
     }
 
@@ -197,12 +200,12 @@ public class Tunnel extends BasicWriteableImpl {
         } else {
             channel.writeAndFlush(pkg.getBody());
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
-            LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
-//            try {
-//                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
+            try {
+                //LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return true;
     }
@@ -240,10 +243,53 @@ public class Tunnel extends BasicWriteableImpl {
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
                     int localConnId = pkg.getLocalConnId();
+
                     ByteBuf data = pkg.getBody();
                     Package correctPkg = PackageUtils.buildDataPackage(localConnId, correspondConnId, 1L, data);
                     sendQueue.add(correctPkg);
                     LOG.debug("correct pkg = {}", correctPkg);
                 });
+    }
+
+
+    /***以下两个方法用在client端, 用于在读取到ConnectPackage后,等待服务端建立连接之前,规避读取数据
+     * 增加复杂性。
+     */
+
+     /**
+     * 等待服务端Tunnel成功连接, 该操作会将对应的Channel 自动读取关闭
+     */
+    public void waitTunnelConnect() {
+        channel.config().setAutoRead(false);
+    }
+
+    /**
+     * 服务端建立连接, 重新打开对应Channel自动读取功能
+     */
+    public void tunnelConnected() {
+        channel.config().setAutoRead(true);
+    }
+
+    /*** 以下两个方法用于client与server, 用来做流量控制, 防止在读取大量数据不能及时发送(如http下载),
+     * 造成网卡跑满,或者内存OOM
+     */
+    public void incReadWaterMarker(int val) {
+        curReadWaterMarker += val;
+    }
+
+    public void deincReadWaterMarker(int val) {
+        curReadWaterMarker -= val;
+    }
+
+    public boolean readWaterMarkerSafe() {
+        return curReadWaterMarker < MAX_READ_WATER_MARKER;
+    }
+
+    public void resetReadState() {
+        if(readWaterMarkerSafe()) {
+            channel.config().setAutoRead(true);
+        } else {
+            channel.config().setAutoRead(false);
+        }
     }
 }

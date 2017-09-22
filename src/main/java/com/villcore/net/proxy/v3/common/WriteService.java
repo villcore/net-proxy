@@ -33,8 +33,13 @@ public class WriteService extends LoopTask {
     void loop() throws InterruptedException {
         //LOG.debug("write service loop ...");
         time = System.currentTimeMillis();
-        //主要的遍历writable
-        writeables.forEach(writeable -> writeable.write());
+
+        try {
+            //主要的遍历writable
+            writeables.forEach(writeable -> writeable.write());
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+        }
 
         long workTime = System.currentTimeMillis() - time;
         if(workTime < SLEEP_INTERVAL) {

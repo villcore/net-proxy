@@ -41,12 +41,25 @@ public class ConnectRespPackageHandler implements PackageHandler {
                     .forEach(pkg -> {
                         int connId = pkg.getLocalConnId();
                         int corrspondId = pkg.getRemoteConnId();
-                        LOG.debug("connect resp ... [{}:{}]", connId, corrspondId);
+                        LOG.debug(">> client connect resp ... [{}:{}]", connId, corrspondId);
+
                         Tunnel tunnel = tunnelManager.tunnelFor(connId);
-                        tunnel.setCorrespondConnId(corrspondId);
-                        tunnel.setConnect(true);
-                        tunnel.rebuildSendPackages(corrspondId);
-                        tunnel.touch(pkg);
+                        if(tunnel == null) {
+                            LOG.error("can not find client tunnel [{}] , this tunnel maybe cleanup ...", connId);
+                            return;
+                        }
+
+                        //server tunnel can not connect to dst ...
+                        if(corrspondId < 0) {
+                            LOG.debug("server can not build tunnel for client tunnel [{}] ...", connId);
+                            tunnel.setConnect(false);
+                        } else {
+                            tunnel.setCorrespondConnId(corrspondId);
+                            tunnel.rebuildSendPackages(corrspondId);
+                            tunnel.setConnect(true);
+                            tunnel.tunnelConnected();
+                            tunnel.touch(pkg);
+                        }
                     });
 
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_RESP).collect(Collectors.toList());

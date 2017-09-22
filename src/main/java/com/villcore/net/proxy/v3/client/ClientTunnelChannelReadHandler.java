@@ -6,7 +6,6 @@ import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
 import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -23,8 +22,8 @@ import java.nio.charset.Charset;
 /**
  * Channel 读取处理Handler
  */
-public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(TunnelReadHandler.class);
+public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientTunnelChannelReadHandler.class);
 
     /** http **/
     private static final String POST = "POST";
@@ -40,7 +39,7 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
 
     private long userFlag = 1L;
 
-    public TunnelReadHandler(TunnelManager tunnelManager) {
+    public ClientTunnelChannelReadHandler(TunnelManager tunnelManager) {
         this.tunnelManager = tunnelManager;
     }
 
@@ -58,22 +57,21 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
         }
 
         ByteBuf byteBuf = (ByteBuf) msg;
-        LOG.debug("read ================================{}", byteBuf.readableBytes());
+        LOG.debug("client [{}] read {} bytes ...", curTunnel.getConnId(), byteBuf.readableBytes());
 
         if(detectedProxy) {
-            LOG.debug("tunnel read ready ...{}", tunnelReady(curTunnel));
-            LOG.debug("connId = {}, correspondConnId = {}", curTunnel.getConnId(), curTunnel.getCorrespondConnId());
-            if (!tunnelReady(curTunnel)) {
-                DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, byteBuf);
-                curTunnel.addSendPackage(dataPackage);
-                return;
-            } else {
-                ByteBuf data = byteBuf;
-                DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, data);
-                //ctx.fireChannelRead(dataPackage);
-                curTunnel.addSendPackage(dataPackage);
+            if(curTunnel.shouldClose()) {
+                curTunnel.getChannel().config().setAutoRead(false);
                 return;
             }
+
+            if(!curTunnel.readWaterMarkerSafe()) {
+                curTunnel.getChannel().config().setAutoRead(false);
+            }
+
+            DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, byteBuf);
+            curTunnel.addSendPackage(dataPackage);
+            LOG.debug("connId = {}, correspondConnId = {}", curTunnel.getConnId(), curTunnel.getCorrespondConnId());
         }
 
         int readerIndex = byteBuf.readerIndex();
@@ -97,14 +95,11 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
                     DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
 
-//                    ctx.fireChannelRead(connectReqPackage);
-//                    ctx.fireChannelRead(dataPackage);
                     curTunnel.setConnectPackage(connectReqPackage);
                     curTunnel.addSendPackage(dataPackage);
-                    channel.config().setAutoRead(false);
-                    if(connectReqPackage == null) {
-                        LOG.debug("!!!!connect pkg == null {}", "");
-                    }
+                    //channel.config().setAutoRead(false);
+                    curTunnel.waitTunnelConnect();
+
                     detectedProxy = true;
                     return;
                 } else {
@@ -142,35 +137,16 @@ public class TunnelReadHandler extends ChannelInboundHandlerAdapter {
                     //ctx.fireChannelRead(connectReqPackage);
                     curTunnel.setConnectPackage(connectReqPackage);
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
-                    channel.config().setAutoRead(false);
-                    if(connectReqPackage == null) {
-                        LOG.debug("!!!!connect pkg == null {}", "");
-                    }
+                    //channel.config().setAutoRead(false);
+                    curTunnel.waitTunnelConnect();
+
+//                    if(connectReqPackage == null) {
+//                        LOG.debug("!!!!connect pkg == null {}", "");
+//                    }
                     detectedProxy = true;
                     return;
                 }
             }
         }
-    }
-
-    /**
-     *
-     * 当前 Tunnel是否可以继续读取数据
-     *
-     * @param curTunnel
-     * @return
-     */
-    private boolean tunnelReady(Tunnel curTunnel) {
-
-        //1.tunnel should close
-        //2.tunnel write queue full
-        //3.connect false
-
-        boolean shouldClose = curTunnel.shouldClose();
-        boolean sendQueueFull = curTunnel.sendQueueIsFull();
-        boolean connected = curTunnel.getConnected();
-
-        return !shouldClose && !sendQueueFull && connected;
-        //return true;
     }
 }
