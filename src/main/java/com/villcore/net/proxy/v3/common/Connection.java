@@ -131,7 +131,7 @@ public class Connection extends BasicWriteableImpl {
             LOG.debug("connection write...{}, remoteChannel == null ? {}", false, remoteChannel == null);
             return false;
         }
-        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
+        //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
         remoteChannel.writeAndFlush(pkg);
         remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());

@@ -76,11 +76,11 @@ public class PackageProcessService extends LoopTask {
                 }
                 //LOG.debug("before {}", avaliableRecvPackages.size());
                 for (PackageHandler handler : recvHandlers) {
-                    LOG.debug("{}", handler.getClass().toString());
+                    //LOG.debug("{}", handler.getClass().toString());
                     if (!avaliableRecvPackages.isEmpty())
                     avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
                 }
-                LOG.debug("---");
+                //LOG.debug("---");
                 //LOG.debug("after {}", avaliableRecvPackages.size());
                 tunnelManager.scatterRecvPackage(avaliableRecvPackages);
             });
