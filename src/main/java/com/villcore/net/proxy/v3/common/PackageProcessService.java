@@ -22,8 +22,8 @@ public class PackageProcessService extends LoopTask {
     private TunnelManager tunnelManager;
     private ConnectionManager connectionManager;
 
-    private Set<PackageHandler> sendHandlers = new HashSet<>();
-    private Set<PackageHandler> recvHandlers = new HashSet<>();
+    private Set<PackageHandler> sendHandlers = new LinkedHashSet<>();
+    private Set<PackageHandler> recvHandlers = new LinkedHashSet<>();
 
     private long time;
 
