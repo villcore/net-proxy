@@ -6,6 +6,7 @@ import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -160,6 +161,7 @@ public class ConnectionManager implements Runnable {
                 }
             });
             connection.setRemoteChannel(channel);
+            channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         } catch (Exception e) {
             connectFailed(addr, port, connection);
         }

@@ -39,15 +39,15 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                 switch (pkg.getPkgType()) {
                     case PackageType.PKG_CONNECT_REQ:
                         ConnectReqPackage connectReqPackage = new ConnectReqPackage();
-//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        //LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         connectReqPackage.setHeader(header);
                         connectReqPackage.setBody(body);
-//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
+                        //LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectReqPackage.getHostname(), connectReqPackage.getPort());
                         pkg = connectReqPackage;
                         break;
                     case PackageType.PKG_CONNECT_RESP:
                         ConnectRespPackage connectRespPackage = new ConnectRespPackage();
-//                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        //LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         connectRespPackage.setHeader(header);
                         connectRespPackage.setBody(body);
 //                        LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", connectRespPackage.getLocalConnId(), connectRespPackage.getRemoteConnId());
@@ -66,6 +66,7 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                         defaultDataPackage.setHeader(header);
                         defaultDataPackage.setBody(body);
                         pkg = defaultDataPackage;
+                        //LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         break;
                     default:
                         break;

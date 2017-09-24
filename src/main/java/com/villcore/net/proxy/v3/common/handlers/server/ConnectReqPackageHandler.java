@@ -63,7 +63,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
         List<Package> connectReqPackage = packages.stream()
                 .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ)
                 .collect(Collectors.toList());
-        //LOG.debug("{}, {}", packages.size(), connectReqPackage.size());
+//        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", packages.size(), connectReqPackage.size());
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -71,7 +71,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     Integer correspondConnId = pkg.getConnId();
                     String hostname = pkg.getHostname();
                     int port = pkg.getPort();
-                    //LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
+                    LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
                     connectToDst(hostname, port, correspondConnId, connection, 0);
 //                    hostname = "127.0.0.1";

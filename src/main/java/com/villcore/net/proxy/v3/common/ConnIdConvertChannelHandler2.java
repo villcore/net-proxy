@@ -45,7 +45,7 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     int connId = connectRespPackage.getLocalConnId();
                     int corspondConnId = connectRespPackage.getRemoteConnId();
 
-                    //LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
+//                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
                     ConnectRespPackage newPkg = PackageUtils.buildConnectRespPackage(corspondConnId, connId, 1L);
                     pkg = newPkg;
                     break;
