@@ -170,19 +170,23 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-//                    curTunnel.setConnectPackage(connectReqPackage);
-//                    ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
-                    //channel.config().setAutoRead(false);
-//                    curTunnel.waitTunnelConnect();
-
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
-
                     curTunnel.setConnectPackage(connectReqPackage);
-                    curTunnel.addSendPackage(dataPackage);
-                    //channel.config().setAutoRead(false);
+//                    channel.config().setAutoRead(false);
                     curTunnel.waitTunnelConnect();
+                    curTunnel.setHttps(true);
+                    String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(connectResponse.getBytes()));
+                    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+
+
+//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
+//                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
+//
+//                    curTunnel.setConnectPackage(connectReqPackage);
+//                    curTunnel.addSendPackage(dataPackage);
+//                    //channel.config().setAutoRead(false);
+//                    curTunnel.waitTunnelConnect();
 
 //                    if(connectReqPackage == null) {
 //                        LOG.debug("!!!!connect pkg == null {}", "");

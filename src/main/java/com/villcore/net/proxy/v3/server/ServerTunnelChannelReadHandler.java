@@ -34,6 +34,10 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
         if(msg instanceof ByteBuf) {
             ByteBuf data = (ByteBuf) msg;
             Tunnel tunnel = tunnelManager.tunnelFor(channel);
+            if(tunnel == null) {
+                ctx.channel().close();
+                return;
+            }
             tunnel.touch(null);
             
             int connId = tunnel.getConnId();

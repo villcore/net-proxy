@@ -24,10 +24,12 @@ public class Client {
         String proxyPort = "10081";
 
         String remoteAddress = "127.0.0.1";
-        String remotePort = "20081";
+//      String remotePort = "20081";
+//      String remotePort = "50080";
 
+//
 //        String remoteAddress = "45.63.120.186";
-//        String remotePort = "20081";
+        String remotePort = "20081";
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         ScheduleService scheduleService = new ScheduleService();
@@ -41,7 +43,7 @@ public class Client {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 30 * 1000, 30 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 300 * 1000, 30 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);

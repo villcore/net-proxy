@@ -28,10 +28,10 @@ public class Tunnel extends BasicWriteableImpl {
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId
-    private Integer connId;
+    private volatile int connId;
 
     //远端对应的ConnId
-    private Integer correspondConnId = -1;
+    private volatile int correspondConnId = -1;
 
     //sendQueueSize
     //private int sendQueueSize;
@@ -65,6 +65,9 @@ public class Tunnel extends BasicWriteableImpl {
 
     //bind connection, 该Tunnel绑定的Connection
     private Connection bindConnection;
+
+    //https
+    private boolean isHttps;
 
     public Tunnel(Channel channel, Integer connId) {
         this.channel = channel;
@@ -171,17 +174,12 @@ public class Tunnel extends BasicWriteableImpl {
 
         Tunnel tunnel = (Tunnel) o;
 
-        if (!connId.equals(tunnel.connId)) return false;
-        if (!sendQueue.equals(tunnel.sendQueue)) return false;
-        return recvQueue.equals(tunnel.recvQueue);
+        return connId == tunnel.connId;
     }
 
     @Override
     public int hashCode() {
-        int result = connId.hashCode();
-        result = 31 * result + sendQueue.hashCode();
-        result = 31 * result + recvQueue.hashCode();
-        return result;
+        return connId;
     }
 
     /** sendable **/
@@ -317,5 +315,13 @@ public class Tunnel extends BasicWriteableImpl {
                 }
             }
         });
+    }
+
+    public boolean isHttps() {
+        return isHttps;
+    }
+
+    public void setHttps(boolean https) {
+        isHttps = https;
     }
 }

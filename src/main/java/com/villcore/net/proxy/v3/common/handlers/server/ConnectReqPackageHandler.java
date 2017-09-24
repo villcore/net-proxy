@@ -38,9 +38,6 @@ public class ConnectReqPackageHandler implements PackageHandler {
 
     private static final short MAX_CONNECT_RETRY = 3;
 
-    private Map<Channel, Short> connectRetry = new HashMap<>();
-    private ExecutorService connectDstExecutor = Executors.newCachedThreadPool();
-
     public ConnectReqPackageHandler(EventLoopGroup eventLoopGroup, WriteService writeService, TunnelManager tunnelManager, ConnectionManager connectionManager) {
         this.eventLoopGroup = eventLoopGroup;
         this.writeService = writeService;
@@ -76,10 +73,10 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     int port = pkg.getPort();
                     //LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
-//                    connectToDst(hostname, port, correspondConnId, connection, 0);
-                    hostname = "127.0.0.1";
-                    port = 3128;
                     connectToDst(hostname, port, correspondConnId, connection, 0);
+//                    hostname = "127.0.0.1";
+//                    port = 3128;
+//                    connectToDst(hostname, port, correspondConnId, connection, 0);
 
                 });
 
@@ -199,7 +196,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                         //LOG.debug("connect resp [CID{}:CCID{}]", tunnel.getConnId(), correspondConnId);
                                         tunnel.addSendPackage(connectRespPackage);
                                         writeService.addWrite(tunnel);
-                                        LOG.debug("connect [{}:{}] success ...", hostname, port);
+                                        LOG.debug("connect [{}:{}] success for tunnels [CID{}:CCID{}] ...", hostname, port, tunnel.getConnId(), correspondConnId);
 
                                         channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
                                             @Override
@@ -220,7 +217,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                             ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(-1, correspondConnId, 1L);
                                             connection.addSendPackages(Collections.singletonList(connectRespPackage));
                                             //LOG.debug("connect resp [CID{}:CCID{}]", -1, correspondConnId);
-                                            LOG.debug("connect [{}:{}] failed ...", hostname, port);
+                                            LOG.debug("connect [{}:{}] failed for tunnels [CID{}:CCID{}] ...", hostname, port, -1, correspondConnId);
                                             if(channel != null) {
                                                 channel.close();
                                             }

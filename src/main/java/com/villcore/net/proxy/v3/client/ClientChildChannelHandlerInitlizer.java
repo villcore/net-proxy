@@ -30,9 +30,9 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
     @Override
     protected void initChannel(Channel channel) throws Exception {
 
-        //LOG.debug("init channel [{}]...", channel.remoteAddress().toString());
 
         Tunnel tunnel = tunnelManager.newTunnel(channel);
+        LOG.debug("init tunnel [{}] for channel [{}]...", tunnel.getConnId(), channel.remoteAddress().toString());
 
         channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override

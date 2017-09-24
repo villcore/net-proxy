@@ -25,7 +25,8 @@ public class Server {
     public static void main(String[] args) {
         //load configuration
         //TODO load form conf file
-        String listenPort = "20081";
+        String listenPort = "50080";
+
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
         ScheduleService scheduleService = new ScheduleService();
@@ -40,7 +41,7 @@ public class Server {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(20000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 30 * 1000, 30 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 300 * 1000, 300 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
@@ -54,10 +55,10 @@ public class Server {
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
-        packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
+        //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
 
         //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
-        //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
