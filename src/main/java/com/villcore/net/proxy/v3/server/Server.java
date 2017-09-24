@@ -29,6 +29,8 @@ public class Server {
 
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+        EventLoopGroup workerEventLoopGroup = new NioEventLoopGroup(1);
+
         ScheduleService scheduleService = new ScheduleService();
         Bootstrap bootstrap = new Bootstrap();
 
@@ -59,6 +61,9 @@ public class Server {
 
         //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
         packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
+//        packageProcessService.addRecvHandler(connectReqHandler);
+//        packageProcessService.addRecvHandler(channelCloseHandler);
+//        packageProcessService.addRecvHandler(invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
@@ -66,7 +71,7 @@ public class Server {
         try {
             LOG.info("start listen [{}] ...", listenPort);
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(eventLoopGroup)
+            serverBootstrap.group(eventLoopGroup, workerEventLoopGroup)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)

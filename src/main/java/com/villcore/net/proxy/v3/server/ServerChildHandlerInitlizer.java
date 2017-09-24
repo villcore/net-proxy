@@ -6,6 +6,7 @@ import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -56,5 +57,6 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
         //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
         ch.pipeline().addLast(new PackageToByteBufOutHandler());
+        ch.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 }
