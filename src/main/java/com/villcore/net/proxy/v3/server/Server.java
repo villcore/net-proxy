@@ -25,7 +25,7 @@ public class Server {
     public static void main(String[] args) {
         //load configuration
         //TODO load form conf file
-        String listenPort = "50080";
+        String listenPort = "20081";
 
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);

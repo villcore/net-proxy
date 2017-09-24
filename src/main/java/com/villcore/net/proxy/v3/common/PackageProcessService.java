@@ -58,12 +58,14 @@ public class PackageProcessService extends LoopTask {
             List<Connection> connections = connectionManager.allConnected();
             connections.forEach(connection -> {
                 if (connection.sendPackageReady()) {
+                    //LOG.debug(">>>");
                     List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
-
                     for (PackageHandler handler : sendHandlers) {
                         avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
                     }
                     connection.addSendPackages(avaliableSendPackages);
+                } else {
+                    LOG.debug("===");
                 }
             });
 
