@@ -14,7 +14,7 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if(msg instanceof Package) {
             Package pkg = (Package) msg;
-            ctx.writeAndFlush(pkg.toByteBuf());
+            ctx.writeAndFlush(pkg.toByteBuf().retain());
             return;
         }
         ctx.writeAndFlush(msg);

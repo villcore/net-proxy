@@ -30,7 +30,7 @@ public class InvalidDataPackageHandler implements PackageHandler {
 
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
-        return packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
+        List<Package> avaliablePackages = packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
                 .map(pkg -> (DefaultDataPackage)pkg)
                 .filter(pkg -> {
                     int connId = pkg.getLocalConnId();
@@ -44,5 +44,7 @@ public class InvalidDataPackageHandler implements PackageHandler {
                     return true;
                 })
                 .collect(Collectors.toList());
+        //LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
+        return avaliablePackages;
     }
 }

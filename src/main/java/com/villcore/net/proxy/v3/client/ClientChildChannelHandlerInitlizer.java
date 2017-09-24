@@ -1,9 +1,15 @@
 package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.*;
+import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
+import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.channel.*;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
 
 /**
  * 客户端ChaildChannelHandlerInitlizer
@@ -23,12 +29,26 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
 
     @Override
     protected void initChannel(Channel channel) throws Exception {
-        LOG.debug("init channel [{}]...", channel.remoteAddress().toString());
+
+        //LOG.debug("init channel [{}]...", channel.remoteAddress().toString());
 
         Tunnel tunnel = tunnelManager.newTunnel(channel);
+
+        channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                if(future.isSuccess()) {
+                    tunnel.needClose();
+                    ChannelClosePackage channelClosePackage = PackageUtils
+                            .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
+                    connection.addSendPackages(Collections.singletonList(channelClosePackage));
+                }
+            }
+        });
+
         tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
-        channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager));
+        channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager, connection));
         channel.pipeline().addLast(new PackageToByteBufOutHandler());
     }
 }

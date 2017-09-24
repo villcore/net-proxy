@@ -34,14 +34,14 @@ public class Client {
 
         //核心的运行任务
         //WriteService
-        WriteService writeService = new WriteService();
+        WriteService writeService = new WriteService(50L);
         writeService.start();
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 1 * 60 * 1000, 1 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 30 * 1000, 30 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
@@ -53,8 +53,10 @@ public class Client {
         PackageHandler connectRespHandler = new ConnectRespPackageHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
-        packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
-        //packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
+
+       // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
+        //packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
+        packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();

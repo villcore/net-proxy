@@ -28,8 +28,9 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        LOG.debug("|||||server tunnel channel read success ...");
+        //LOG.debug("|||||server tunnel channel read success ...");
         Channel channel = ctx.channel();
+
         if(msg instanceof ByteBuf) {
             ByteBuf data = (ByteBuf) msg;
             Tunnel tunnel = tunnelManager.tunnelFor(channel);
@@ -43,9 +44,11 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             }
             
             DefaultDataPackage defaultDataPackage = PackageUtils.buildDataPackage(connId, corrspondConnId, 1L, data);
-            LOG.debug("add send pkg [{}] -> [{}]", connId, corrspondConnId);
+            //LOG.debug("add send pkg [{}] -> [{}]", connId, corrspondConnId);
             tunnel.addSendPackage(defaultDataPackage);
 //            LOG.debug("read content >>>\n [{}]\n>>>>>>>", PackageUtils.toString(data));
+            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", tunnel.getConnId(), tunnel.getCorrespondConnId(), data.readableBytes());
+
         } else {
             ctx.fireChannelRead(msg);
         }

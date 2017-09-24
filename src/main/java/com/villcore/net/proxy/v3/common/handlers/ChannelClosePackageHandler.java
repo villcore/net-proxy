@@ -38,9 +38,20 @@ public class ChannelClosePackageHandler implements PackageHandler {
                 .map(pkg -> ChannelClosePackage.class.cast(pkg))
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
-                    int corrspondConnId = pkg.getLocalConnId();
-                    int connId = pkg.getRemoteConnId();
-                    LOG.debug("need handle channel close package ...");
+                    int connId = pkg.getLocalConnId();
+                    int corresponConnId = pkg.getRemoteConnId();
+                    LOG.debug("need handle channel close package ... connId = {}, correspondConnId = {}", connId, corresponConnId);
+
+                    Tunnel tunnel = tunnelManager.tunnelFor(connId);
+
+                    if(tunnel == null) {
+                        LOG.error("search tunnel is null, but channel is running ..., please check code...");
+                    } else {
+                        LOG.debug("tunnel close ...");
+                        tunnel.needClose();
+                        tunnel.stopRead();
+                        tunnel.close();
+                    }
                 });
 
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CHANNEL_CLOSE).collect(Collectors.toList());

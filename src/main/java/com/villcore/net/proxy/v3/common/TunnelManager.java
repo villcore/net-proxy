@@ -1,14 +1,14 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.*;
+import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
+import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class TunnelManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(TunnelManager.class);
 
-    private static final long MAX_TOUCH_INTERVAL = 1 * 60 * 1000L;
+    private static final long MAX_TOUCH_INTERVAL = 2 * 60 * 1000L;
 
     private ConnIdGenerator connIdGenerator;
 
@@ -30,12 +30,9 @@ public class TunnelManager implements Runnable {
      **/
     private Map<Integer, Tunnel> connIdTunnelMap = new ConcurrentHashMap<>();
     private Map<Channel, Tunnel> channelTunnelMap = new ConcurrentHashMap<>();
-    //private Map<Integer, Tunnel> correspondConnIdTunnelMap = new ConcurrentHashMap<>();
     private Map<Connection, Set<Tunnel>> connectionSetMap = new ConcurrentHashMap<>();
 
-    //用于再清理中加锁，可能不需要
-    private Object tunnelStateLock = new Object();
-
+    private Object stateLock = new Object();
 
     private WriteService writeService;
 
@@ -43,122 +40,122 @@ public class TunnelManager implements Runnable {
         connIdGenerator = new ConnIdGenerator(idStart);
     }
 
-    //TODO need sync
-    public Tunnel newTunnel(Channel channel) {
-        //分配connId
-        Integer connId = connIdGenerator.generateConnId();
-
-        //new Tunnel
-        Tunnel tunnel = new Tunnel(channel, new Integer(connId), 20, Integer.MAX_VALUE);
-        connIdTunnelMap.put(new Integer(connId), tunnel);
-        channelTunnelMap.put(channel, tunnel);
-        writeService.addWrite(tunnel);
-        return tunnel;
-    }
-
-    //TODO need sync
-    public void bindConnection(Connection connection, Tunnel tunnel) {
-        Set<Tunnel> tunnels = connectionSetMap.getOrDefault(connection, new HashSet<>());
-        tunnels.add(tunnel);
-        connectionSetMap.put(connection, tunnels);
-    }
-
     public void setWriteService(WriteService writeService) {
         this.writeService = writeService;
     }
 
-    //TODO need sync
-    /**
-     * 清理不响应的Tunnel
-     */
-    private void clearIdleTunnels() {
-        //Tunnel#shouldColose
-        //Tunnel#close()
-        //清理Tunnel相关状态
+    public Tunnel newTunnel(Channel channel) {
+        if(channel == null) {
+            throw new IllegalArgumentException("channe can not be null ...");
+        }
+        //分配connId
+        Integer connId = connIdGenerator.generateConnId();
+        Tunnel tunnel = newTunnel(channel, connId);
+        return tunnel;
     }
 
-//    public void markConnected(int connId, int correspondConnId) {
-//        Tunnel tunnel = connIdTunnelMap.get(new Integer((connId)));
-//        tunnel.markConnected(correspondConnId);
-//        correspondConnIdTunnelMap.put(new Integer((correspondConnId)), tunnel);
-//    }
+    // sync
+    private Tunnel newTunnel(Channel channel, Integer connId) {
+        synchronized (stateLock) {
+            //new Tunnel
+            Tunnel tunnel = new Tunnel(channel, new Integer(connId));
+            connIdTunnelMap.put(new Integer(connId), tunnel);
+            channelTunnelMap.put(channel, tunnel);
+            writeService.addWrite(tunnel);
+            return tunnel;
+        }
+    }
 
-    //TODO maybe need sync
+    // sync
+    public void bindConnection(Connection connection, Tunnel tunnel) {
+        synchronized (stateLock) {
+            Set<Tunnel> tunnels = connectionSetMap.getOrDefault(connection, Collections.synchronizedSet(new HashSet<>()));
+            tunnels.add(tunnel);
+            connectionSetMap.put(connection, tunnels);
+        }
+    }
+
+    // sync
     public Tunnel tunnelFor(Channel channel) {
-        return channelTunnelMap.get(channel);
+        synchronized (stateLock) {
+            return channelTunnelMap.get(channel);
+        }
     }
 
-    //TODO need sync
+    //sync
     public List<Package> gatherSendPackages(Connection connection) {
         //LOG.debug(connectionSetMap.get(connection).toString());
-        return connectionSetMap.getOrDefault(connection, Collections.emptySet()).stream().flatMap(t -> {
-            //LOG.debug("tunner[{}] -> send", t.getConnId());
-            List<Package> packages = Collections.emptyList();
-            if (t.getConnected()) {
-                packages = t.drainSendPackages();
-                //LOG.debug("tunnel [{}] write package sizle = [{}]", t.getConnId(), packages.size());
-            } else if (!t.isWaitConnect()) {
-                if (t.getConnectPackage() == null) {
-                    //LOG.debug("connect pkg null for tunnel {}", t.getConnId());
-                    packages = Collections.emptyList();
+        Set<Tunnel> tunnelSet = Collections.EMPTY_SET;
+        synchronized (stateLock) {
+            tunnelSet = connectionSetMap.getOrDefault(connection, Collections.synchronizedSet(new HashSet<>()));
+
+
+            return tunnelSet.stream().flatMap(t -> {
+                //LOG.debug("tunner[{}] -> send", t.getConnId());
+                List<Package> packages = Collections.emptyList();
+                if (t.getConnected()) {
+                    packages = t.drainSendPackages();
+                    //LOG.debug("tunnel [{}] write package sizle = [{}]", t.getConnId(), packages.size());
                 } else {
-                    t.setWaitConnect(true);
-                    packages = Collections.singletonList(t.getConnectPackage());
-                    //LOG.debug("connect pkg = {}", t.getConnectPackage());
+                    //LOG.debug("tunnel connect package is null ? {}", t.getConnectPackage() == null);
+                    if (t.getConnectPackage() != null) {
+                        ConnectReqPackage oriConnectReqPackage = t.getConnectPackage();
+                        try {
+                            ConnectReqPackage connectReqPackage =
+                                    PackageUtils.buildConnectPackage(oriConnectReqPackage.getHostname(), (short) oriConnectReqPackage.getPort(), t.getConnId(), 1L);
+                            packages = Collections.singletonList(connectReqPackage);
+                            t.setConnectPackage(null);
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        //LOG.debug("connect pkg == null {}", t.getConnectPackage());
+                        //packages = Collections.emptyList();
+                    }
                 }
-            } else {
-                packages = Collections.emptyList();
-            }
-            return packages.stream();
-        }).collect(Collectors.toList());
+                return packages.stream();
+            }).collect(Collectors.toList());
+        }
     }
 
     //TODO need sync
+    /**
+     * 该方法接收DefaultDataPackage, 会丢弃其他的Package
+     *
+     * @param avaliableRecvPackages
+     */
     public void scatterRecvPackage(List<Package> avaliableRecvPackages) {
-        avaliableRecvPackages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
+        List<DefaultDataPackage> dataPackages = avaliableRecvPackages.stream()
+                .filter(pkg -> pkg instanceof DefaultDataPackage)
                 .map(pkg -> DefaultDataPackage.class.cast(pkg))
-                .collect(Collectors.toList())
-                .forEach(pkg -> {
+                .collect(Collectors.toList());
 
+                dataPackages.forEach(pkg -> {
                     int connId = pkg.getLocalConnId();
                     int corrspondConnId = pkg.getRemoteConnId();
 
                     Tunnel tunnel = tunnelFor(connId);
-                    try {
-                        LOG.debug("connId = {}, corrspondConnId = {}, recv {x}", connId, corrspondConnId/*, PackageUtils.toString(pkg)*/);
-                        LOG.debug("search tunnel = {}", tunnel == null ? " null" : tunnel.getConnId());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+//                    LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, pkg.getBody().readableBytes());
+//                    try {
+//                        LOG.debug("connId = {}, corrspondConnId = {}, recv {x}", connId, corrspondConnId/*, PackageUtils.toString(pkg)*/);
+//                        LOG.debug("search tunnel = {}", tunnel == null ? " null" : tunnel.getConnId());
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
 
                     if (tunnel == null || tunnel.shouldClose()) {
                         pkg.toByteBuf().release();
-                        LOG.debug("tunnel == null or tunnel should close...");
+                        //LOG.debug("tunnel == null or tunnel should close...");
                     } else {
                         tunnel.addRecvPackage(pkg);
                         //tunnel.getChannel().writeAndFlush(pkg.getBody());
-                        LOG.debug("tunnel[{}] connected [{}] add recv package ...", tunnel.getConnId(), tunnel.getConnected());
+                        //LOG.debug("tunnel[{}] connected [{}] add recv package ...", tunnel.getConnId(), tunnel.getConnected());
                     }
                 });
         //connId
         //tunnel#putRecvQueue
     }
 
-//    public void tunnelResp(ConnectRespPackage connectRespPackage) {
-//        int connId = connectRespPackage.getLocalConnId();
-//        int correspondConnId = connectRespPackage.getRemoteConnId();
-//
-//        Tunnel tunnel = channelTunnelMap.get(new Integer((connId)));
-//        if (tunnel != null) {
-//            if (correspondConnId >= 0) {
-//                tunnel.setConnect(true);
-//                tunnel.setCorrespondConnId(correspondConnId);
-//            } else {
-//                tunnel.needClose();
-//            }
-//        }
-//    }
-
+    //sync
     public void tunnelClose(int connId) {
         Tunnel tunnel = connIdTunnelMap.get(new Integer((connId)));
         if (tunnel != null) {
@@ -167,9 +164,12 @@ public class TunnelManager implements Runnable {
         }
     }
 
+    //sync
     public Tunnel tunnelFor(int connId) {
-        //LOG.debug("search id = [{}], connIdTunnel map = {}", connId, connIdTunnelMap.toString());
-        return connIdTunnelMap.get(new Integer((connId)));
+        synchronized (stateLock) {
+            //LOG.debug("search id = [{}], connIdTunnel map = {}", connId, connIdTunnelMap.toString());
+            return connIdTunnelMap.get(new Integer((connId)));
+        }
     }
 
     public void touch(Package pkg) {
@@ -191,32 +191,61 @@ public class TunnelManager implements Runnable {
         }
     }
 
+    //sync
     public void addConnection(Connection connection) {
-        connectionSetMap.put(connection, new HashSet<>());
-    }
-
-    @Override
-    public void run() {
-        synchronized (tunnelStateLock) {
-//            connIdTunnelMap.values().stream()
-//                    .filter(t -> lastTouchInterval(t.getLastTouch()) > MAX_TOUCH_INTERVAL)
-//                    .collect(Collectors.toList()).forEach(t -> t.needClose());
-//
-//            List<Tunnel> needClearTunners = connIdTunnelMap.values().stream().filter(t -> t.shouldClose()).collect(Collectors.toList());
-//            for (Tunnel tunnel : needClearTunners) {
-//                Integer connId = tunnel.getConnId();
-//                Channel channel = tunnel.getChannel();
-//                Integer correspondConnId = tunnel.getCorrespondConnId();
-//                Connection connection = tunnel.getBindConnection();
-//                connIdTunnelMap.remove(connId);
-//                channelTunnelMap.remove(channel);
-//                correspondConnIdTunnelMap.remove(correspondConnId);
-//                connectionSetMap.getOrDefault(connection, Collections.EMPTY_SET).remove(tunnel);
-//            }
+        synchronized (stateLock) {
+            connectionSetMap.put(connection, Collections.synchronizedSet(new HashSet<>()));
         }
     }
 
     private long lastTouchInterval(long lastTouch) {
         return System.currentTimeMillis() - lastTouch;
+    }
+
+    //sync
+    public void closeConnection(Connection connection) {
+        synchronized (stateLock) {
+            Set<Tunnel> tunnelSet = connectionSetMap.remove(connection);
+            if(tunnelSet == null) {
+                tunnelSet = Collections.EMPTY_SET;
+            }
+
+            tunnelSet.forEach(t -> {
+                connIdTunnelMap.remove(t.getConnId());
+                channelTunnelMap.remove(t.getChannel());
+            });
+        }
+    }
+
+    @Override
+    public void run() {
+        clean();
+    }
+
+    //sync
+    private void clean() {
+        synchronized (stateLock) {
+            try {
+            connIdTunnelMap.values().stream()
+                    .filter(t -> lastTouchInterval(t.getLastTouch()) > MAX_TOUCH_INTERVAL)
+                    .collect(Collectors.toList()).forEach(t -> t.needClose());
+
+            List<Tunnel> needClearTunners = connIdTunnelMap.values().stream().filter(t -> t.shouldClose()).collect(Collectors.toList());
+            for (Tunnel tunnel : needClearTunners) {
+                Integer connId = tunnel.getConnId();
+                Channel channel = tunnel.getChannel();
+
+                Connection connection = tunnel.getBindConnection();
+
+                connIdTunnelMap.remove(connId);
+                connectionSetMap.getOrDefault(connection, Collections.EMPTY_SET).remove(tunnel);
+                tunnel.close();
+                channelTunnelMap.remove(channel);
+            }
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+            }
+            LOG.debug("clean tunnels ... alive tunnels = {}, {}", connIdTunnelMap.size(), channelTunnelMap.size());
+        }
     }
 }

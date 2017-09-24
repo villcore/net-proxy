@@ -33,14 +33,14 @@ public class Server {
 
         //核心的运行任务
         //WriteService
-        WriteService writeService = new WriteService();
+        WriteService writeService = new WriteService(50L);
         writeService.start();
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(20000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 1 * 60 * 1000, 1 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 30 * 1000, 30 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
@@ -53,7 +53,10 @@ public class Server {
         PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
-        packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
+
+        packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
+
+        //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
         //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
@@ -69,7 +72,7 @@ public class Server {
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
-                    .childHandler(new ServerChildHandlerInitlizer(connectionManager));
+                    .childHandler(new ServerChildHandlerInitlizer(connectionManager, tunnelManager));
             serverBootstrap.bind(Integer.valueOf(listenPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);

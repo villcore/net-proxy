@@ -6,6 +6,8 @@ import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    public static final int MAX_READ_WATER_MARKER = 100;
+    public static final int MAX_READ_WATER_MARKER = 100000;
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId
@@ -64,14 +66,9 @@ public class Tunnel extends BasicWriteableImpl {
     //bind connection, 该Tunnel绑定的Connection
     private Connection bindConnection;
 
-    public Tunnel(Channel channel, Integer connId, int sendQueueSize, int recvQueueSize) {
+    public Tunnel(Channel channel, Integer connId) {
         this.channel = channel;
         this.connId = connId;
-        //this.sendQueueSize =
-        //this.recvQueueSize = recvQueueSize > 0 ? recvQueueSize : Integer.MAX_VALUE;
-
-        //this.sendQueue = new LinkedBlockingQueue<>(sendQueueSize + 2); //extra two more space);
-        //this.recvQueue = new LinkedBlockingQueue<>(recvQueueSize);
     }
 
     public Integer getConnId() {
@@ -86,20 +83,23 @@ public class Tunnel extends BasicWriteableImpl {
         return connected;
     }
 
-    public boolean isWaitConnect() {
-        return waitConnect;
-    }
-
-    public void setWaitConnect(boolean waitConnect) {
-        this.waitConnect = waitConnect;
-    }
+//    public boolean isWaitConnect() {
+//        return waitConnect;
+//    }
+//
+//    public void setWaitConnect(boolean waitConnect) {
+//        this.waitConnect = waitConnect;
+//    }
 
     public ConnectReqPackage getConnectPackage() {
         return this.connectPackage;
     }
 
     public void setConnectPackage(ConnectReqPackage connectPackage) {
-        LOG.debug("set connect package ...{}", connId);
+//        LOG.debug("set connect package ...{}", connId);
+        if(connectPackage != null) {
+            LOG.debug("tunnel [{}] need to cennect [{}:{}]", connId, connectPackage.getHostname(), connectPackage.getPort());
+        }
         this.connectPackage = connectPackage;
     }
 
@@ -141,7 +141,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void setConnect(boolean connect) {
-        LOG.debug("cur tunnel send queue size = {}", sendQueue.size());
+        //LOG.debug("cur tunnel send queue size = {}", sendQueue.size());
         this.connected = connect;
 //        if(connect) {
 //            channel.config().setAutoRead(true);
@@ -198,9 +198,17 @@ public class Tunnel extends BasicWriteableImpl {
             //LOG.debug("write pkg ...failed ...");
             pkg.toByteBuf().release();
         } else {
-            channel.writeAndFlush(pkg.getBody());
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
+            int connId = dataPackage.getLocalConnId();
+            int corrspondConnId = dataPackage.getRemoteConnId();
+            int bytes = dataPackage.getBody().readableBytes();
+            channel.writeAndFlush(pkg.getBody());
+
             //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
+
+
+            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
+
             try {
                 //LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
             } catch (Exception e) {
@@ -237,7 +245,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void rebuildSendPackages(int correspondConnId) {
-        LOG.debug("rebuild send packages ... {}, queue size = {}", correspondConnId, sendQueue.size());
+        //LOG.debug("rebuild send packages ... {}, queue size = {}", correspondConnId, sendQueue.size());
         //LOG.debug("drain send package size = {}, connected = {}", drainSendPackages().size(), connected);
         drainSendPackages().stream().map(pkg -> DefaultDataPackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -247,7 +255,7 @@ public class Tunnel extends BasicWriteableImpl {
                     ByteBuf data = pkg.getBody();
                     Package correctPkg = PackageUtils.buildDataPackage(localConnId, correspondConnId, 1L, data);
                     sendQueue.add(correctPkg);
-                    LOG.debug("correct pkg = {}", correctPkg);
+                    //LOG.debug("correct pkg = {}", correctPkg);
                 });
     }
 
@@ -291,5 +299,23 @@ public class Tunnel extends BasicWriteableImpl {
         } else {
             channel.config().setAutoRead(false);
         }
+    }
+
+    public void stopRead() {
+        channel.config().setAutoRead(false);
+    }
+
+    public void close() {
+        waitTunnelConnect();
+        drainRecvPackages();
+        drainSendPackages();
+        channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                if(future.isSuccess()) {
+                    LOG.debug("tunnel [{}] close ...", connId);
+                }
+            }
+        });
     }
 }

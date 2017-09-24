@@ -19,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Connection extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
-    private int highWater = 1000;
+    private static final int SEND_HIGH_WATER_MARKER = 100000;
     private volatile boolean connected;
 
     private String remoteAddr;
@@ -35,7 +35,7 @@ public class Connection extends BasicWriteableImpl {
     //RecvQueue
     private BlockingQueue<Package> recvQueue = new LinkedBlockingQueue<>();
 
-    private volatile int waterMarker = 0;
+    private volatile int curSendWaterMarker = 0;
 
     private long lastTouch;
 
@@ -46,8 +46,16 @@ public class Connection extends BasicWriteableImpl {
     }
 
     public void addSendPackages(List<Package> avaliableSendPackages) {
-        waterMarker += avaliableSendPackages.size();
-        avaliableSendPackages.stream().forEach(pkg -> sendQueue.addLast(pkg));
+        //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>{}", avaliableSendPackages.size());
+        curSendWaterMarker += avaliableSendPackages.size();
+        try {
+            avaliableSendPackages.stream().forEach(pkg -> {
+                //LOG.debug("pkg == null {}", pkg == null);
+                sendQueue.addLast(pkg);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void addRecvPackages(List<Package> packages) {
@@ -57,7 +65,8 @@ public class Connection extends BasicWriteableImpl {
     }
 
     public boolean sendPackageReady() {
-        return connected && (waterMarker <= highWater);
+        //LOG.debug("cur send water marker = {}", curSendWaterMarker);
+        return connected && (curSendWaterMarker <= SEND_HIGH_WATER_MARKER);
     }
 
     public List<Package> getRecvPackages() {
@@ -87,7 +96,7 @@ public class Connection extends BasicWriteableImpl {
     }
 
     public void close() {
-
+        tunnelManager.closeConnection(this);
     }
 
     @Override
@@ -136,7 +145,7 @@ public class Connection extends BasicWriteableImpl {
 
     @Override
     public void failWrite(Package pkg) {
-        waterMarker ++;
+        curSendWaterMarker ++;
         sendQueue.addFirst(pkg);
         //LOG.debug("connection faile write ...{}", true);
     }
@@ -147,7 +156,7 @@ public class Connection extends BasicWriteableImpl {
 
         List<Package> packages = new LinkedList<>();
         sendQueue.drainTo(packages);
-        waterMarker -= packages.size();
+        curSendWaterMarker -= packages.size();
         return packages;
     }
 }

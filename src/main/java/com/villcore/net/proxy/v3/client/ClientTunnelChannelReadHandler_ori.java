@@ -1,11 +1,9 @@
 package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.bio.util.HttpParser;
-
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
@@ -26,8 +24,8 @@ import java.nio.charset.Charset;
 /**
  * Channel 读取处理Handler
  */
-public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(ClientTunnelChannelReadHandler.class);
+public class ClientTunnelChannelReadHandler_ori extends ChannelInboundHandlerAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientTunnelChannelReadHandler_ori.class);
 
     /** http **/
     private static final String POST = "POST";
@@ -44,7 +42,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
     private long userFlag = 1L;
 
-    public ClientTunnelChannelReadHandler(TunnelManager tunnelManager, Connection connection) {
+    public ClientTunnelChannelReadHandler_ori(TunnelManager tunnelManager, Connection connection) {
         this.tunnelManager = tunnelManager;
         this.connection = connection;
     }
@@ -73,7 +71,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         ByteBuf byteBuf = (ByteBuf) msg;
         //LOG.debug("client [{}] read {} bytes ...", curTunnel.getConnId(), byteBuf.readableBytes());
-        //LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
+        LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
 
         LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", curTunnel.getConnId(), curTunnel.getCorrespondConnId(), byteBuf.readableBytes());
 
@@ -170,17 +168,9 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-//                    curTunnel.setConnectPackage(connectReqPackage);
-//                    ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
-                    //channel.config().setAutoRead(false);
-//                    curTunnel.waitTunnelConnect();
-
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
-
                     curTunnel.setConnectPackage(connectReqPackage);
-                    curTunnel.addSendPackage(dataPackage);
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
                     //channel.config().setAutoRead(false);
                     curTunnel.waitTunnelConnect();
 
