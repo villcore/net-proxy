@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    public static final int MAX_READ_WATER_MARKER = 100000;
+    public static final int MAX_READ_WATER_MARKER = 100;
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId

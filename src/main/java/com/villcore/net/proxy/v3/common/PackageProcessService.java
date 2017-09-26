@@ -25,6 +25,10 @@ public class PackageProcessService extends LoopTask {
     private Set<PackageHandler> sendHandlers = new LinkedHashSet<>();
     private Set<PackageHandler> recvHandlers = new LinkedHashSet<>();
 
+    private Set<PackageHandler> connectionReqHandlers = new LinkedHashSet<>();
+    private Set<PackageHandler> connectionRespHandlers = new LinkedHashSet<>();
+
+
     private long time;
 
     public PackageProcessService(TunnelManager tunnelManager, ConnectionManager connectionManager) {
@@ -48,12 +52,37 @@ public class PackageProcessService extends LoopTask {
         recvHandlers.addAll(Arrays.asList(packageHandler));
     }
 
+    public void addConnectionReqHandler(PackageHandler packageHandler) {
+        connectionReqHandlers.add(packageHandler);
+    }
+
+    public void addConnectionReqHandler(PackageHandler... packageHandler) {
+        connectionReqHandlers.addAll(Arrays.asList(packageHandler));
+    }
+
+    public void addConnectionRespHandler(PackageHandler packageHandler) {
+        connectionRespHandlers.add(packageHandler);
+    }
+
+    public void addConnectionRespHandler(PackageHandler... packageHandler) {
+        connectionRespHandlers.addAll(Arrays.asList(packageHandler));
+    }
+
+
     @Override
     public void loop() throws InterruptedException {
         //LOG.debug("package process service loop ...");
         time = System.currentTimeMillis();
 
         try {
+            //client
+            //connectionManager#getAuthPackage (单个Queue)
+            //connectionManager#allConnection() -> getAuthReqPackage -> addSendPkg
+            //connectionManager#allConnection() -> getAuthRespPackage -> connection.handleConnect
+
+            //server
+            //connection#allConnection() -> authReqPackage
+
             //TODO connection waterMarker handle...
             List<Connection> connections = connectionManager.allConnected();
             connections.forEach(connection -> {
@@ -72,7 +101,7 @@ public class PackageProcessService extends LoopTask {
             connections.forEach(connection -> {
                 List<Package> avaliableRecvPackages = connection.getRecvPackages();
                 if(!avaliableRecvPackages.isEmpty()) {
-                    LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", avaliableRecvPackages.size(), avaliableRecvPackages.size());
+                    //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", avaliableRecvPackages.size(), avaliableRecvPackages.size());
                 }
                 //LOG.debug("before {}", avaliableRecvPackages.size());
                 for (PackageHandler handler : recvHandlers) {

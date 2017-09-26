@@ -74,8 +74,6 @@ public class ConnectionManager implements Runnable {
         return bootstrap;
     }
 
-    ;
-
     //TODO need sync
 
     /**
@@ -192,6 +190,8 @@ public class ConnectionManager implements Runnable {
         finalConnection.connectionTouch(System.currentTimeMillis());
         retryCountMap.put(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         writeService.addWrite(finalConnection);
+
+        //TODO 构建ConnectionReqPackage, 添加到Queue中
     }
 
     private String addrAndPortKey(String addr, int port) {

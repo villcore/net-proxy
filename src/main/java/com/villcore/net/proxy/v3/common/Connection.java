@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Connection extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
-    private static final int SEND_HIGH_WATER_MARKER = 100000;
+    private static final int SEND_HIGH_WATER_MARKER = 100;
     private volatile boolean connected;
 
     private String remoteAddr;
@@ -39,6 +39,10 @@ public class Connection extends BasicWriteableImpl {
     private volatile int curSendWaterMarker = 0;
 
     private long lastTouch;
+
+    private long authId = -1L;
+
+
 
     public Connection(String addr, int port, TunnelManager tunnelManager) {
         this.remoteAddr = addr;

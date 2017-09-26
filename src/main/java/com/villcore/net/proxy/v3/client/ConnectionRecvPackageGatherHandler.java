@@ -24,7 +24,9 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //TODO connection == null ?
         Connection connection = connectionManager.channelFor(ctx.channel());
-
+        if(connection == null) {
+            LOG.debug("!!!!!!!!! error, this is a new connection that not managed ...");
+        }
         if(msg instanceof Package) {
             Package pkg = Package.class.cast(msg);
             //LOG.debug("get pkg = {}", PackageUtils.toString(pkg.toByteBuf().copy()));

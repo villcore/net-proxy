@@ -16,23 +16,16 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class Client {
-    private static final Logger LOG = LoggerFactory.getLogger(Client.class);
+public class ClientLocalTest {
+    private static final Logger LOG = LoggerFactory.getLogger(ClientLocalTest.class);
 
     public static void main(String[] args) {
         //TODO 配置信息需要从文件中读取
         String proxyPort = "10081";
 
-//        String remoteAddress = "127.0.0.1";
-//      String remotePort = "20081";
-//      String remotePort = "50080";
-
-//
-        String remoteAddress = "45.63.120.186";
-//
-//        String remoteAddress = "192.168.56.102";
-
+        String remoteAddress = "127.0.0.1";
         String remotePort = "20081";
+
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         ScheduleService scheduleService = new ScheduleService();

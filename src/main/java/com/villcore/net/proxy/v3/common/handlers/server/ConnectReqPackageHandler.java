@@ -73,10 +73,10 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     int port = pkg.getPort();
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
-                    connectToDst(hostname, port, correspondConnId, connection, 0);
-//                    hostname = "127.0.0.1";
-//                    port = 3128;
 //                    connectToDst(hostname, port, correspondConnId, connection, 0);
+                    hostname = "127.0.0.1";
+                    port = 3128;
+                    connectToDst(hostname, port, correspondConnId, connection, 0);
 
                 });
 
