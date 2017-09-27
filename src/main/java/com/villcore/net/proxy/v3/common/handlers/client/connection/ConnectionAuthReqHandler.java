@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ConnectionAuthReqHandler implements PackageHandler {
+
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
         short packageType = PackageType.PKG_CONNECTION_AUTH_REQ;
