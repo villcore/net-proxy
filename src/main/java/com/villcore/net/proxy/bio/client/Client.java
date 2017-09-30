@@ -24,7 +24,9 @@ public class Client {
 
         int listenPort = 10080;
         //InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 20080);
-        InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
+        //InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
+        //72.93.36.103
+        InetSocketAddress remoteAddress = new InetSocketAddress("172.93.36.103", 20080);
 
         ServerSocket serverSocket = null;
 

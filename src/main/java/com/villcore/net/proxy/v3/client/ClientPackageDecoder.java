@@ -2,6 +2,8 @@ package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthReqPackage;
+import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthRespPackage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -66,6 +68,20 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
                         defaultDataPackage.setHeader(header);
                         defaultDataPackage.setBody(body);
                         pkg = defaultDataPackage;
+                        //LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        break;
+                    case PackageType.PKG_CONNECTION_AUTH_REQ:
+                        ConnectAuthReqPackage connectAuthReqPackage = new ConnectAuthReqPackage();
+                        connectAuthReqPackage.setHeader(header);
+                        connectAuthReqPackage.setBody(body);
+                        pkg = connectAuthReqPackage;
+                        //LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        break;
+                    case PackageType.PKG_CONNECTION_AUTH_RESP:
+                        ConnectAuthRespPackage connectAuthRespPackage = new ConnectAuthRespPackage();
+                        connectAuthRespPackage.setHeader(header);
+                        connectAuthRespPackage.setBody(body);
+                        pkg = connectAuthRespPackage;
                         //LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         break;
                     default:
