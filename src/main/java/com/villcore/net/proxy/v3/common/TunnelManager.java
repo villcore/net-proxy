@@ -88,7 +88,7 @@ public class TunnelManager implements Runnable {
         Set<Tunnel> tunnelSet = Collections.EMPTY_SET;
         synchronized (stateLock) {
             tunnelSet = connectionSetMap.getOrDefault(connection, Collections.synchronizedSet(new HashSet<>()));
-
+            //LOG.debug("cur tunnel size = {}", tunnelSet.size());
 
             return tunnelSet.stream().flatMap(t -> {
                 //LOG.debug("tunner[{}] -> send", t.getConnId());

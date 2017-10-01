@@ -41,6 +41,7 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
                     tunnel.needClose();
                     ChannelClosePackage channelClosePackage = PackageUtils
                             .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
+                    connection.addSendPackages(tunnel.drainSendPackages());
                     connection.addSendPackages(Collections.singletonList(channelClosePackage));
                 }
             }

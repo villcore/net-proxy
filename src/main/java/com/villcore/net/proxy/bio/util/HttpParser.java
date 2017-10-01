@@ -41,6 +41,7 @@ public class HttpParser {
         return parseAddress2(arr);
     }
         public static InetSocketAddress parseAddress2(byte[] httpRequest) {
+
         for (int i = 0; i < httpRequest.length; i++) {
             if (httpRequest[i] == 10 || httpRequest[i] == 13) {
                 String firstLine = new String(httpRequest, 0, i);

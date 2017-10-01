@@ -58,7 +58,7 @@ public class DecryptTask implements Runnable {
 
                 //LOG.debug("request content = \n==\n{}\n==", new String(pkg.getBody(), "utf-8"));
                 pkg.writePackageWithoutHeader(outputStream);
-//                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", new String(pkg.getBody()));
+                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", new String(pkg.getBody()));
 //                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", "");
 
                 //LOG.debug("decryt task write pkg...");

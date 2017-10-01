@@ -73,10 +73,10 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     int port = pkg.getPort();
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
-//                    connectToDst(hostname, port, correspondConnId, connection, 0);
-                    hostname = "127.0.0.1";
-                    port = 3128;
                     connectToDst(hostname, port, correspondConnId, connection, 0);
+//                    hostname = "127.0.0.1";
+//                    port = 3128;
+//                    connectToDst(hostname, port, correspondConnId, connection, 0);
 
                 });
 
@@ -188,7 +188,6 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                     if(channel != null && channel.isOpen()) {
                                         Tunnel tunnel = tunnelManager.newTunnel(channel);
                                         tunnel.setBindConnection(connection);
-                                        tunnel.setConnect(false);
                                         tunnel.setCorrespondConnId(correspondConnId);
                                         tunnelManager.bindConnection(connection, tunnel);
                                         tunnel.setConnect(true);
@@ -204,6 +203,11 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                                 if (future.isSuccess()) {
                                                     tunnel.setConnect(false);
                                                     //TODO build channel close package and send
+                                                    List<Package> packages = tunnel.drainSendPackages();
+                                                    if(!packages.isEmpty()) {
+                                                        connection.addSendPackages(packages);
+                                                    }
+                                                    LOG.debug("server tunnel [{}] close ...", tunnel.getConnId());
                                                 }
                                             }
                                         });

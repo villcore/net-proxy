@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 public class ConnectionManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionManager.class);
 
-    private static final short MAX_RETRY_COUNT = 5000;
+    private static final short MAX_RETRY_COUNT = 500;
 
     private EventLoopGroup eventLoopGroup;
     private TunnelManager tunnelManager;
@@ -94,19 +95,14 @@ public class ConnectionManager implements Runnable {
             connection.setConnected(true);
             connection.connectionTouch(System.currentTimeMillis());
 
-//            channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-//                @Override
-//                public void operationComplete(Future<? super Void> future) throws Exception {
-//                    if (future.isSuccess()) {
-//                        connection.setConnected(false);
-//                        Tunnel tunnel = tunnelManager.tunnelFor(channel);
-//                        tunnel.shouldClose();
-//                        ChannelClosePackage channelClosePackage = PackageUtils
-//                                .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
-//                        connection.addSendPackages(Collections.singletonList(channelClosePackage));
-//                    }
-//                }
-//            });
+            channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+                @Override
+                public void operationComplete(Future<? super Void> future) throws Exception {
+                    if (future.isSuccess()) {
+                        connection.setConnected(false);
+                    }
+                }
+            });
             connectionMap.put(addrAndPortKey(addr, port), connection);
             writeService.addWrite(connection);
             return connection;
@@ -140,7 +136,8 @@ public class ConnectionManager implements Runnable {
 
         try {
             Connection finalConnection = connection;
-            Channel channel = initBootstrap().connect(addr, port).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
+
+            Channel channel = initBootstrap().connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override
                 public void operationComplete(Future<? super Void> future) throws Exception {
                     if (future.isSuccess()) {
@@ -167,15 +164,27 @@ public class ConnectionManager implements Runnable {
     }
 
     private void connectFailed(String addr, int port, Connection finalConnection) {
+
         //TODO failed
         LOG.debug("connect to remote [{}:{}] server failed...", addr, port);
         finalConnection.setConnected(false);
+//        try {
+//            finalConnection.getRemoteChannel().closeFuture().sync();
+//        } catch (InterruptedException e) {
+//            LOG.error(e.getMessage(), e);
+//        }
 
         Short curRetry = retryCountMap.getOrDefault(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         LOG.debug("cur retry = {}", curRetry);
         if (curRetry++ < MAX_RETRY_COUNT) {
             retryCountMap.put(addrAndPortKey(addr, port), Short.valueOf(curRetry));
-            connectTo(addr, port);
+            eventLoopGroup.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    connectTo(addr, port);
+                }
+            }, 1000, TimeUnit.MILLISECONDS);
+            //connectTo(addr, port);
         } else {
             finalConnection.setConnected(false);
             LOG.debug("retry for [{}] exceed max retry count, this connection will closed...", addrAndPortKey(addr, port));

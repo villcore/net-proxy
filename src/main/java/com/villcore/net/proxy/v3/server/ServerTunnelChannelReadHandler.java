@@ -52,6 +52,7 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             tunnel.addSendPackage(defaultDataPackage);
 //            LOG.debug("read content >>>\n [{}]\n>>>>>>>", PackageUtils.toString(data));
             LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", tunnel.getConnId(), tunnel.getCorrespondConnId(), data.readableBytes());
+//            LOG.debug("tunnel [{}] read content ========================\n{}\n==============================", connId, PackageUtils.toString(data.copy()));
 
         } else {
             ctx.fireChannelRead(msg);

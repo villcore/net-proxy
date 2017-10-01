@@ -89,6 +89,9 @@ public class PackageProcessService extends LoopTask {
                 if (connection.sendPackageReady()) {
                     //LOG.debug(">>>");
                     List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
+//                    if(avaliableSendPackages.size() > 0) {
+//                        LOG.debug("tunnels has pkg to send ...");
+//                    }
                     for (PackageHandler handler : sendHandlers) {
                         avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
                     }

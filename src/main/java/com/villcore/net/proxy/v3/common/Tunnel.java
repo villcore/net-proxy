@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    public static final int MAX_READ_WATER_MARKER = 100;
+    public static final int MAX_READ_WATER_MARKER = 10;
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId
@@ -100,16 +100,17 @@ public class Tunnel extends BasicWriteableImpl {
 
     public void setConnectPackage(ConnectReqPackage connectPackage) {
 //        LOG.debug("set connect package ...{}", connId);
-        if(connectPackage != null) {
-            LOG.debug("tunnel [{}] need to cennect [{}:{}]", connId, connectPackage.getHostname(), connectPackage.getPort());
-        }
+//        if(connectPackage != null) {
+//            LOG.debug("tunnel [{}] need to cennect [{}:{}]", connId, connectPackage.getHostname(), connectPackage.getPort());
+//        }
         this.connectPackage = connectPackage;
     }
 
     public void addSendPackage(Package dataPackage) {
-        //LOG.debug("add send package for [{}]...,", connId);
+//        LOG.debug("add send package for [{}]...,", connId);
         sendQueue.add(dataPackage);
         incReadWaterMarker(1);
+        LOG.debug("add send pkg, warter marker = {}, safe = {}", curReadWaterMarker, readWaterMarkerSafe());
         resetReadState();
     }
 
@@ -207,11 +208,11 @@ public class Tunnel extends BasicWriteableImpl {
 
             LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
 
-            try {
-                //LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            try {
+//                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody().copy()));
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
         }
         return true;
     }
