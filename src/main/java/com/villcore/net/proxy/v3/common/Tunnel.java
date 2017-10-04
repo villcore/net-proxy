@@ -70,7 +70,15 @@ public class Tunnel extends BasicWriteableImpl {
     //https
     private boolean isHttps;
 
-    public Tunnel(Channel channel, Integer connId) {
+    //write service
+    private WriteService writeService;
+
+    //    public Tunnel(Channel channel, Integer connId) {
+//        this.channel = channel;
+//        this.connId = connId;
+//    }
+    public Tunnel(WriteService writeService, Channel channel, Integer connId) {
+        this.writeService = writeService;
         this.channel = channel;
         this.connId = connId;
     }
@@ -128,7 +136,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public List<Package> drainRecvPackages() {
-        if(!connected) {
+        if (!connected) {
             return Collections.emptyList();
         }
         List<Package> avaliablePackages = new LinkedList<>();
@@ -184,7 +192,9 @@ public class Tunnel extends BasicWriteableImpl {
         return connId;
     }
 
-    /** sendable **/
+    /**
+     * sendable
+     **/
 
     @Override
     public boolean canWrite() {
@@ -194,7 +204,7 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public boolean write(Package pkg) {
         //LOG.debug("write pkg ...");
-        if(channel == null || !channel.isOpen()) {
+        if (channel == null || !channel.isOpen()) {
             //LOG.debug("write pkg ...failed ...");
             pkg.toByteBuf().release();
         } else {
@@ -204,7 +214,9 @@ public class Tunnel extends BasicWriteableImpl {
             int bytes = dataPackage.getBody().readableBytes();
 
             channel.writeAndFlush(pkg.getBody());
-            channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+//            pkg.getHeader().release();
+//            pkg.getFixed().release();
+            //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
 
             //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
 
@@ -266,7 +278,7 @@ public class Tunnel extends BasicWriteableImpl {
      * 增加复杂性。
      */
 
-     /**
+    /**
      * 等待服务端Tunnel成功连接, 该操作会将对应的Channel 自动读取关闭
      */
     public void waitTunnelConnect() {
@@ -296,7 +308,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void resetReadState() {
-        if(readWaterMarkerSafe()) {
+        if (readWaterMarkerSafe()) {
             channel.config().setAutoRead(true);
         } else {
             channel.config().setAutoRead(false);
@@ -308,13 +320,14 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void close() {
+        writeService.removeWrite(this);
         waitTunnelConnect();
         drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
         drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
         channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
-                if(future.isSuccess()) {
+                if (future.isSuccess()) {
                     LOG.debug("tunnel [{}] close ...", connId);
                 }
             }

@@ -195,7 +195,7 @@ public class ServerChannelSendService implements Runnable {
         if(clientChannel == null || !clientChannel.isOpen()) {
 
         } else {
-            clientChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+            //clientChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         }
     }
 

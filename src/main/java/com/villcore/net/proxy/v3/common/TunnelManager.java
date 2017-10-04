@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class TunnelManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(TunnelManager.class);
 
-    private static final long MAX_TOUCH_INTERVAL = 2 * 60 * 1000L;
+    private static final long MAX_TOUCH_INTERVAL = 30 * 1000L;
 
     private ConnIdGenerator connIdGenerator;
 
@@ -58,7 +58,7 @@ public class TunnelManager implements Runnable {
     private Tunnel newTunnel(Channel channel, Integer connId) {
         synchronized (stateLock) {
             //new Tunnel
-            Tunnel tunnel = new Tunnel(channel, new Integer(connId));
+            Tunnel tunnel = new Tunnel(writeService, channel, new Integer(connId));
             connIdTunnelMap.put(new Integer(connId), tunnel);
             channelTunnelMap.put(channel, tunnel);
             writeService.addWrite(tunnel);
@@ -151,6 +151,9 @@ public class TunnelManager implements Runnable {
                         //LOG.debug("tunnel[{}] connected [{}] add recv package ...", tunnel.getConnId(), tunnel.getConnected());
                     }
                 });
+
+                dataPackages.clear();
+                dataPackages = null;
         //connId
         //tunnel#putRecvQueue
     }
@@ -217,6 +220,7 @@ public class TunnelManager implements Runnable {
             });
             connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
             connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+            writeService.removeWrite(connection);
         }
     }
 

@@ -59,8 +59,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
                 if(future.isSuccess()) {
-//                    ChannelClosePackage channelClosePackage = PackageUtils
-//                            .buildChannelClosePackage(curTunnel.getConnId(), curTunnel.getCorrespondConnId(), 1L);
+//                    ChannelClosePackage channelClosePackage =  , curTunnel.getCorrespondConnId(), 1L);
                 }
             }
         });
@@ -176,7 +175,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     curTunnel.setHttps(true);
                     String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
                     ctx.writeAndFlush(Unpooled.wrappedBuffer(connectResponse.getBytes()));
-                    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+                    //ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
 
 
 //                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);

@@ -1,0 +1,1 @@
+#### 调试模式 -Dio.netty.noUnsafe=true -Dio.netty.leakDetectionLevel=Paranoid  -Xmx400m -Xms400m 

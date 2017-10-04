@@ -4,10 +4,8 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +43,7 @@ public class InvalidDataPackageHandler implements PackageHandler {
                     return true;
                 })
                 .collect(Collectors.toList());
-        //LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
+        LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
         return avaliablePackages;
     }
 }

@@ -38,28 +38,25 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
     protected void initChannel(SocketChannel ch) throws Exception {
         LOG.debug("accepot connection from {} ...", ch.remoteAddress().toString());
         Connection connection = connectionManager.acceptConnectTo(ch);
+
 //        ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 
 //        Channel channel = ch;
-//        channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-//            @Override
-//            public void operationComplete(Future<? super Void> future) throws Exception {
-//                if(future.isSuccess()) {
-//                    Tunnel tunnel = tunnelManager.tunnelFor(channel);
-//                    tunnel.shouldClose();
-//                    ChannelClosePackage channelClosePackage = PackageUtils
-//                            .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
-//                    connection.addSendPackages(Collections.singletonList(channelClosePackage));
-//                }
-//            }
-//        });
+        ch.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                if(future.isSuccess()) {
+                    connection.setConnected(false);
+                }
+            }
+        });
 
-        ch.pipeline().addLast(new ClientPackageDecoder());
+        ch.pipeline().addLast(new ServerPackageDecoder());
         //ch.pipeline().addLast(new ConnectionPackageDecoder());
         ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
         //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
         ch.pipeline().addLast(new PackageToByteBufOutHandler());
-        ch.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
+//        ch.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 }

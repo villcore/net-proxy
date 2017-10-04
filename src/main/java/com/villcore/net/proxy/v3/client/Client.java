@@ -39,18 +39,18 @@ public class Client {
 
         //核心的运行任务
         //WriteService
-        WriteService writeService = new WriteService(50L);
+        WriteService writeService = new WriteService(10L);
         writeService.start();
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 60 * 1000, 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager,  60 * 1000, 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
-        Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
+//        Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
         scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
 
         //ProcessService
@@ -75,7 +75,7 @@ public class Client {
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
-                    .childHandler(new ClientChildChannelHandlerInitlizer(tunnelManager, connection));
+                    .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort)));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);

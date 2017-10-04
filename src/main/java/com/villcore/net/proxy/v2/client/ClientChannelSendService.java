@@ -121,7 +121,7 @@ public class ClientChannelSendService implements Runnable {
                     NioSocketChannel socketChannel = connectionManager.getChannel(localConnId);
 
                     if(remoteConnId == -1) {
-                        socketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+                        //socketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
                         connectionManager.closeConnection(socketChannel);
                         return;
                     }
@@ -298,7 +298,7 @@ public class ClientChannelSendService implements Runnable {
         }
         if (remoteSocketChannel == null || !remoteSocketChannel.isOpen()) {
         } else {
-            remoteSocketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+            //remoteSocketChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         }
     }
 

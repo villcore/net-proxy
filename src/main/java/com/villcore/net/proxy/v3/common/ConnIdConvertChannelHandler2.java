@@ -33,7 +33,7 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
             ByteBuf body = pkg.getBody();
 
 
-            //LOG.debug("************connId convert running.........{}", pkg.getPkgType());
+            LOG.debug("************connId convert running.........{}", pkg.getPkgType());
 
             switch (pkg.getPkgType()) {
                 case PackageType.PKG_CONNECT_REQ: {//do nothing
@@ -50,7 +50,7 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     int connId = connectRespPackage.getLocalConnId();
                     int corspondConnId = connectRespPackage.getRemoteConnId();
 
-//                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
+                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
                     ConnectRespPackage newPkg = PackageUtils.buildConnectRespPackage(corspondConnId, connId, 1L);
                     pkg = newPkg;
                     break;
@@ -85,6 +85,5 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
         } else {
             ctx.fireChannelRead(msg);
         }
-
     }
 }

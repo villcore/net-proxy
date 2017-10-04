@@ -51,7 +51,7 @@ public class Connection extends BasicWriteableImpl {
     }
 
     public void addSendPackages(List<Package> avaliableSendPackages) {
-        //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>{}", avaliableSendPackages.size());
+//        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>{}", avaliableSendPackages.size());
         curSendWaterMarker += avaliableSendPackages.size();
         try {
             avaliableSendPackages.stream().forEach(pkg -> {
@@ -63,10 +63,19 @@ public class Connection extends BasicWriteableImpl {
         }
     }
 
-    public void addRecvPackages(List<Package> packages) {
-        packages.forEach(pkg -> {
-            recvQueue.add(pkg);
-        });
+//    public void addSendPackage(Package pkg) {
+//        curSendWaterMarker ++;
+//        sendQueue.add(pkg);
+//    }
+//
+//    public void addRecvPackages(List<Package> packages) {
+//        packages.forEach(pkg -> {
+//            recvQueue.add(pkg);
+//        });
+//    }
+
+    public void addRecvPackage(Package pkg) {
+        recvQueue.add(pkg);
     }
 
     public boolean sendPackageReady() {
@@ -141,9 +150,9 @@ public class Connection extends BasicWriteableImpl {
         }
         //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
         remoteChannel.writeAndFlush(pkg);
-        remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+        //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
-//        LOG.debug("connection write...{}", true);
+        LOG.debug("connection write...{}", true);
         return true;
     }
 

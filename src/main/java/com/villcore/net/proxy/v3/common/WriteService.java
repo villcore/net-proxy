@@ -1,8 +1,13 @@
 package com.villcore.net.proxy.v3.common;
 
+import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.util.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -12,7 +17,8 @@ import java.util.concurrent.TimeUnit;
 public class WriteService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(WriteService.class);
 
-    private CopyOnWriteArrayList<Writeable> writeables = new CopyOnWriteArrayList<>();
+//    private CopyOnWriteArrayList<Writeable> writeables = new CopyOnWriteArrayList<>();
+    private Set<Writeable> copyOnWriteSet = new HashSet<>();
     private long sleepInterval = 50;
 
     private long time;
@@ -21,22 +27,31 @@ public class WriteService extends LoopTask {
         this.sleepInterval = sleepInterval;
     }
 
-    public void addWrite(Writeable writeable) {
-        writeables.add(writeable);
+    public synchronized void addWrite(Writeable writeable) {
+        //writeables.add(writeable);
+        Set<Writeable> newWriteables = new HashSet<>(copyOnWriteSet);
+        newWriteables.add(writeable);
+        copyOnWriteSet = newWriteables;
     }
 
-    public void removeWrite(Writeable writeable) {
-        writeables.remove(writeable);
+    public synchronized void removeWrite(Writeable writeable) {
+        //writeables.remove(writeable);
+        Set<Writeable> newWriteables = new HashSet<>(copyOnWriteSet);
+        newWriteables.remove(writeable);
+        copyOnWriteSet = newWriteables;
     }
 
     @Override
     void loop() throws InterruptedException {
-        //LOG.debug("write service loop ...");
+//        LOG.debug("write service loop ...");
         time = System.currentTimeMillis();
 
         try {
             //主要的遍历writable
-            writeables.forEach(writeable -> writeable.write());
+            copyOnWriteSet.forEach(writeable -> writeable.write());
+//            if(!copyOnWriteSet.isEmpty()) {
+//                LOG.debug("cur writable size = {} ...", copyOnWriteSet.size());
+//            }
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
         }
@@ -45,5 +60,50 @@ public class WriteService extends LoopTask {
         if(workTime < sleepInterval) {
             TimeUnit.MILLISECONDS.sleep(sleepInterval - workTime);
         }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        WriteService ws = new WriteService(50);
+
+        Writeable w = new Writeable() {
+            @Override
+            public boolean canWrite() {
+                return false;
+            }
+
+            @Override
+            public boolean write(Package pkg) {
+                return false;
+            }
+
+            @Override
+            public void touch(Package pkg) {
+
+            }
+
+            @Override
+            public void failWrite(Package pkg) {
+
+            }
+
+            @Override
+            public List<Package> getWritePackages() {
+                return null;
+            }
+
+            @Override
+            public void write() {
+
+            }
+        };
+        ws.start();
+        ThreadUtils.newThread("test", ws, false).start();
+
+        ws.addWrite(w);
+        ws.addWrite(w);
+        ws.addWrite(w);
+
+        Thread.sleep(1000L);
+        ws.removeWrite(w);
     }
 }

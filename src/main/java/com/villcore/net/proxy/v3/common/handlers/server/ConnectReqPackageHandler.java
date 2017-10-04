@@ -68,7 +68,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                 .collect(Collectors.toList());
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
 
-//        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", packages.size(), connectReqPackage.size());
+        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())

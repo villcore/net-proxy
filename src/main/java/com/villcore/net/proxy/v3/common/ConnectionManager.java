@@ -62,8 +62,8 @@ public class ConnectionManager implements Runnable {
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 128 * 1024)
 
-//                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-//                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
 
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -86,12 +86,24 @@ public class ConnectionManager implements Runnable {
      * @return
      */
     public Connection acceptConnectTo(Channel channel) {
-        synchronized (updateLock) {
-            InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
-            String addr = address.getAddress().getHostAddress();
-            int port = address.getPort();
-            LOG.debug(">>>>>>>>>>>>>>>>>server accept client connection [{}:{}] ...", addr, port);
+        InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
+        String addr = address.getAddress().getHostAddress();
+        int port = address.getPort();
+        LOG.debug(">>>>>>>>>>>>>>>>>server accept client connection [{}:{}] ...", addr, port);
+        String connectionKey = addrAndPortKey(addr, port);
 
+        synchronized (updateLock) {
+            if (connectionMap.containsKey(connectionKey)) {
+                Connection connection = connectionMap.get(connectionKey);
+                connection.getRemoteChannel().close();
+                connection.setRemoteChannel(channel);
+                connection.setConnected(true);
+
+                return connection;
+            }
+        }
+
+        synchronized (updateLock) {
             Connection connection = new Connection(address.getHostName(), address.getPort(), tunnelManager);
             connection.setRemoteChannel(channel);
             connection.setConnected(true);
@@ -111,6 +123,7 @@ public class ConnectionManager implements Runnable {
         }
     }
 
+
     //TODO need sync
 
     /**
@@ -123,46 +136,40 @@ public class ConnectionManager implements Runnable {
     public Connection connectTo(String addr, int port) {
         Connection connection = null;
         synchronized (updateLock) {
-            if (connectionMap.containsKey(addrAndPortKey(addr, port))) {
-                connection = connectionMap.get(addrAndPortKey(addr, port));
-            }
-        }
-
-        if (connection == null) {
-            connection = connectionMap.getOrDefault(addrAndPortKey(addr, port), new Connection(addr, port, tunnelManager));
-            synchronized (updateLock) {
+            if (connection == null) {
+                connection = connectionMap.getOrDefault(addrAndPortKey(addr, port), new Connection(addr, port, tunnelManager));
                 connectionMap.putIfAbsent(addrAndPortKey(addr, port), connection);
                 tunnelManager.addConnection(connection);
             }
-        }
 
-        try {
-            Connection finalConnection = connection;
+            try {
+                Connection finalConnection = connection;
 
-            Channel channel = initBootstrap().connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    if (future.isSuccess()) {
-                        connectSuccess(addr, port, finalConnection);
+                Channel channel = initBootstrap().connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
+                    @Override
+                    public void operationComplete(Future<? super Void> future) throws Exception {
+                        if (future.isSuccess()) {
+                            connectSuccess(addr, port, finalConnection);
 
-                    } else {
+                        } else {
+                            connectFailed(addr, port, finalConnection);
+                        }
+                    }
+                }).channel();
+
+                channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+                    @Override
+                    public void operationComplete(Future<? super Void> future) throws Exception {
                         connectFailed(addr, port, finalConnection);
                     }
-                }
-            }).channel();
-
-            channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    connectFailed(addr, port, finalConnection);
-                }
-            });
-            connection.setRemoteChannel(channel);
-            channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
-        } catch (Exception e) {
-            connectFailed(addr, port, connection);
+                });
+                connection.setRemoteChannel(channel);
+                //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+            } catch (Exception e) {
+                connectFailed(addr, port, connection);
+            }
+            return connection;
         }
-        return connection;
     }
 
     private void connectFailed(String addr, int port, Connection finalConnection) {
@@ -228,7 +235,10 @@ public class ConnectionManager implements Runnable {
     public List<Connection> allConnected() {
         synchronized (updateLock) {
             return connectionMap.values().stream()
-                    .filter(conn -> conn.isConnected())
+                    .filter(conn -> {
+//                        LOG.debug("conn {} ", conn.toString() + conn.isConnected());
+                        return conn.isConnected();
+                    })
                     .collect(Collectors.toList());
         }
     }
@@ -240,14 +250,27 @@ public class ConnectionManager implements Runnable {
 //        TODO 这个逻辑如果关闭了connection，客户端如何才能新建连接，需要再考虑设计，服务端可以这样使用
         synchronized (updateLock) {
             List<String> connectionKeys = connectionMap.keySet().stream().collect(Collectors.toList());
-            for(String connectionKey : connectionKeys) {
+            for (String connectionKey : connectionKeys) {
                 Connection connection = connectionMap.remove(connectionKey);
-                if(System.currentTimeMillis() - connection.lastTouch() > 3 * 60 * 1000)
-                retryCountMap.remove(connectionKey);
-                if(connection != null) {
+                if (System.currentTimeMillis() - connection.lastTouch() > 3 * 60 * 1000)
+                    retryCountMap.remove(connectionKey);
+                if (connection != null) {
                     connection.close();
                 }
             }
         }
+    }
+
+    public Connection getConnection(String remoteAddr, int remotePort) {
+        String connectionKey = addrAndPortKey(remoteAddr, remotePort);
+        synchronized (updateLock) {
+            if (connectionMap.containsKey(connectionKey)) {
+                return connectionMap.get(connectionKey);
+            }
+        }
+
+        // already sync and put into map ...
+        Connection connection = connectTo(remoteAddr, remotePort);
+        return connection;
     }
 }
