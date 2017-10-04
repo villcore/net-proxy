@@ -15,6 +15,7 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
         if(msg instanceof Package) {
             Package pkg = (Package) msg;
             ctx.writeAndFlush(pkg.toByteBuf().retain());
+            pkg.toByteBuf().release();
             return;
         }
         ctx.writeAndFlush(msg);

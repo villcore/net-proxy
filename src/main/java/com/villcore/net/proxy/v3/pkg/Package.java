@@ -45,6 +45,10 @@ public class Package implements Serializable {
         return this.header;
     }
 
+    public ByteBuf getFixed() {
+        return this.fixed;
+    }
+
     public ByteBuf getBody() {
         return this.body;
     }

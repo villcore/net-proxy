@@ -26,8 +26,13 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
         if (msg instanceof Package) {
 
             Package pkg = (Package) msg;
-            ByteBuf header = pkg.getHeader().copy();
-            ByteBuf body = pkg.getBody().copy();
+//            ByteBuf header = pkg.getHeader().copy();
+//            ByteBuf body = pkg.getBody().copy();
+
+            ByteBuf header = pkg.getHeader();
+            ByteBuf body = pkg.getBody();
+
+
             //LOG.debug("************connId convert running.........{}", pkg.getPkgType());
 
             switch (pkg.getPkgType()) {
@@ -80,5 +85,6 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
         } else {
             ctx.fireChannelRead(msg);
         }
+
     }
 }

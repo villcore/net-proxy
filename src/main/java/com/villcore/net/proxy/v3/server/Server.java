@@ -43,11 +43,11 @@ public class Server {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(20000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 30 * 60 * 1000, 30 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 5 * 60 * 1000, 5 * 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 30 * 60 * 1000, 30 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);

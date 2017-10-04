@@ -44,7 +44,7 @@ public class ChildHandlerInitlizer extends ChannelInitializer<SocketChannel> {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
             ByteBuf byteBuf = (ByteBuf) msg;
-            System.out.println(PackageUtils.toString(byteBuf));
+            //System.out.println(PackageUtils.toString(byteBuf));
         }
     };
 }

@@ -25,7 +25,7 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        //LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
+        LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
         if (packageLen > 0) {
 //            LOG.debug("pkg len = {}", packageLen);
             if (in.readableBytes() >= packageLen - 4) {
@@ -35,8 +35,11 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 //                LOG.debug("rx = {}, wx = {}", byteBuf.readerIndex(), byteBuf.writerIndex());
                 Package pkg = Package.valueOf(byteBuf);
 
-                ByteBuf header = pkg.getHeader().copy();
-                ByteBuf body = pkg.getBody().copy();
+//                ByteBuf header = pkg.getHeader().copy();
+//                ByteBuf body = pkg.getBody().copy();
+
+                ByteBuf header = pkg.getHeader().retain();
+                ByteBuf body = pkg.getBody().retain();
 
                 switch (pkg.getPkgType()) {
                     case PackageType.PKG_CONNECT_REQ:

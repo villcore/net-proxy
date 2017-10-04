@@ -7,6 +7,7 @@ import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -35,7 +36,9 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
+        LOG.debug("accepot connection from {} ...", ch.remoteAddress().toString());
         Connection connection = connectionManager.acceptConnectTo(ch);
+//        ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 
 //        Channel channel = ch;
 //        channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {

@@ -34,6 +34,8 @@ public class ChannelClosePackageHandler implements PackageHandler {
                 .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CHANNEL_CLOSE)
                 .collect(Collectors.toList());
 
+        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CHANNEL_CLOSE).collect(Collectors.toList());
+
         connectReqPackage.stream()
                 .map(pkg -> ChannelClosePackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -52,9 +54,9 @@ public class ChannelClosePackageHandler implements PackageHandler {
                         tunnel.stopRead();
                         tunnel.close();
                     }
+                    //pkg.toByteBuf().release();
                 });
 
-        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CHANNEL_CLOSE).collect(Collectors.toList());
         return otherPackage;
     }
 

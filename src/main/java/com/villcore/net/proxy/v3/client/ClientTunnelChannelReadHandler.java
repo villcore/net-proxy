@@ -74,8 +74,8 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
         ByteBuf byteBuf = (ByteBuf) msg;
         //LOG.debug("client [{}] read {} bytes ...", curTunnel.getConnId(), byteBuf.readableBytes());
 //        LOG.debug("tunnel [{}] read content ===================\n {}=======================", connId, PackageUtils.toString(byteBuf.copy()));
-//
-//        LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", curTunnel.getConnId(), curTunnel.getCorrespondConnId(), byteBuf.readableBytes());
+
+        LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", curTunnel.getConnId(), curTunnel.getCorrespondConnId(), byteBuf.readableBytes());
 
         if(detectedProxy) {
             if(curTunnel.shouldClose()) {
@@ -196,6 +196,9 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         curTunnel.stopRead();
         curTunnel.shouldClose();
+        curTunnel.drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
+        curTunnel.drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+
         curTunnel.close();
         channel.close();
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +

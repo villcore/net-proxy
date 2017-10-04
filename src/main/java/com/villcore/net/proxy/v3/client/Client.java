@@ -46,7 +46,7 @@ public class Client {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 300 * 1000, 30 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 60 * 1000, 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
@@ -59,7 +59,7 @@ public class Client {
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
-       // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
+        // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
         //packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
         packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
 

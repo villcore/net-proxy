@@ -5,6 +5,7 @@ import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -110,7 +111,7 @@ public class Tunnel extends BasicWriteableImpl {
 //        LOG.debug("add send package for [{}]...,", connId);
         sendQueue.add(dataPackage);
         incReadWaterMarker(1);
-        LOG.debug("add send pkg, warter marker = {}, safe = {}", curReadWaterMarker, readWaterMarkerSafe());
+        //LOG.debug("add send pkg, warter marker = {}, safe = {}", curReadWaterMarker, readWaterMarkerSafe());
         resetReadState();
     }
 
@@ -198,10 +199,12 @@ public class Tunnel extends BasicWriteableImpl {
             pkg.toByteBuf().release();
         } else {
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
-            int connId = dataPackage.getLocalConnId();
-            int corrspondConnId = dataPackage.getRemoteConnId();
+            int connId = Integer.valueOf(dataPackage.getLocalConnId());
+            int corrspondConnId = Integer.valueOf(dataPackage.getRemoteConnId());
             int bytes = dataPackage.getBody().readableBytes();
+
             channel.writeAndFlush(pkg.getBody());
+            channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
 
             //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
 
@@ -306,8 +309,8 @@ public class Tunnel extends BasicWriteableImpl {
 
     public void close() {
         waitTunnelConnect();
-        drainRecvPackages();
-        drainSendPackages();
+        drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+        drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
         channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {

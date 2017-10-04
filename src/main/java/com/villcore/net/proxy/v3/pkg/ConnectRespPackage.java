@@ -16,7 +16,7 @@ public class ConnectRespPackage extends Package {
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
 
-        localConnId = header.readInt();
+        localConnId = new Integer(header.readInt());
         header.readerIndex(oriReadIndex);
 
         return localConnId;
@@ -28,7 +28,7 @@ public class ConnectRespPackage extends Package {
         int oriReadIndex = header.readerIndex();
 
         header.readInt();
-        remoteConnId = header.readInt();
+        remoteConnId = new Integer(header.readInt());
         header.readerIndex(oriReadIndex);
 
         return remoteConnId;

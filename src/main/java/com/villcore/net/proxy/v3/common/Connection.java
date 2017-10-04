@@ -143,7 +143,7 @@ public class Connection extends BasicWriteableImpl {
         remoteChannel.writeAndFlush(pkg);
         remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
-        LOG.debug("connection write...{}", true);
+//        LOG.debug("connection write...{}", true);
         return true;
     }
 

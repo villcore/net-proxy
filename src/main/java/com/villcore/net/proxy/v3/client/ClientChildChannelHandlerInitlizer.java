@@ -3,6 +3,7 @@ package com.villcore.net.proxy.v3.client;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -29,7 +30,7 @@ public class ClientChildChannelHandlerInitlizer extends ChannelInitializer<Chann
 
     @Override
     protected void initChannel(Channel channel) throws Exception {
-
+        //channel.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 
         Tunnel tunnel = tunnelManager.newTunnel(channel);
         LOG.debug("init tunnel [{}] for channel [{}]...", tunnel.getConnId(), channel.remoteAddress().toString());

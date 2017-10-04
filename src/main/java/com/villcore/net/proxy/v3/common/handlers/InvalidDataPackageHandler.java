@@ -33,12 +33,13 @@ public class InvalidDataPackageHandler implements PackageHandler {
         List<Package> avaliablePackages = packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
                 .map(pkg -> (DefaultDataPackage)pkg)
                 .filter(pkg -> {
-                    int connId = pkg.getLocalConnId();
+                    int connId = Integer.valueOf(pkg.getLocalConnId());
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
                     if(tunnel == null || tunnel.shouldClose()) {
                         ChannelClosePackage channelClosePackage = PackageUtils.buildChannelClosePackage(connId, pkg.getRemoteConnId(), 1L);
                         connection.addSendPackages(Collections.singletonList(channelClosePackage));
+                        pkg.toByteBuf().release();
                         return false;
                     }
                     return true;

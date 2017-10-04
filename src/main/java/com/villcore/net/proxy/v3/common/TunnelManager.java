@@ -213,7 +213,10 @@ public class TunnelManager implements Runnable {
             tunnelSet.forEach(t -> {
                 connIdTunnelMap.remove(t.getConnId());
                 channelTunnelMap.remove(t.getChannel());
+                t.close();
             });
+            connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
+            connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
         }
     }
 
@@ -241,11 +244,16 @@ public class TunnelManager implements Runnable {
                 connectionSetMap.getOrDefault(connection, Collections.EMPTY_SET).remove(tunnel);
                 tunnel.close();
                 channelTunnelMap.remove(channel);
+                if(channelTunnelMap.size() == 0) {
+                    connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
+                    connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+                }
             }
             } catch (Exception e) {
                 LOG.error(e.getMessage(), e);
             }
             LOG.debug("clean tunnels ... alive tunnels = {}, {}", connIdTunnelMap.size(), channelTunnelMap.size());
+
         }
     }
 }

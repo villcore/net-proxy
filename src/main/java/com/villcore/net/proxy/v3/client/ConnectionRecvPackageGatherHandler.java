@@ -26,6 +26,8 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
         Connection connection = connectionManager.channelFor(ctx.channel());
         if(connection == null) {
             LOG.debug("!!!!!!!!! error, this is a new connection that not managed ...");
+            ctx.close();
+            return;
         }
         if(msg instanceof Package) {
             Package pkg = Package.class.cast(msg);

@@ -6,11 +6,9 @@ import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
@@ -63,6 +61,10 @@ public class ConnectionManager implements Runnable {
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 128 * 1024)
+
+//                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+//                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
@@ -86,7 +88,7 @@ public class ConnectionManager implements Runnable {
     public Connection acceptConnectTo(Channel channel) {
         synchronized (updateLock) {
             InetSocketAddress address = (InetSocketAddress) channel.remoteAddress();
-            String addr = address.getHostName();
+            String addr = address.getAddress().getHostAddress();
             int port = address.getPort();
             LOG.debug(">>>>>>>>>>>>>>>>>server accept client connection [{}:{}] ...", addr, port);
 
@@ -204,8 +206,8 @@ public class ConnectionManager implements Runnable {
     }
 
     private String addrAndPortKey(String addr, int port) {
-        //return addr + ":" + String.valueOf(port);
-        return addr;
+        return addr + ":" + String.valueOf(port);
+        //return addr;
     }
 
     public void closeConnection(Connection connection) {
@@ -216,8 +218,9 @@ public class ConnectionManager implements Runnable {
 
     public Connection channelFor(Channel channel) {
         InetSocketAddress remoteAddr = (InetSocketAddress) channel.remoteAddress();
-        String addr = remoteAddr.getHostName();
+        String addr = remoteAddr.getAddress().getHostAddress();
         int port = remoteAddr.getPort();
+//        LOG.debug("key = {}, channel map = {}", addrAndPortKey(addr, port), connectionMap.toString());
         return connectionMap.getOrDefault(addrAndPortKey(addr, port), null);
     }
 
@@ -232,13 +235,14 @@ public class ConnectionManager implements Runnable {
 
     @Override
     public void run() {
-        //自动调度任务，用来清理长时间无响应的Connection
-        //过滤touch超时的connection
-        //TODO 这个逻辑如果关闭了connection，客户端如何才能新建连接，需要再考虑设计，服务端可以这样使用
+//        自动调度任务，用来清理长时间无响应的Connection
+//        过滤touch超时的connection
+//        TODO 这个逻辑如果关闭了connection，客户端如何才能新建连接，需要再考虑设计，服务端可以这样使用
         synchronized (updateLock) {
             List<String> connectionKeys = connectionMap.keySet().stream().collect(Collectors.toList());
             for(String connectionKey : connectionKeys) {
                 Connection connection = connectionMap.remove(connectionKey);
+                if(System.currentTimeMillis() - connection.lastTouch() > 3 * 60 * 1000)
                 retryCountMap.remove(connectionKey);
                 if(connection != null) {
                     connection.close();
