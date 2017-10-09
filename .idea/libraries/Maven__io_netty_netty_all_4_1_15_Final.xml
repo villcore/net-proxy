@@ -1,13 +1,12 @@
 <component name="libraryTable">
   <library name="Maven: io.netty:netty-all:4.1.15.Final">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final.jar!/" />
+      <root url="jar://$USER_HOME$/.m2/repository/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final-javadoc.jar!/" />
+      <root url="jar://$USER_HOME$/.m2/repository/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final-sources.jar!/" />
       <root url="file://$PROJECT_DIR$/../netty/buffer/src/main/java" />
       <root url="file://$PROJECT_DIR$/../netty/buffer/src/test/java" />
       <root url="file://$PROJECT_DIR$/../netty/codec-dns/src/main/java" />
@@ -59,6 +58,7 @@
       <root url="file://$PROJECT_DIR$/../netty/transport-udt/src/test/java" />
       <root url="file://$PROJECT_DIR$/../netty/transport/src/main/java" />
       <root url="file://$PROJECT_DIR$/../netty/transport/src/test/java" />
+      <root url="jar://$USER_HOME$/.m2/repository/io/netty/netty-all/4.1.15.Final/netty-all-4.1.15.Final-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
