@@ -36,15 +36,17 @@ public class ClientPackageDecoder extends ByteToMessageDecoder {
 //                LOG.debug("rx = {}, wx = {}", byteBuf.readerIndex(), byteBuf.writerIndex());
                 Package pkg = Package.valueOf(byteBuf);
 
-                ByteBuf header = pkg.getHeader().copy();
-                ByteBuf body = pkg.getBody().copy();
+                ByteBuf header = pkg.getHeader();
+                ByteBuf body = pkg.getBody();
+                short pkgType = pkg.getPkgType();
 
+//                pkg.toByteBuf().release();
 //                ByteBuf header = pkg.getHeader().retain();
 //                ByteBuf body = pkg.getBody().retain();
 
 
 //                LOG.debug("pkg type = {}", pkg.getPkgType());
-                switch (pkg.getPkgType()) {
+                switch (pkgType) {
                     case PackageType.PKG_CONNECT_REQ:
                         ConnectReqPackage connectReqPackage = new ConnectReqPackage();
                         //LOG.debug(">>>>>>>>>>>>>>>locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));

@@ -175,23 +175,54 @@ public class TunnelManager implements Runnable {
         }
     }
 
-    public void touch(Package pkg) {
+//    public void touch(Package pkg) {
+//        int connId = -1;
+//
+//        //connect req
+//        if (pkg instanceof ConnectReqPackage) {
+//            connId = ConnectReqPackage.class.cast(pkg).getConnId();
+//        }
+//
+//        //data
+//        if (pkg instanceof DefaultDataPackage) {
+//            connId = DefaultDataPackage.class.cast(pkg).getLocalConnId();
+//        }
+//
+//        Tunnel tunnel = tunnelFor(connId);
+//        if (tunnel != null && !tunnel.shouldClose()) {
+//            tunnel.touch(pkg);
+//        } else {
+//            //pkg.toByteBuf().release();
+//        }
+//    }
+
+    public void touch(int tunnelId) {
         int connId = -1;
 
-        //connect req
-        if (pkg instanceof ConnectReqPackage) {
-            connId = ConnectReqPackage.class.cast(pkg).getConnId();
-        }
-
-        //data
-        if (pkg instanceof DefaultDataPackage) {
-            connId = DefaultDataPackage.class.cast(pkg).getLocalConnId();
-        }
+//        //connect req
+//        if (pkg instanceof ConnectReqPackage) {
+//            connId = ConnectReqPackage.class.cast(pkg).getConnId();
+//        }
+//
+//        //data
+//        if (pkg instanceof DefaultDataPackage) {
+//            connId = DefaultDataPackage.class.cast(pkg).getLocalConnId();
+//        }
+//
+//        Tunnel tunnel = tunnelFor(connId);
+//        if (tunnel != null && !tunnel.shouldClose()) {
+//            tunnel.touch(pkg);
+//        } else {
+//            //pkg.toByteBuf().release();
+//        }
 
         Tunnel tunnel = tunnelFor(connId);
         if (tunnel != null && !tunnel.shouldClose()) {
-            tunnel.touch(pkg);
+            tunnel.touch(tunnelId);
+        } else {
+            //pkg.toByteBuf().release();
         }
+
     }
 
     //sync
@@ -218,8 +249,10 @@ public class TunnelManager implements Runnable {
                 channelTunnelMap.remove(t.getChannel());
                 t.close();
             });
-            connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
-            connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+//            connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
+//            connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+            connection.getWritePackages().forEach(pkg -> PackageUtils.release(pkg));
+            connection.getRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
             writeService.removeWrite(connection);
         }
     }

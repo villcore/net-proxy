@@ -42,12 +42,12 @@ public class ChannelClosePackageHandler implements PackageHandler {
                 .forEach(pkg -> {
                     int connId = pkg.getLocalConnId();
                     int corresponConnId = pkg.getRemoteConnId();
-                    LOG.debug("need handle channel close package ... connId = {}, correspondConnId = {}", connId, corresponConnId);
+//                    LOG.debug("need handle channel close package ... connId = {}, correspondConnId = {}", connId, corresponConnId);
 
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
                     if(tunnel == null) {
-                        LOG.error("search tunnel is null, but channel is running ..., please check code...");
+//                        LOG.error("search tunnel is null, but channel is running ..., please check code...");
                     } else {
                         LOG.debug("tunnel close ...");
                         tunnel.needClose();

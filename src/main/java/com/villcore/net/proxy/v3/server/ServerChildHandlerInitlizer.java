@@ -51,7 +51,7 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
             }
         });
 
-        ch.pipeline().addLast(new ServerPackageDecoder());
+        ch.pipeline().addLast(new ServerPackageDecoder(connection));
         //ch.pipeline().addLast(new ConnectionPackageDecoder());
         ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));

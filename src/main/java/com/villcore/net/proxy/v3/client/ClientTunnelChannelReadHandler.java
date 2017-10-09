@@ -55,6 +55,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
         ChannelPipeline pipeline = ctx.pipeline();
         Channel channel = pipeline.channel();
         Tunnel curTunnel = tunnelManager.tunnelFor(channel);
+        curTunnel.touch(-1);
         channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
@@ -63,6 +64,15 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                 }
             }
         });
+
+//        if(curTunnel == null) {
+//            if(msg instanceof ByteBuf) {
+//                ByteBuf byteBuf = (ByteBuf) msg;
+//                byteBuf.release();
+//            }
+//                ctx.close();
+//                return;
+//        }
         int connId = curTunnel.getConnId();
 
         if(!(msg instanceof ByteBuf)) {
@@ -84,7 +94,6 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             }
 
             if(!curTunnel.readWaterMarkerSafe()) {
-//                LOG.debug("tunnel [{}] waterMark too high ...", connId);
                 curTunnel.getChannel().config().setAutoRead(false);
             }
 
@@ -118,30 +127,6 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
                 detectedProxy = true;
                 return;
-
-//                int last = byteBuf.getByte(writerIndex - 1);
-//                int lastOne = byteBuf.getByte(writerIndex - 2);
-//                int lastTwo = byteBuf.getByte(writerIndex - 3);
-//                int lastThree = byteBuf.getByte(writerIndex - 4);
-//
-//                if((last == lastTwo && lastTwo == 10) && (lastOne == lastThree && lastThree == 13)) {
-//                    InetSocketAddress address = HttpParser.parseAddress2(byteBuf.toString(Charset.forName("utf-8")).getBytes());
-//                    String hostName = address.getHostName();
-//                    short port = (short) address.getPort();
-//
-//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-//                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
-//
-//                    curTunnel.setConnectPackage(connectReqPackage);
-//                    curTunnel.addSendPackage(dataPackage);
-//                    //channel.config().setAutoRead(false);
-//                    curTunnel.waitTunnelConnect();
-//
-//                    detectedProxy = true;
-//                    return;
-//                } else {
-//                    LOG.debug("");
-//                }
             }
         }
 
@@ -169,6 +154,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
+                    byteBuf.release(1);
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
                     curTunnel.setConnectPackage(connectReqPackage);
                     curTunnel.waitTunnelConnect();
@@ -201,8 +187,8 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
         curTunnel.close();
         channel.close();
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +
-                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, PackageUtils.toString(byteBuf.copy()));
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, PackageUtils.toString(byteBuf));
 //        LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
-
+        byteBuf.release(byteBuf.refCnt());
     }
 }

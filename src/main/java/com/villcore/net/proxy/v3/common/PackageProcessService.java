@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class PackageProcessService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(PackageProcessService.class);
 
-    private static final long SLEEP_INTERVAL = 50;
+    private static final long SLEEP_INTERVAL = 10;
 
     private TunnelManager tunnelManager;
     private ConnectionManager connectionManager;

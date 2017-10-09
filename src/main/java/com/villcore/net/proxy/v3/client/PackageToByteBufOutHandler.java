@@ -15,7 +15,8 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if(msg instanceof Package) {
             Package pkg = (Package) msg;
-            ctx.writeAndFlush(pkg.toByteBuf());
+//            ctx.writeAndFlush(pkg.toByteBuf());
+            ctx.write(pkg.toByteBuf());
             return;
         }
 //        if(msg instanceof ByteBuf) {
@@ -33,5 +34,7 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
 //        }
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! cur ref cnt = 0 for {}", msg.getClass());
         ctx.writeAndFlush(msg);
+//        ctx.write(msg);
+
     }
 }

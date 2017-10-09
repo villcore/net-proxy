@@ -2,11 +2,15 @@ package com.villcore.net.proxy.v3.pkg;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 public class PackageUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(PackageUtils.class);
+
     public static ConnectReqPackage buildConnectPackage(String hostName, short port, int localConnId, long userFlag) throws UnsupportedEncodingException {
         ByteBuf header = ConnectReqPackage.newHeader(hostName, port, localConnId, userFlag);
 
@@ -56,6 +60,44 @@ public class PackageUtils {
     public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
         //ByteBuf byteBuf2 = byteBuf.copy();
         return byteBuf.toString(Charset.forName("utf-8"));
+    }
+
+    public static void release(Package pkg) {
+        ByteBuf fix = pkg.getFixed();
+        ByteBuf header = pkg.getHeader();
+        ByteBuf body = pkg.getBody();
+//        release(fix);
+//        release(header);
+//        release(body);
+    }
+
+    public static void release(ByteBuf byteBuf) {
+//        if(byteBuf != null) {
+//            LOG.debug("byteBuf is release {}, refCnt = {}", byteBuf.refCnt());
+//
+//            while (byteBuf.refCnt() > 0) {
+//                byteBuf.release(1);
+//            }
+//        }
+    }
+
+    public static void release2(Package pkg) {
+//        ByteBuf fix = pkg.getFixed();
+//        ByteBuf header = pkg.getHeader();
+//        ByteBuf body = pkg.getBody();
+//        release2(fix);
+//        release2(header);
+//        release2(body);
+    }
+
+    public static void release2(ByteBuf byteBuf) {
+//        if(byteBuf != null) {
+//            LOG.debug("byteBuf is release {}, refCnt = {}", byteBuf.refCnt());
+//
+//            while (byteBuf.refCnt() > 0) {
+//                byteBuf.release(1);
+//            }
+//        }
     }
 
     public static Package convertCorrectPackage(Package pkg) {

@@ -19,7 +19,7 @@ public class WriteService extends LoopTask {
 
 //    private CopyOnWriteArrayList<Writeable> writeables = new CopyOnWriteArrayList<>();
     private Set<Writeable> copyOnWriteSet = new HashSet<>();
-    private long sleepInterval = 50;
+    private long sleepInterval = 10;
 
     private long time;
 
@@ -60,50 +60,5 @@ public class WriteService extends LoopTask {
         if(workTime < sleepInterval) {
             TimeUnit.MILLISECONDS.sleep(sleepInterval - workTime);
         }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        WriteService ws = new WriteService(50);
-
-        Writeable w = new Writeable() {
-            @Override
-            public boolean canWrite() {
-                return false;
-            }
-
-            @Override
-            public boolean write(Package pkg) {
-                return false;
-            }
-
-            @Override
-            public void touch(Package pkg) {
-
-            }
-
-            @Override
-            public void failWrite(Package pkg) {
-
-            }
-
-            @Override
-            public List<Package> getWritePackages() {
-                return null;
-            }
-
-            @Override
-            public void write() {
-
-            }
-        };
-        ws.start();
-        ThreadUtils.newThread("test", ws, false).start();
-
-        ws.addWrite(w);
-        ws.addWrite(w);
-        ws.addWrite(w);
-
-        Thread.sleep(1000L);
-        ws.removeWrite(w);
     }
 }

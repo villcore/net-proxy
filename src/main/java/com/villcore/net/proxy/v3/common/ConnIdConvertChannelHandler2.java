@@ -22,24 +22,21 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        //LOG.debug(">>>>>>>>>>>>>>>>> conver running...{}", msg.getClass().toString());
         if (msg instanceof Package) {
 
             Package pkg = (Package) msg;
-//            ByteBuf header = pkg.getHeader().copy();
-//            ByteBuf body = pkg.getBody().copy();
 
-            ByteBuf header = pkg.getHeader();
-            ByteBuf body = pkg.getBody();
+            ByteBuf header = pkg.getHeader().retain();
+            ByteBuf body = pkg.getBody().retain();
 
-
-            LOG.debug("************connId convert running.........{}", pkg.getPkgType());
+            //LOG.debug("************connId convert running.........{}", pkg.getPkgType());
 
             switch (pkg.getPkgType()) {
                 case PackageType.PKG_CONNECT_REQ: {//do nothing
                     ConnectReqPackage connectReqPackage = new ConnectReqPackage();
                     connectReqPackage.setHeader(header);
                     connectReqPackage.setBody(body);
+
                     pkg = connectReqPackage;
                     break;
                 }
@@ -47,10 +44,12 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     ConnectRespPackage connectRespPackage = new ConnectRespPackage();
                     connectRespPackage.setHeader(header);
                     connectRespPackage.setBody(body);
+
                     int connId = connectRespPackage.getLocalConnId();
                     int corspondConnId = connectRespPackage.getRemoteConnId();
 
-                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
+                    connectRespPackage.toByteBuf().release(1);
+                    //LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
                     ConnectRespPackage newPkg = PackageUtils.buildConnectRespPackage(corspondConnId, connId, 1L);
                     pkg = newPkg;
                     break;
@@ -62,7 +61,11 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
 
                     int connId = channelClosePackage.getLocalConnId();
                     int corspondConnId = channelClosePackage.getRemoteConnId();
+
                     ChannelClosePackage newPkg = PackageUtils.buildChannelClosePackage(corspondConnId, connId, 1L);
+//                    channelClosePackage.toByteBuf().release(1);
+                    PackageUtils.release(channelClosePackage);
+
                     pkg = newPkg;
                     break;
                 }
@@ -73,8 +76,16 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
 
                     int connId = defaultDataPackage.getLocalConnId();
                     int corspondConnId = defaultDataPackage.getRemoteConnId();
+//                    defaultDataPackage.getFixed().release();
+//                    defaultDataPackage.getHeader().release();
 
                     DefaultDataPackage newPkg = PackageUtils.buildDataPackage(corspondConnId, connId, 1L, body);
+//                    ByteBuf release = defaultDataPackage.toByteBuf();
+//                    release.release(release.refCnt());
+
+                    PackageUtils.release(defaultDataPackage.getFixed());
+                    PackageUtils.release(defaultDataPackage.getHeader());
+
                     pkg = newPkg;
                     break;
                 }

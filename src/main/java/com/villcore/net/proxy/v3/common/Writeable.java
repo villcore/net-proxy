@@ -12,11 +12,15 @@ public interface Writeable {
 
     public boolean write(Package pkg);
 
-    public void touch(Package pkg);
+    //public void touch(Package pkg);
+
+    public void touch(int tunnelId);
 
     public void failWrite(Package pkg);
 
     public List<Package> getWritePackages();
 
     public void write();
+
+    public void flush();
 }

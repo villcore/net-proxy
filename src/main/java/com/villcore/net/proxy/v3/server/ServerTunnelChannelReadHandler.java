@@ -38,7 +38,7 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                 ctx.channel().close();
                 return;
             }
-            tunnel.touch(null);
+            tunnel.touch(-1);
             
             int connId = tunnel.getConnId();
             int corrspondConnId = tunnel.getCorrespondConnId();

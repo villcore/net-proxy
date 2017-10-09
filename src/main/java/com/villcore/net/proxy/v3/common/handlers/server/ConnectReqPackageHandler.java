@@ -6,6 +6,7 @@ import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.server.DNS;
 import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -68,7 +69,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                 .collect(Collectors.toList());
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
 
-        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
+//        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())
@@ -77,8 +78,15 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     String hostname = new String(pkg.getHostname());
                     int port = pkg.getPort();
 
-                    LOG.debug("ref = {}", pkg.toByteBuf().refCnt());
-                    pkg.toByteBuf().release();
+                    pkg.getFixed().release();
+                    pkg.getHeader().release();
+                    pkg.getBody().release();
+
+                    PackageUtils.release(pkg.getFixed());
+                    PackageUtils.release(pkg.getHeader());
+                    PackageUtils.release(pkg.getBody());
+
+
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
                     connectToDst(hostname, port, correspondConnId, connection, 0);

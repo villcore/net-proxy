@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    public static final int MAX_READ_WATER_MARKER = 10;
+    public static final int MAX_READ_WATER_MARKER = 100;
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId
@@ -195,7 +195,6 @@ public class Tunnel extends BasicWriteableImpl {
     /**
      * sendable
      **/
-
     @Override
     public boolean canWrite() {
         return true;
@@ -206,22 +205,31 @@ public class Tunnel extends BasicWriteableImpl {
         //LOG.debug("write pkg ...");
         if (channel == null || !channel.isOpen()) {
             //LOG.debug("write pkg ...failed ...");
-            pkg.toByteBuf().release();
+//            pkg.toByteBuf().release();
+            PackageUtils.release(pkg.getFixed());
+            PackageUtils.release(pkg.getHeader());
+            PackageUtils.release(pkg.getBody());
+
         } else {
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
             int connId = Integer.valueOf(dataPackage.getLocalConnId());
             int corrspondConnId = Integer.valueOf(dataPackage.getRemoteConnId());
             int bytes = dataPackage.getBody().readableBytes();
+            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
 
+            LOG.debug("================================{} ...", pkg.getBody().refCnt());
             channel.writeAndFlush(pkg.getBody());
 //            pkg.getHeader().release();
 //            pkg.getFixed().release();
             //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+            PackageUtils.release2(pkg.getFixed());
+            PackageUtils.release2(pkg.getHeader());
+            PackageUtils.release2(pkg.getBody());
+
+
 
             //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
 
-
-            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
 
 //            try {
 //                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody().copy()));
@@ -232,8 +240,14 @@ public class Tunnel extends BasicWriteableImpl {
         return true;
     }
 
+//    @Override
+//    public void touch(Package pkg) {
+//        lastTouch = System.currentTimeMillis();
+//        //pkg.toByteBuf().release();
+//    }
+
     @Override
-    public void touch(Package pkg) {
+    public void touch(int tunnelId) {
         lastTouch = System.currentTimeMillis();
     }
 
@@ -244,6 +258,10 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public List<Package> getWritePackages() {
         return drainRecvPackages();
+    }
+
+    @Override
+    public void flush() {
     }
 
     public long getLastTouch() {
@@ -320,10 +338,13 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void close() {
+        channel.close();
         writeService.removeWrite(this);
         waitTunnelConnect();
-        drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
-        drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
+//        drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+//        drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
+        drainRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
+        drainSendPackages().forEach(pkg -> PackageUtils.release(pkg));
         channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {

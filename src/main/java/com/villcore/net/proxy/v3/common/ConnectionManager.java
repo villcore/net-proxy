@@ -4,6 +4,7 @@ import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
+import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -35,6 +36,7 @@ public class ConnectionManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionManager.class);
 
     private static final short MAX_RETRY_COUNT = 500;
+    private static final long MAX_IDLE_TIME =  30 * 1000L;
 
     private EventLoopGroup eventLoopGroup;
     private TunnelManager tunnelManager;
@@ -56,7 +58,7 @@ public class ConnectionManager implements Runnable {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(this.eventLoopGroup)
                 .channel(NioSocketChannel.class)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 60 * 1000)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
@@ -95,15 +97,13 @@ public class ConnectionManager implements Runnable {
         synchronized (updateLock) {
             if (connectionMap.containsKey(connectionKey)) {
                 Connection connection = connectionMap.get(connectionKey);
-                connection.getRemoteChannel().close();
+                //connection.getRemoteChannel().close();
                 connection.setRemoteChannel(channel);
                 connection.setConnected(true);
-
+                connection.connectionTouch(System.currentTimeMillis());
                 return connection;
             }
-        }
 
-        synchronized (updateLock) {
             Connection connection = new Connection(address.getHostName(), address.getPort(), tunnelManager);
             connection.setRemoteChannel(channel);
             connection.setConnected(true);
@@ -117,7 +117,7 @@ public class ConnectionManager implements Runnable {
                     }
                 }
             });
-            connectionMap.put(addrAndPortKey(addr, port), connection);
+            connectionMap.put(connectionKey, connection);
             writeService.addWrite(connection);
             return connection;
         }
@@ -136,8 +136,9 @@ public class ConnectionManager implements Runnable {
     public Connection connectTo(String addr, int port) {
         Connection connection = null;
         synchronized (updateLock) {
+            connection = connectionMap.get(addrAndPortKey(addr, port));
             if (connection == null) {
-                connection = connectionMap.getOrDefault(addrAndPortKey(addr, port), new Connection(addr, port, tunnelManager));
+                connection = new Connection(addr, port, tunnelManager);
                 connectionMap.putIfAbsent(addrAndPortKey(addr, port), connection);
                 tunnelManager.addConnection(connection);
             }
@@ -145,12 +146,12 @@ public class ConnectionManager implements Runnable {
             try {
                 Connection finalConnection = connection;
 
+                LOG.debug("ready to connect ...");
                 Channel channel = initBootstrap().connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
                     @Override
                     public void operationComplete(Future<? super Void> future) throws Exception {
                         if (future.isSuccess()) {
                             connectSuccess(addr, port, finalConnection);
-
                         } else {
                             connectFailed(addr, port, finalConnection);
                         }
@@ -166,6 +167,7 @@ public class ConnectionManager implements Runnable {
                 connection.setRemoteChannel(channel);
                 //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
             } catch (Exception e) {
+                LOG.debug(e.getMessage(), e);
                 connectFailed(addr, port, connection);
             }
             return connection;
@@ -173,15 +175,9 @@ public class ConnectionManager implements Runnable {
     }
 
     private void connectFailed(String addr, int port, Connection finalConnection) {
-
         //TODO failed
         LOG.debug("connect to remote [{}:{}] server failed...", addr, port);
         finalConnection.setConnected(false);
-//        try {
-//            finalConnection.getRemoteChannel().closeFuture().sync();
-//        } catch (InterruptedException e) {
-//            LOG.error(e.getMessage(), e);
-//        }
 
         Short curRetry = retryCountMap.getOrDefault(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         LOG.debug("cur retry = {}", curRetry);
@@ -208,8 +204,22 @@ public class ConnectionManager implements Runnable {
         finalConnection.connectionTouch(System.currentTimeMillis());
         retryCountMap.put(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         writeService.addWrite(finalConnection);
+        addPingTask(finalConnection);
+    }
 
+    private void addPingTask(Connection finalConnection) {
         //TODO 构建ConnectionReqPackage, 添加到Queue中
+        eventLoopGroup.schedule(new Runnable() {
+            @Override
+            public void run() {
+                if (finalConnection != null && finalConnection.isConnected()) {
+                    Package pkg = PackageUtils.buildChannelClosePackage(-1, -1, -1L);
+                    finalConnection.addSendPackages(Collections.singletonList(pkg));
+
+                    addPingTask(finalConnection);
+                }
+            }
+        }, 10, TimeUnit.SECONDS);
     }
 
     private String addrAndPortKey(String addr, int port) {
@@ -227,8 +237,11 @@ public class ConnectionManager implements Runnable {
         InetSocketAddress remoteAddr = (InetSocketAddress) channel.remoteAddress();
         String addr = remoteAddr.getAddress().getHostAddress();
         int port = remoteAddr.getPort();
-//        LOG.debug("key = {}, channel map = {}", addrAndPortKey(addr, port), connectionMap.toString());
-        return connectionMap.getOrDefault(addrAndPortKey(addr, port), null);
+        LOG.debug("key = {}, channel map = {}", addrAndPortKey(addr, port), connectionMap.toString());
+
+        synchronized (updateLock) {
+            return connectionMap.getOrDefault(addrAndPortKey(addr, port), null);
+        }
     }
 
     //TODO need sync
@@ -248,14 +261,17 @@ public class ConnectionManager implements Runnable {
 //        自动调度任务，用来清理长时间无响应的Connection
 //        过滤touch超时的connection
 //        TODO 这个逻辑如果关闭了connection，客户端如何才能新建连接，需要再考虑设计，服务端可以这样使用
+        LOG.debug("scan idle connections ...");
         synchronized (updateLock) {
             List<String> connectionKeys = connectionMap.keySet().stream().collect(Collectors.toList());
             for (String connectionKey : connectionKeys) {
-                Connection connection = connectionMap.remove(connectionKey);
-                if (System.currentTimeMillis() - connection.lastTouch() > 3 * 60 * 1000)
+                Connection connection = connectionMap.get(connectionKey);
+                if (System.currentTimeMillis() - connection.lastTouch() > MAX_IDLE_TIME) {
                     retryCountMap.remove(connectionKey);
-                if (connection != null) {
-                    connection.close();
+                    if (connection != null) {
+                        connection.close();
+                        LOG.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&need close connection [{}] ...", connection);
+                    }
                 }
             }
         }
@@ -265,9 +281,12 @@ public class ConnectionManager implements Runnable {
         String connectionKey = addrAndPortKey(remoteAddr, remotePort);
         synchronized (updateLock) {
             if (connectionMap.containsKey(connectionKey)) {
+                LOG.debug("get a cached connection ...");
                 return connectionMap.get(connectionKey);
             }
         }
+
+        LOG.debug("get a new connection ...");
 
         // already sync and put into map ...
         Connection connection = connectTo(remoteAddr, remotePort);

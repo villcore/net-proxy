@@ -43,8 +43,8 @@ public class ClientLocalTest {
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
-//        Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
+        Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 30 * 1000, 1 * 30 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);

@@ -58,7 +58,8 @@ public class ConnectRespPackageHandler implements PackageHandler {
                             tunnel.rebuildSendPackages(corrspondId);
                             tunnel.setConnect(true);
                             tunnel.tunnelConnected();
-                            tunnel.touch(pkg);
+                            tunnel.touch(-1);
+//                            tunnel.touch(pkg);
 //                            if(tunnel.isHttps()) {
 //                                String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
 //                                tunnel.addRecvPackage(PackageUtils.buildDataPackage(connId, corrspondId, 1L, Unpooled.wrappedBuffer(connectResponse.getBytes())));

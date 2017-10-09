@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Connection extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
-    private static final int SEND_HIGH_WATER_MARKER = 100;
+    private static final int SEND_HIGH_WATER_MARKER = 1000;
     private volatile boolean connected;
 
     private String remoteAddr;
@@ -115,6 +115,7 @@ public class Connection extends BasicWriteableImpl {
 
     public void close() {
         tunnelManager.closeConnection(this);
+        LOG.debug("%%%%%%%%%%%%%%%%%%%%%connection close...");
     }
 
     @Override
@@ -149,18 +150,26 @@ public class Connection extends BasicWriteableImpl {
             return false;
         }
         //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
-        remoteChannel.writeAndFlush(pkg);
+        //remoteChannel.writeAndFlush(pkg);
+        remoteChannel.write(pkg);
         //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
         LOG.debug("connection write...{}", true);
         return true;
     }
 
+//    @Override
+//    public void touch(Package pkg) {
+//        lastTouch = System.currentTimeMillis();
+//        tunnelManager.touch(pkg);
+//        LOG.debug("connection touch...{}", true);
+//    }
+
     @Override
-    public void touch(Package pkg) {
+    public void touch(int tunnelId) {
         lastTouch = System.currentTimeMillis();
-        tunnelManager.touch(pkg);
-        //LOG.debug("connection touch...{}", true);
+        tunnelManager.touch(tunnelId);
+        LOG.debug("connection touch...{}", true);
     }
 
     @Override
@@ -178,5 +187,10 @@ public class Connection extends BasicWriteableImpl {
         sendQueue.drainTo(packages);
         curSendWaterMarker -= packages.size();
         return packages;
+    }
+
+    @Override
+    public void flush() {
+        remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 }

@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v3.server;
 
+import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthReqPackage;
@@ -23,8 +24,16 @@ public class ServerPackageDecoder extends ByteToMessageDecoder {
 
     private int packageLen = 0;
 
+    private Connection connection;
+
+    public ServerPackageDecoder(Connection connection) {
+        this.connection = connection;
+    }
+
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+            in.retain();
+
         //LOG.debug("rx = {}, wx = {}", in.readerIndex(), in.writerIndex());
         if (packageLen > 0) {
             //LOG.debug("pkg len = {}", packageLen);
@@ -41,7 +50,7 @@ public class ServerPackageDecoder extends ByteToMessageDecoder {
                 ByteBuf header = pkg.getHeader().retain();
                 ByteBuf body = pkg.getBody().retain();
 
-                LOG.debug("pkg type = {}", pkg.getPkgType());
+//                LOG.debug("pkg type = {}", pkg.getPkgType());
                 switch (pkg.getPkgType()) {
                     case PackageType.PKG_CONNECT_REQ:
                         ConnectReqPackage connectReqPackage = new ConnectReqPackage();
@@ -91,9 +100,15 @@ public class ServerPackageDecoder extends ByteToMessageDecoder {
                     default:
                         break;
                 }
-//                                LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
+
+//              LOG.debug("recv pkg, totalLen = {}, headerLen = {}, bodyLen = {}", pkg.getTotalLen(), pkg.getHeaderLen(), pkg.getBodyLen());
                 //out.add(pkg);
                 ctx.fireChannelRead(pkg);
+//                connection.touch(pkg);
+//                connection.touch(pkg);
+                connection.connectionTouch(System.currentTimeMillis());
+
+
                 //LOG.debug("decoder recv pgk count = {}", cnt.incrementAndGet());
                 packageLen = 0;
             } else {

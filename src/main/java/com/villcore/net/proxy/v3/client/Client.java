@@ -23,12 +23,15 @@ public class Client {
         //TODO 配置信息需要从文件中读取
         String proxyPort = "10081";
 
+//
 //        String remoteAddress = "127.0.0.1";
 //      String remotePort = "20081";
 //      String remotePort = "50080";
 
 //
         String remoteAddress = "45.63.120.186";
+//        String remoteAddress = "172.93.36.103";
+
 //
 //        String remoteAddress = "192.168.56.102";
 

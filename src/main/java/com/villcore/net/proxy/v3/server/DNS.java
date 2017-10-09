@@ -8,11 +8,18 @@ import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DNS {
     private static final Map<String, String> DOMAIN_MAP = new ConcurrentHashMap<>();
 
-    public static String[] parseIp(String hostname, int port) {
+    private static AtomicLong cnt = new AtomicLong(0);
+
+    public synchronized static String[] parseIp(String hostname, int port) {
+        if(cnt.incrementAndGet() >= 10000) {
+            DOMAIN_MAP.clear();
+        }
+
         if(!DOMAIN_MAP.containsKey(hostname)) {
             InetSocketAddress address = new InetSocketAddress(hostname, port);
 
@@ -33,6 +40,7 @@ public class DNS {
             String ip = a + "." + b + "." + c + "." + d;
             DOMAIN_MAP.putIfAbsent(hostname, ip);
         }
+
         return new String[]{DOMAIN_MAP.get(hostname), String.valueOf(port)};
     }
 
