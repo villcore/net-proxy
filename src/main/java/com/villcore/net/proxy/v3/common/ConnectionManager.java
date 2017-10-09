@@ -140,7 +140,9 @@ public class ConnectionManager implements Runnable {
 
         try {
             Connection finalConnection = connection;
-            Channel channel = initBootstrap().connect(addr, port).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
+            Bootstrap bootstrap = initBootstrap();
+            bootstrap.bind("127.0.0.1", 60070);
+            Channel channel = bootstrap.connect(addr, port).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override
                 public void operationComplete(Future<? super Void> future) throws Exception {
                     if (future.isSuccess()) {

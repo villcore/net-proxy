@@ -37,7 +37,7 @@ public class ClientLocalTest {
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
-        TunnelManager tunnelManager = new TunnelManager(10000);
+            TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
         scheduleService.scheduleTaskAtFixedRate(tunnelManager, 300 * 1000, 30 * 1000);
 

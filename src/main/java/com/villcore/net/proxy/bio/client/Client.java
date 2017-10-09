@@ -15,18 +15,22 @@ import java.util.List;
 
 /**
  * Created by villcore on 2017/7/17.
+ *
  */
 public class Client {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static long connectionId = 0;
+
     public static void main(String[] args) throws IOException {
         List<Connection> connections = new LinkedList<>();
 
         int listenPort = 10080;
+
         //InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 20080);
-        //InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
-        //72.93.36.103
-        InetSocketAddress remoteAddress = new InetSocketAddress("172.93.36.103", 20080);
+        InetSocketAddress remoteAddress = new InetSocketAddress("45.63.120.186", 20080);
+
+        //172.93.36.103
+        //InetSocketAddress remoteAddress = new InetSocketAddress("172.93.36.103", 20080);
 
         ServerSocket serverSocket = null;
 
@@ -96,7 +100,5 @@ public class Client {
             proxy.clearProxy();
             LOG.error(e.getMessage(), e);
         }
-
-
     }
 }

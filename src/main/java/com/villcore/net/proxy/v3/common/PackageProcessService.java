@@ -76,12 +76,19 @@ public class PackageProcessService extends LoopTask {
 
         try {
             //client
+            /**
+             *
+             * all connection -> checkAndHandleConnectState
+             *
+             * **/
+
+            /**
             //connectionManager#getAuthPackage (单个Queue)
             //connectionManager#allConnection() -> getAuthReqPackage -> addSendPkg
             //connectionManager#allConnection() -> getAuthRespPackage -> connection.handleConnect
 
             //server
-            //connection#allConnection() -> authReqPackage
+            //connection#allConnection() -> authReqPackage**/
 
             //TODO connection waterMarker handle...
             List<Connection> connections = connectionManager.allConnected();
