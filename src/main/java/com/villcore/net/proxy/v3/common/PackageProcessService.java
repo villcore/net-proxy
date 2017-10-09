@@ -75,41 +75,33 @@ public class PackageProcessService extends LoopTask {
         time = System.currentTimeMillis();
 
         try {
-            //client
-            /**
-             *
-             * all connection -> checkAndHandleConnectState
-             *
-             * **/
-
-            /**
-            //connectionManager#getAuthPackage (单个Queue)
-            //connectionManager#allConnection() -> getAuthReqPackage -> addSendPkg
-            //connectionManager#allConnection() -> getAuthRespPackage -> connection.handleConnect
-
-            //server
-            //connection#allConnection() -> authReqPackage**/
-
-            //TODO connection waterMarker handle...
             List<Connection> connections = connectionManager.allConnected();
             connections.forEach(connection -> {
                 if (connection.sendPackageReady()) {
                     //LOG.debug(">>>");
                     List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
+                    if(avaliableSendPackages.size() > 0) {
+//                        LOG.debug("tunnels has pkg to send ...");
+                    } else {
+                        //LOG.debug("tunnels has no pkg to send ...");
+                    }
                     for (PackageHandler handler : sendHandlers) {
                         avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
                     }
                     connection.addSendPackages(avaliableSendPackages);
                 } else {
-                    LOG.debug("===");
+//                    LOG.debug("===");
                 }
             });
 
-            connections.forEach(connection -> {
+            connectionManager.allConnected().forEach(connection -> {
                 List<Package> avaliableRecvPackages = connection.getRecvPackages();
-                if(!avaliableRecvPackages.isEmpty()) {
-                    //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", avaliableRecvPackages.size(), avaliableRecvPackages.size());
-                }
+//                if(!avaliableRecvPackages.isEmpty()) {
+//                    LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", avaliableRecvPackages.size(), avaliableRecvPackages.size());
+//                } else {
+//                    LOG.debug("recv queue for conn {} empty ...", connection);
+//                }
+
                 //LOG.debug("before {}", avaliableRecvPackages.size());
                 for (PackageHandler handler : recvHandlers) {
                     //LOG.debug("{}", handler.getClass().toString());

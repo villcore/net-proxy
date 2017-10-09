@@ -187,8 +187,8 @@ public class ClientTunnelChannelReadHandler_ori extends ChannelInboundHandlerAda
         curTunnel.shouldClose();
         curTunnel.close();
         channel.close();
-        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +
-                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, PackageUtils.toString(byteBuf.copy()));
+//        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +
+//                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, PackageUtils.toString(byteBuf.copy()));
 //        LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
 
     }

@@ -59,8 +59,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
                 if(future.isSuccess()) {
-//                    ChannelClosePackage channelClosePackage = PackageUtils
-//                            .buildChannelClosePackage(curTunnel.getConnId(), curTunnel.getCorrespondConnId(), 1L);
+//                    ChannelClosePackage channelClosePackage =  , curTunnel.getCorrespondConnId(), 1L);
                 }
             }
         });
@@ -73,7 +72,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         ByteBuf byteBuf = (ByteBuf) msg;
         //LOG.debug("client [{}] read {} bytes ...", curTunnel.getConnId(), byteBuf.readableBytes());
-        //LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
+//        LOG.debug("tunnel [{}] read content ===================\n {}=======================", connId, PackageUtils.toString(byteBuf.copy()));
 
         LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", curTunnel.getConnId(), curTunnel.getCorrespondConnId(), byteBuf.readableBytes());
 
@@ -170,23 +169,20 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-//                    curTunnel.setConnectPackage(connectReqPackage);
-////                    channel.config().setAutoRead(false);
-//                    curTunnel.waitTunnelConnect();
-//                    curTunnel.setHttps(true);
-//                    String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
-//                    ctx.writeAndFlush(Unpooled.wrappedBuffer(connectResponse.getBytes()));
-//                    ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
-
-
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
-
                     curTunnel.setConnectPackage(connectReqPackage);
-                    curTunnel.addSendPackage(dataPackage);
-                    //channel.config().setAutoRead(false);
                     curTunnel.waitTunnelConnect();
+                    curTunnel.setHttps(true);
+                    String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(connectResponse.getBytes()));
+                    //ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+
+
+//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
+//                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
+//                    curTunnel.setConnectPackage(connectReqPackage);
+//                    curTunnel.addSendPackage(dataPackage);
+//                    curTunnel.waitTunnelConnect();
 
 //                    if(connectReqPackage == null) {
 //                        LOG.debug("!!!!connect pkg == null {}", "");
@@ -199,6 +195,9 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         curTunnel.stopRead();
         curTunnel.shouldClose();
+        curTunnel.drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
+        curTunnel.drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+
         curTunnel.close();
         channel.close();
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +

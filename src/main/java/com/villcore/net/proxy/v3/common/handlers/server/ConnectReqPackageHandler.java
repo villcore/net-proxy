@@ -6,9 +6,8 @@ import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.server.DNS;
 import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -53,6 +52,10 @@ public class ConnectReqPackageHandler implements PackageHandler {
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 128 * 1024)
+
+//                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+//                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+
                 .channel(NioSocketChannel.class)
                 .handler(new ServerTunnelChannelReadHandler(tunnelManager));
         return bootstrap;
@@ -63,24 +66,28 @@ public class ConnectReqPackageHandler implements PackageHandler {
         List<Package> connectReqPackage = packages.stream()
                 .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ)
                 .collect(Collectors.toList());
-//        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", packages.size(), connectReqPackage.size());
+        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
+
+        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
         connectReqPackage.stream()
                 .map(pkg -> ConnectReqPackage.class.cast(pkg))
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
-                    Integer correspondConnId = pkg.getConnId();
-                    String hostname = pkg.getHostname();
+                    Integer correspondConnId = Integer.valueOf(pkg.getConnId());
+                    String hostname = new String(pkg.getHostname());
                     int port = pkg.getPort();
+
+                    LOG.debug("ref = {}", pkg.toByteBuf().refCnt());
+                    pkg.toByteBuf().release();
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
-//                    connectToDst(hostname, port, correspondConnId, connection, 0);
-                    hostname = "127.0.0.1";
-                    port = 3128;
                     connectToDst(hostname, port, correspondConnId, connection, 0);
+//                    hostname = "127.0.0.1";
+//                    port = 3128;
+//                    connectToDst(hostname, port, correspondConnId, connection, 0);
 
                 });
 
-        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
         return otherPackage;
     }
 
@@ -181,14 +188,12 @@ public class ConnectReqPackageHandler implements PackageHandler {
                             @Override
                             public void operationComplete(Future<? super Void> future) throws Exception {
                                 Channel channel = channels[0];
-
                                 if(future.isSuccess()) {
                                     //connect success...
                                     //channel success, build tunnel
                                     if(channel != null && channel.isOpen()) {
                                         Tunnel tunnel = tunnelManager.newTunnel(channel);
                                         tunnel.setBindConnection(connection);
-                                        tunnel.setConnect(false);
                                         tunnel.setCorrespondConnId(correspondConnId);
                                         tunnelManager.bindConnection(connection, tunnel);
                                         tunnel.setConnect(true);
@@ -204,6 +209,11 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                                 if (future.isSuccess()) {
                                                     tunnel.setConnect(false);
                                                     //TODO build channel close package and send
+                                                    List<Package> packages = tunnel.drainSendPackages();
+                                                    if(!packages.isEmpty()) {
+                                                        connection.addSendPackages(packages);
+                                                    }
+                                                    LOG.debug("server tunnel [{}] close ...", tunnel.getConnId());
                                                 }
                                             }
                                         });

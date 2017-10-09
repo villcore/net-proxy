@@ -38,12 +38,12 @@ public class PackageUtils {
         return pkg;
     }
 
-    public static String toString(Package pkg) throws UnsupportedEncodingException {
-        return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
-    }
-
-    public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
-        //ByteBuf byteBuf2 = byteBuf.copy();
-        return byteBuf.toString(Charset.forName("utf-8"));
-    }
+//    public static String toString(Package pkg) throws UnsupportedEncodingException {
+//        return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
+//    }
+//
+//    public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
+//        //ByteBuf byteBuf2 = byteBuf.copy();
+//        return byteBuf.toString(Charset.forName("utf-8"));
+//    }
 }

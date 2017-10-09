@@ -51,7 +51,7 @@ public class Connection extends BasicWriteableImpl {
     }
 
     public void addSendPackages(List<Package> avaliableSendPackages) {
-        //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>{}", avaliableSendPackages.size());
+//        LOG.debug(">>>>>>>>>>>>>>>>>>>>>>{}", avaliableSendPackages.size());
         curSendWaterMarker += avaliableSendPackages.size();
         try {
             avaliableSendPackages.stream().forEach(pkg -> {
@@ -63,10 +63,19 @@ public class Connection extends BasicWriteableImpl {
         }
     }
 
-    public void addRecvPackages(List<Package> packages) {
-        packages.forEach(pkg -> {
-            recvQueue.add(pkg);
-        });
+//    public void addSendPackage(Package pkg) {
+//        curSendWaterMarker ++;
+//        sendQueue.add(pkg);
+//    }
+//
+//    public void addRecvPackages(List<Package> packages) {
+//        packages.forEach(pkg -> {
+//            recvQueue.add(pkg);
+//        });
+//    }
+
+    public void addRecvPackage(Package pkg) {
+        recvQueue.add(pkg);
     }
 
     public boolean sendPackageReady() {
@@ -90,6 +99,10 @@ public class Connection extends BasicWriteableImpl {
 
     public void setRemoteChannel(Channel remoteChannel) {
         this.remoteChannel = remoteChannel;
+    }
+
+    public Channel getRemoteChannel() {
+        return this.remoteChannel;
     }
 
     public void setConnected(boolean connected) {
@@ -132,14 +145,14 @@ public class Connection extends BasicWriteableImpl {
     @Override
     public boolean write(Package pkg) {
         if(remoteChannel == null || !remoteChannel.isOpen()) {
-            LOG.debug("connection write...{}, remoteChannel == null ? {}", false, remoteChannel == null);
+            //LOG.debug("connection write...{}, remoteChannel == null ? {}", false, remoteChannel == null);
             return false;
         }
         //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
         remoteChannel.writeAndFlush(pkg);
-        remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+        //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
-        //LOG.debug("connection write...{}", true);
+        LOG.debug("connection write...{}", true);
         return true;
     }
 

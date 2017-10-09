@@ -4,10 +4,8 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,18 +31,19 @@ public class InvalidDataPackageHandler implements PackageHandler {
         List<Package> avaliablePackages = packages.stream().filter(pkg -> pkg instanceof DefaultDataPackage)
                 .map(pkg -> (DefaultDataPackage)pkg)
                 .filter(pkg -> {
-                    int connId = pkg.getLocalConnId();
+                    int connId = Integer.valueOf(pkg.getLocalConnId());
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
                     if(tunnel == null || tunnel.shouldClose()) {
                         ChannelClosePackage channelClosePackage = PackageUtils.buildChannelClosePackage(connId, pkg.getRemoteConnId(), 1L);
                         connection.addSendPackages(Collections.singletonList(channelClosePackage));
+                        pkg.toByteBuf().release();
                         return false;
                     }
                     return true;
                 })
                 .collect(Collectors.toList());
-        //LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
+        LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
         return avaliablePackages;
     }
 }

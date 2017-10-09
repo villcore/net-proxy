@@ -160,7 +160,7 @@ public class ConnectionManager implements Runnable {
             channelConnectMap.remove(channel);
 
             if (channel != null && !channel.isOpen()) {
-                channel.write(Unpooled.EMPTY_BUFFER);
+                //channel.write(Unpooled.EMPTY_BUFFER);
                 try {
                     channel.closeFuture().sync();
                 } catch (InterruptedException e) {
@@ -198,7 +198,7 @@ public class ConnectionManager implements Runnable {
                             channelConnectMap.remove(channel);
 
                             if (channel != null && !channel.isOpen()) {
-                                channel.write(Unpooled.EMPTY_BUFFER);
+                                //channel.write(Unpooled.EMPTY_BUFFER);
                                 try {
                                     channel.closeFuture().sync();
                                 } catch (InterruptedException e) {

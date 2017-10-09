@@ -36,14 +36,14 @@ public class Server {
 
         //核心的运行任务
         //WriteService
-        WriteService writeService = new WriteService(50L);
+        WriteService writeService = new WriteService(10L);
         writeService.start();
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(20000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 300 * 1000, 300 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 60 * 1000, 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
@@ -71,7 +71,7 @@ public class Server {
         try {
             LOG.info("start listen [{}] ...", listenPort);
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            serverBootstrap.group(eventLoopGroup, workerEventLoopGroup)
+            serverBootstrap.group(eventLoopGroup /**, workerEventLoopGroup **/)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)

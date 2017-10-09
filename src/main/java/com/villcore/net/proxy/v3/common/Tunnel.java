@@ -5,6 +5,7 @@ import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 public class Tunnel extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
-    public static final int MAX_READ_WATER_MARKER = 100;
+    public static final int MAX_READ_WATER_MARKER = 10;
     private volatile int curReadWaterMarker = 0;
 
     //本地端对应的connId
@@ -69,7 +70,15 @@ public class Tunnel extends BasicWriteableImpl {
     //https
     private boolean isHttps;
 
-    public Tunnel(Channel channel, Integer connId) {
+    //write service
+    private WriteService writeService;
+
+    //    public Tunnel(Channel channel, Integer connId) {
+//        this.channel = channel;
+//        this.connId = connId;
+//    }
+    public Tunnel(WriteService writeService, Channel channel, Integer connId) {
+        this.writeService = writeService;
         this.channel = channel;
         this.connId = connId;
     }
@@ -100,16 +109,17 @@ public class Tunnel extends BasicWriteableImpl {
 
     public void setConnectPackage(ConnectReqPackage connectPackage) {
 //        LOG.debug("set connect package ...{}", connId);
-        if(connectPackage != null) {
-            LOG.debug("tunnel [{}] need to cennect [{}:{}]", connId, connectPackage.getHostname(), connectPackage.getPort());
-        }
+//        if(connectPackage != null) {
+//            LOG.debug("tunnel [{}] need to cennect [{}:{}]", connId, connectPackage.getHostname(), connectPackage.getPort());
+//        }
         this.connectPackage = connectPackage;
     }
 
     public void addSendPackage(Package dataPackage) {
-        //LOG.debug("add send package for [{}]...,", connId);
+//        LOG.debug("add send package for [{}]...,", connId);
         sendQueue.add(dataPackage);
         incReadWaterMarker(1);
+        //LOG.debug("add send pkg, warter marker = {}, safe = {}", curReadWaterMarker, readWaterMarkerSafe());
         resetReadState();
     }
 
@@ -126,7 +136,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public List<Package> drainRecvPackages() {
-        if(!connected) {
+        if (!connected) {
             return Collections.emptyList();
         }
         List<Package> avaliablePackages = new LinkedList<>();
@@ -182,7 +192,9 @@ public class Tunnel extends BasicWriteableImpl {
         return connId;
     }
 
-    /** sendable **/
+    /**
+     * sendable
+     **/
 
     @Override
     public boolean canWrite() {
@@ -192,26 +204,30 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public boolean write(Package pkg) {
         //LOG.debug("write pkg ...");
-        if(channel == null || !channel.isOpen()) {
+        if (channel == null || !channel.isOpen()) {
             //LOG.debug("write pkg ...failed ...");
             pkg.toByteBuf().release();
         } else {
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
-            int connId = dataPackage.getLocalConnId();
-            int corrspondConnId = dataPackage.getRemoteConnId();
+            int connId = Integer.valueOf(dataPackage.getLocalConnId());
+            int corrspondConnId = Integer.valueOf(dataPackage.getRemoteConnId());
             int bytes = dataPackage.getBody().readableBytes();
+
             channel.writeAndFlush(pkg.getBody());
+//            pkg.getHeader().release();
+//            pkg.getFixed().release();
+            //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
 
             //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
 
 
             LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
 
-            try {
-                //LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody()));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            try {
+//                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody().copy()));
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
         }
         return true;
     }
@@ -262,7 +278,7 @@ public class Tunnel extends BasicWriteableImpl {
      * 增加复杂性。
      */
 
-     /**
+    /**
      * 等待服务端Tunnel成功连接, 该操作会将对应的Channel 自动读取关闭
      */
     public void waitTunnelConnect() {
@@ -292,7 +308,7 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void resetReadState() {
-        if(readWaterMarkerSafe()) {
+        if (readWaterMarkerSafe()) {
             channel.config().setAutoRead(true);
         } else {
             channel.config().setAutoRead(false);
@@ -304,13 +320,14 @@ public class Tunnel extends BasicWriteableImpl {
     }
 
     public void close() {
+        writeService.removeWrite(this);
         waitTunnelConnect();
-        drainRecvPackages();
-        drainSendPackages();
+        drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+        drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
         channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
-                if(future.isSuccess()) {
+                if (future.isSuccess()) {
                     LOG.debug("tunnel [{}] close ...", connId);
                 }
             }

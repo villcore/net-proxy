@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class TunnelManager implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(TunnelManager.class);
 
-    private static final long MAX_TOUCH_INTERVAL = 2 * 60 * 1000L;
+    private static final long MAX_TOUCH_INTERVAL = 30 * 1000L;
 
     private ConnIdGenerator connIdGenerator;
 
@@ -58,7 +58,7 @@ public class TunnelManager implements Runnable {
     private Tunnel newTunnel(Channel channel, Integer connId) {
         synchronized (stateLock) {
             //new Tunnel
-            Tunnel tunnel = new Tunnel(channel, new Integer(connId));
+            Tunnel tunnel = new Tunnel(writeService, channel, new Integer(connId));
             connIdTunnelMap.put(new Integer(connId), tunnel);
             channelTunnelMap.put(channel, tunnel);
             writeService.addWrite(tunnel);
@@ -88,7 +88,7 @@ public class TunnelManager implements Runnable {
         Set<Tunnel> tunnelSet = Collections.EMPTY_SET;
         synchronized (stateLock) {
             tunnelSet = connectionSetMap.getOrDefault(connection, Collections.synchronizedSet(new HashSet<>()));
-
+            //LOG.debug("cur tunnel size = {}", tunnelSet.size());
 
             return tunnelSet.stream().flatMap(t -> {
                 //LOG.debug("tunner[{}] -> send", t.getConnId());
@@ -151,6 +151,9 @@ public class TunnelManager implements Runnable {
                         //LOG.debug("tunnel[{}] connected [{}] add recv package ...", tunnel.getConnId(), tunnel.getConnected());
                     }
                 });
+
+                dataPackages.clear();
+                dataPackages = null;
         //connId
         //tunnel#putRecvQueue
     }
@@ -213,7 +216,11 @@ public class TunnelManager implements Runnable {
             tunnelSet.forEach(t -> {
                 connIdTunnelMap.remove(t.getConnId());
                 channelTunnelMap.remove(t.getChannel());
+                t.close();
             });
+            connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
+            connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+            writeService.removeWrite(connection);
         }
     }
 
@@ -241,11 +248,16 @@ public class TunnelManager implements Runnable {
                 connectionSetMap.getOrDefault(connection, Collections.EMPTY_SET).remove(tunnel);
                 tunnel.close();
                 channelTunnelMap.remove(channel);
+                if(channelTunnelMap.size() == 0) {
+                    connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
+                    connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+                }
             }
             } catch (Exception e) {
                 LOG.error(e.getMessage(), e);
             }
             LOG.debug("clean tunnels ... alive tunnels = {}, {}", connIdTunnelMap.size(), channelTunnelMap.size());
+
         }
     }
 }

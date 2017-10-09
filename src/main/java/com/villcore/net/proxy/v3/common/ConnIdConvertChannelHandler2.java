@@ -26,9 +26,14 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
         if (msg instanceof Package) {
 
             Package pkg = (Package) msg;
-            ByteBuf header = pkg.getHeader().copy();
-            ByteBuf body = pkg.getBody().copy();
-            //LOG.debug("************connId convert running.........{}", pkg.getPkgType());
+//            ByteBuf header = pkg.getHeader().copy();
+//            ByteBuf body = pkg.getBody().copy();
+
+            ByteBuf header = pkg.getHeader();
+            ByteBuf body = pkg.getBody();
+
+
+            LOG.debug("************connId convert running.........{}", pkg.getPkgType());
 
             switch (pkg.getPkgType()) {
                 case PackageType.PKG_CONNECT_REQ: {//do nothing
@@ -45,7 +50,7 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     int connId = connectRespPackage.getLocalConnId();
                     int corspondConnId = connectRespPackage.getRemoteConnId();
 
-//                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
+                    LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
                     ConnectRespPackage newPkg = PackageUtils.buildConnectRespPackage(corspondConnId, connId, 1L);
                     pkg = newPkg;
                     break;

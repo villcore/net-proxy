@@ -7,6 +7,7 @@ import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -35,28 +36,27 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
+        LOG.debug("accepot connection from {} ...", ch.remoteAddress().toString());
         Connection connection = connectionManager.acceptConnectTo(ch);
 
-//        Channel channel = ch;
-//        channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-//            @Override
-//            public void operationComplete(Future<? super Void> future) throws Exception {
-//                if(future.isSuccess()) {
-//                    Tunnel tunnel = tunnelManager.tunnelFor(channel);
-//                    tunnel.shouldClose();
-//                    ChannelClosePackage channelClosePackage = PackageUtils
-//                            .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
-//                    connection.addSendPackages(Collections.singletonList(channelClosePackage));
-//                }
-//            }
-//        });
+//        ch.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 
-        ch.pipeline().addLast(new ClientPackageDecoder());
+//        Channel channel = ch;
+        ch.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                if(future.isSuccess()) {
+                    connection.setConnected(false);
+                }
+            }
+        });
+
+        ch.pipeline().addLast(new ServerPackageDecoder());
         //ch.pipeline().addLast(new ConnectionPackageDecoder());
         ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
         //ch.pipeline().addLast(new ConnIdConvertChannelHandler());
         ch.pipeline().addLast(new PackageToByteBufOutHandler());
-        ch.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
+//        ch.pipeline().writeAndFlush(Unpooled.EMPTY_BUFFER);
     }
 }
