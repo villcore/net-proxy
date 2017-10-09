@@ -81,7 +81,7 @@ public class ServerPackageDecoder extends ByteToMessageDecoder {
                         defaultDataPackage.setHeader(header);
                         defaultDataPackage.setBody(body);
                         pkg = defaultDataPackage;
-                        //LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
+                        LOG.debug(">>>>>>>>>>>>>>>data locaConnId = {}, remoteId = {}", in.getInt(in.readerIndex()), in.getInt(in.readerIndex() + 4));
                         break;
                     case PackageType.PKG_CONNECTION_AUTH_REQ:
                         ConnectAuthReqPackage connectAuthReqPackage = new ConnectAuthReqPackage();

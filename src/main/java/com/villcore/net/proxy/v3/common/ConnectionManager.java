@@ -1,17 +1,15 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.client.ClientPackageDecoder;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
@@ -19,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,7 +67,8 @@ public class ConnectionManager implements Runnable {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new ClientPackageDecoder());
+                        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
+                        ch.pipeline().addLast(new PackageDecoder());
                         ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
@@ -237,7 +235,7 @@ public class ConnectionManager implements Runnable {
         InetSocketAddress remoteAddr = (InetSocketAddress) channel.remoteAddress();
         String addr = remoteAddr.getAddress().getHostAddress();
         int port = remoteAddr.getPort();
-        LOG.debug("key = {}, channel map = {}", addrAndPortKey(addr, port), connectionMap.toString());
+//        LOG.debug("key = {}, channel map = {}", addrAndPortKey(addr, port), connectionMap.toString());
 
         synchronized (updateLock) {
             return connectionMap.getOrDefault(addrAndPortKey(addr, port), null);
@@ -261,7 +259,7 @@ public class ConnectionManager implements Runnable {
 //        自动调度任务，用来清理长时间无响应的Connection
 //        过滤touch超时的connection
 //        TODO 这个逻辑如果关闭了connection，客户端如何才能新建连接，需要再考虑设计，服务端可以这样使用
-        LOG.debug("scan idle connections ...");
+//        LOG.debug("scan idle connections ...");
         synchronized (updateLock) {
             List<String> connectionKeys = connectionMap.keySet().stream().collect(Collectors.toList());
             for (String connectionKey : connectionKeys) {
@@ -270,6 +268,7 @@ public class ConnectionManager implements Runnable {
                     retryCountMap.remove(connectionKey);
                     if (connection != null) {
                         connection.close();
+                        connectionMap.remove(connectionKey);
                         LOG.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&need close connection [{}] ...", connection);
                     }
                 }
@@ -281,12 +280,12 @@ public class ConnectionManager implements Runnable {
         String connectionKey = addrAndPortKey(remoteAddr, remotePort);
         synchronized (updateLock) {
             if (connectionMap.containsKey(connectionKey)) {
-                LOG.debug("get a cached connection ...");
+                //LOG.debug("get a cached connection ...");
                 return connectionMap.get(connectionKey);
             }
         }
 
-        LOG.debug("get a new connection ...");
+        //LOG.debug("get a new connection ...");
 
         // already sync and put into map ...
         Connection connection = connectTo(remoteAddr, remotePort);

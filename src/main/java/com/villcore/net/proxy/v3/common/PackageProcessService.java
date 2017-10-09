@@ -121,13 +121,4 @@ public class PackageProcessService extends LoopTask {
             TimeUnit.MILLISECONDS.sleep(SLEEP_INTERVAL - workTime);
         }
     }
-
-    private void printDebug(Package pkg) {
-        try {
-            LOG.debug("pkg corspondId = {}, {}", DefaultDataPackage.class.cast(pkg).getRemoteConnId(), pkg.toString());
-            LOG.debug(PackageUtils.toString(pkg));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

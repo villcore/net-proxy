@@ -28,7 +28,7 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        LOG.debug("|||||server tunnel channel read success ...");
+        //LOG.debug("|||||server tunnel channel read success ...");
         Channel channel = ctx.channel();
 
         if(msg instanceof ByteBuf) {

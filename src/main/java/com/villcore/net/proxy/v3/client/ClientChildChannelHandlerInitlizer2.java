@@ -6,9 +6,9 @@ import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
 import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
@@ -61,6 +61,17 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
         tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
         channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager, connection));
-        //channel.pipeline().addLast(new PackageToByteBufOutHandler());
+        channel.pipeline().addLast(new PackageToByteBufOutHandler());
+//        channel.pipeline().addLast(new ChannelOutboundHandlerAdapter() {
+//            @Override
+//            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+//                if(msg instanceof ByteBuf) {
+//                    ByteBuf byteBuf = ByteBuf.class.cast(msg);
+//                    ctx.writeAndFlush(byteBuf);
+//                } else {
+//                    ctx.write(msg);
+//                }
+//            }
+//        })
     }
 }

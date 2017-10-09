@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
@@ -54,25 +55,21 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ChannelPipeline pipeline = ctx.pipeline();
         Channel channel = pipeline.channel();
+
         Tunnel curTunnel = tunnelManager.tunnelFor(channel);
         curTunnel.touch(-1);
         channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
                 if(future.isSuccess()) {
-//                    ChannelClosePackage channelClosePackage =  , curTunnel.getCorrespondConnId(), 1L);
+                    if(curTunnel != null) {
+                        curTunnel.needClose();
+                        curTunnel.close();
+                    }
                 }
             }
         });
 
-//        if(curTunnel == null) {
-//            if(msg instanceof ByteBuf) {
-//                ByteBuf byteBuf = (ByteBuf) msg;
-//                byteBuf.release();
-//            }
-//                ctx.close();
-//                return;
-//        }
         int connId = curTunnel.getConnId();
 
         if(!(msg instanceof ByteBuf)) {
@@ -81,14 +78,11 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
         }
 
         ByteBuf byteBuf = (ByteBuf) msg;
-        //LOG.debug("client [{}] read {} bytes ...", curTunnel.getConnId(), byteBuf.readableBytes());
-//        LOG.debug("tunnel [{}] read content ===================\n {}=======================", connId, PackageUtils.toString(byteBuf.copy()));
 
         LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", curTunnel.getConnId(), curTunnel.getCorrespondConnId(), byteBuf.readableBytes());
 
         if(detectedProxy) {
             if(curTunnel.shouldClose()) {
-//                LOG.debug("tunnel [{}] should close ...", connId);
                 curTunnel.getChannel().config().setAutoRead(false);
                 return;
             }
@@ -99,7 +93,6 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
             DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, curTunnel.getCorrespondConnId(), userFlag, byteBuf);
             curTunnel.addSendPackage(dataPackage);
-//            LOG.debug("connId = {}, correspondConnId = {}", curTunnel.getConnId(), curTunnel.getCorrespondConnId());
             return;
         }
 
@@ -111,7 +104,6 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             String procotol = httpProtocol.toString(Charset.forName("utf-8"));
 //            LOG.debug("tunnel [{}] HTTP first lien = {}", connId, procotol);
             if(procotol.contains(POST) || procotol.contains(GET) || procotol.contains(HEAD)) {
-//                LOG.debug("tunnel [{}] detect procotol = http", connId);
 
                 InetSocketAddress address = HttpParser.parseAddress2(byteBuf.toString(Charset.forName("utf-8")).getBytes());
                 String hostName = address.getHostName();
@@ -122,7 +114,6 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
                 curTunnel.setConnectPackage(connectReqPackage);
                 curTunnel.addSendPackage(dataPackage);
-                //channel.config().setAutoRead(false);
                 curTunnel.waitTunnelConnect();
 
                 detectedProxy = true;
@@ -134,12 +125,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             ByteBuf httpsProcotol = byteBuf.slice(0, CONNECT.length());
             String procotol = httpsProcotol.toString(Charset.forName("utf-8"));
             if(procotol.contains(CONNECT)) {
-//                LOG.debug("tunnel [{}] detect procotol = https", connId);
                 channel.closeFuture();
-//                int a = 0;
-//                if(a == 0) {
-//                    return;
-//                }
 
                 int lastIndex = writerIndex;
                 int last = byteBuf.getByte(lastIndex - 1);
@@ -154,25 +140,13 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     String hostName = address.getHostName();
                     short port = (short) address.getPort();
 
-                    byteBuf.release(1);
+                    ReferenceCountUtil.release(byteBuf);
                     ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
                     curTunnel.setConnectPackage(connectReqPackage);
                     curTunnel.waitTunnelConnect();
                     curTunnel.setHttps(true);
-                    String connectResponse = "HTTP/1.0 200 Connection Established\r\n\r\n";
-                    ctx.writeAndFlush(Unpooled.wrappedBuffer(connectResponse.getBytes()));
-                    //ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+                    ctx.writeAndFlush(Unpooled.wrappedBuffer(HTTPS_CONNECTED_RESP.getBytes()));
 
-
-//                    ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
-//                    DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
-//                    curTunnel.setConnectPackage(connectReqPackage);
-//                    curTunnel.addSendPackage(dataPackage);
-//                    curTunnel.waitTunnelConnect();
-
-//                    if(connectReqPackage == null) {
-//                        LOG.debug("!!!!connect pkg == null {}", "");
-//                    }
                     detectedProxy = true;
                     return;
                 }
@@ -181,14 +155,12 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         curTunnel.stopRead();
         curTunnel.shouldClose();
-        curTunnel.drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
-        curTunnel.drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
+        curTunnel.drainSendPackages().forEach(pkg -> PackageUtils.release(pkg));
+        curTunnel.drainRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
 
         curTunnel.close();
         channel.close();
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! tunnel [{}] protocal detect error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n{}\n" +
-                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, PackageUtils.toString(byteBuf));
-//        LOG.debug("tunnel [{}] read content = {}", connId, PackageUtils.toString(byteBuf.copy()));
-        byteBuf.release(byteBuf.refCnt());
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", connId, "");
     }
 }

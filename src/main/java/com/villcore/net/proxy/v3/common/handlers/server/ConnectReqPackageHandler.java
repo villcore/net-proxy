@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v3.common.handlers.server;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.pkg.*;
 import com.villcore.net.proxy.v3.pkg.Package;
@@ -59,6 +60,17 @@ public class ConnectReqPackageHandler implements PackageHandler {
 
                 .channel(NioSocketChannel.class)
                 .handler(new ServerTunnelChannelReadHandler(tunnelManager));
+//                .handler(new ChannelOutboundHandlerAdapter() {
+//                    @Override
+//                    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+//                        if(msg instanceof ByteBuf) {
+//                            ByteBuf byteBuf = ByteBuf.class.cast(msg);
+//                            ctx.writeAndFlush(byteBuf);
+//                        } else {
+//                            ctx.write(msg);
+//                        }
+//                    }
+//                })
         return bootstrap;
     }
 
@@ -67,6 +79,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
         List<Package> connectReqPackage = packages.stream()
                 .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CONNECT_REQ)
                 .collect(Collectors.toList());
+
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
 
 //        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
@@ -78,14 +91,15 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     String hostname = new String(pkg.getHostname());
                     int port = pkg.getPort();
 
-                    pkg.getFixed().release();
-                    pkg.getHeader().release();
-                    pkg.getBody().release();
+//                    pkg.getFixed().release();
+//                    pkg.getHeader().release();
+//                    pkg.getBody().release();
+//
+//                    PackageUtils.release(pkg.getFixed());
+//                    PackageUtils.release(pkg.getHeader());
+//                    PackageUtils.release(pkg.getBody());
 
-                    PackageUtils.release(pkg.getFixed());
-                    PackageUtils.release(pkg.getHeader());
-                    PackageUtils.release(pkg.getBody());
-
+                    PackageUtils.release(pkg);
 
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);

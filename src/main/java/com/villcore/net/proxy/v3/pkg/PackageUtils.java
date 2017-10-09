@@ -2,6 +2,7 @@ package com.villcore.net.proxy.v3.pkg;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +54,9 @@ public class PackageUtils {
         return pkg;
     }
 
-    public static String toString(Package pkg) throws UnsupportedEncodingException {
-        return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
-    }
+//    public static String toString(Package pkg) throws UnsupportedEncodingException {
+//        return pkg.toByteBuf().copy().toString(Charset.forName("utf-8"));
+//    }
 
     public static String toString(ByteBuf byteBuf) throws UnsupportedEncodingException {
         //ByteBuf byteBuf2 = byteBuf.copy();
@@ -66,19 +67,49 @@ public class PackageUtils {
         ByteBuf fix = pkg.getFixed();
         ByteBuf header = pkg.getHeader();
         ByteBuf body = pkg.getBody();
-//        release(fix);
-//        release(header);
-//        release(body);
+
+//        ReferenceCountUtil.release(fix);
+//        ReferenceCountUtil.release(header);
+//        ReferenceCountUtil.release(body);
+
+        int fixRef = fix.refCnt();
+        int headerFix = header.refCnt();
+        int bodyFix = body.refCnt();
+
+        try {
+//            fix.release();
+//            header.release();
+//            body.release();
+//            body.release(bodyFix);
+//            release2(fix);
+//            release2(header);
+//            release2(body);
+
+//            if((fix == header) &&  (header == body)) {
+//                release2(fix);
+//            }
+//
+//            if(header == body) {
+//                release2(fix);
+//                release2(header);
+//            }
+//
+            release2(fix);
+            release2(header);
+//            release2(body);
+//            LOG.debug("pkg {} part hashCode, fix = {}, header = {}, body = {}", new Object[]{pkg.getClass(), fix.hashCode(), header.hashCode(), body.hashCode()});
+            LOG.debug("pkg class = {}, fix ref = {}/{}, header ref = {}/{}, body ref = {}/{}", new Object[]{pkg.getClass(), fixRef, fix.refCnt(), headerFix, header.refCnt(), bodyFix, body.refCnt()});
+        } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+            LOG.debug("! exception pkg class = {}, fix ref = {}, header ref = {}, body ref = {}", new Object[]{pkg.getClass(), fix.refCnt(), header.refCnt(), body.refCnt()});
+        }
+
     }
 
     public static void release(ByteBuf byteBuf) {
-//        if(byteBuf != null) {
-//            LOG.debug("byteBuf is release {}, refCnt = {}", byteBuf.refCnt());
-//
-//            while (byteBuf.refCnt() > 0) {
-//                byteBuf.release(1);
-//            }
-//        }
+        if (byteBuf != null) {
+            release2(byteBuf);
+        }
     }
 
     public static void release2(Package pkg) {
@@ -91,13 +122,25 @@ public class PackageUtils {
     }
 
     public static void release2(ByteBuf byteBuf) {
-//        if(byteBuf != null) {
-//            LOG.debug("byteBuf is release {}, refCnt = {}", byteBuf.refCnt());
-//
-//            while (byteBuf.refCnt() > 0) {
-//                byteBuf.release(1);
+//        LOG.debug("========================= before {}", byteBuf.refCnt());
+        if(byteBuf.refCnt() > 0  && !byteBuf.release()) {
+            byteBuf.release();
+        }
+//        LOG.debug("========================= after {}", byteBuf.refCnt());
+
+//        while (!byteBuf.release()) {
+//            byteBuf.release(1);
+//            LOG.debug("xxxxxxxxxxxxxxxxxxxxxxxxxs {}", byteBuf.refCnt());
+//        }
+//        if (byteBuf != null) {
+//            while (byteBuf.refCnt() > 0 && !byteBuf.release()) {
+//                byteBuf.release();
 //            }
 //        }
+    }
+
+    public static void printRef(String curTag, Package pkg) {
+        LOG.debug("cur tag = {}, package class = {}, package ref, fix = {}, header = {}, body = {}", new Object[]{curTag, pkg.getClass().getSimpleName(), pkg.getFixed().refCnt(), pkg.getHeader().refCnt(), pkg.getBody().refCnt()});
     }
 
     public static Package convertCorrectPackage(Package pkg) {
@@ -121,11 +164,11 @@ public class PackageUtils {
             case PackageType.PKG_CHANNEL_CLOSE:
                 correctPkg = new ChannelClosePackage();
                 break;
-                default:
-                    correctPkg = pkg;
-                    break;
+            default:
+                correctPkg = pkg;
+                break;
         }
-        if(correctPkg != pkg) {
+        if (correctPkg != pkg) {
             correctPkg.setHeader(header);
             correctPkg.setBody(body);
         }

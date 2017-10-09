@@ -154,7 +154,7 @@ public class Connection extends BasicWriteableImpl {
         remoteChannel.write(pkg);
         //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
-        LOG.debug("connection write...{}", true);
+//        LOG.debug("connection write...{}", true);
         return true;
     }
 
@@ -169,7 +169,7 @@ public class Connection extends BasicWriteableImpl {
     public void touch(int tunnelId) {
         lastTouch = System.currentTimeMillis();
         tunnelManager.touch(tunnelId);
-        LOG.debug("connection touch...{}", true);
+//        LOG.debug("connection touch...{}", true);
     }
 
     @Override
@@ -191,6 +191,6 @@ public class Connection extends BasicWriteableImpl {
 
     @Override
     public void flush() {
-        remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
+        remoteChannel.flush();
     }
 }

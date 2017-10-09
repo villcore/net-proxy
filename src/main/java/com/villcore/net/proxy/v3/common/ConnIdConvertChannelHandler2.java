@@ -23,23 +23,30 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof Package) {
-
             Package pkg = (Package) msg;
 
-            ByteBuf header = pkg.getHeader().retain();
-            ByteBuf body = pkg.getBody().retain();
+            short pkgType = pkg.getPkgType();
+            ByteBuf header = pkg.getHeader();
+            ByteBuf body = pkg.getBody();
+
+            //PackageUtils.printRef(getClass().getSimpleName(), pkg);
+            //PackageUtils.release2(pkg.getFixed());
 
             //LOG.debug("************connId convert running.........{}", pkg.getPkgType());
 
-            switch (pkg.getPkgType()) {
+            switch (pkgType) {
                 case PackageType.PKG_CONNECT_REQ: {//do nothing
                     ConnectReqPackage connectReqPackage = new ConnectReqPackage();
+
                     connectReqPackage.setHeader(header);
                     connectReqPackage.setBody(body);
+
+                    //PackageUtils.release2(pkg.getFixed());
 
                     pkg = connectReqPackage;
                     break;
                 }
+
                 case PackageType.PKG_CONNECT_RESP: { //convert connId pari
                     ConnectRespPackage connectRespPackage = new ConnectRespPackage();
                     connectRespPackage.setHeader(header);
@@ -48,9 +55,11 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     int connId = connectRespPackage.getLocalConnId();
                     int corspondConnId = connectRespPackage.getRemoteConnId();
 
-                    connectRespPackage.toByteBuf().release(1);
+                    PackageUtils.release(connectRespPackage);
+
                     //LOG.debug("convert connId for connect resp from [{}:{}] to [{}:{}]", new Object[]{connId, corspondConnId, corspondConnId, connId});
                     ConnectRespPackage newPkg = PackageUtils.buildConnectRespPackage(corspondConnId, connId, 1L);
+                    //PackageUtils.release(connectRespPackage);
                     pkg = newPkg;
                     break;
                 }
@@ -62,9 +71,13 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
                     int connId = channelClosePackage.getLocalConnId();
                     int corspondConnId = channelClosePackage.getRemoteConnId();
 
+//                    PackageUtils.printRef("--------------------" + getClass().getSimpleName() + "close pkg", channelClosePackage);
+                    PackageUtils.release(channelClosePackage);
+//                    PackageUtils.printRef("-after-------------------" + getClass().getSimpleName() + "close pkg", channelClosePackage);
+
                     ChannelClosePackage newPkg = PackageUtils.buildChannelClosePackage(corspondConnId, connId, 1L);
 //                    channelClosePackage.toByteBuf().release(1);
-                    PackageUtils.release(channelClosePackage);
+                    //PackageUtils.release(channelClosePackage);
 
                     pkg = newPkg;
                     break;
@@ -83,8 +96,8 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
 //                    ByteBuf release = defaultDataPackage.toByteBuf();
 //                    release.release(release.refCnt());
 
-                    PackageUtils.release(defaultDataPackage.getFixed());
-                    PackageUtils.release(defaultDataPackage.getHeader());
+//                    PackageUtils.release2(defaultDataPackage.getFixed());
+//                    PackageUtils.release2(defaultDataPackage.getHeader());
 
                     pkg = newPkg;
                     break;

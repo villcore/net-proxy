@@ -34,16 +34,17 @@ public class InvalidDataPackageHandler implements PackageHandler {
                     int connId = Integer.valueOf(pkg.getLocalConnId());
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
+                    //LOG.debug("connId = {}", connId);
                     if(tunnel == null || tunnel.shouldClose()) {
                         ChannelClosePackage channelClosePackage = PackageUtils.buildChannelClosePackage(connId, pkg.getRemoteConnId(), 1L);
                         connection.addSendPackages(Collections.singletonList(channelClosePackage));
-                        pkg.toByteBuf().release();
+                        PackageUtils.release(pkg);
                         return false;
                     }
                     return true;
                 })
                 .collect(Collectors.toList());
-        LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
+        //LOG.debug("handle invalid data pacakge ..., ori size = {}, cur size = {}", packages.size(), avaliablePackages.size());
         return avaliablePackages;
     }
 }

@@ -15,7 +15,7 @@ public class DefaultDataPackage extends Package {
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
 
-        localConnId = header.readInt();
+        localConnId = header.getInt(oriReadIndex);
         header.readerIndex(oriReadIndex);
 
         return localConnId;
@@ -25,8 +25,7 @@ public class DefaultDataPackage extends Package {
         int localConnId = -1;
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
-        header.readInt();
-        localConnId = header.readInt();
+        localConnId = header.getInt(oriReadIndex + 4);
         header.readerIndex(oriReadIndex);
 
         return localConnId;
@@ -35,8 +34,7 @@ public class DefaultDataPackage extends Package {
     public void setRemoteConnId(int remoteConnId) {
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
-        header.readInt();
-        header.setInt(header.readerIndex(), remoteConnId);
+        header.setInt(oriReadIndex + 4, remoteConnId);
         header.readerIndex(oriReadIndex);
     }
 

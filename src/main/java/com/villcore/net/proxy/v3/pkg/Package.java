@@ -135,4 +135,24 @@ public class Package implements Serializable {
         pkg.setBody(body);
         return pkg;
     }
+
+    public static Package valueOf2(ByteBuf byteBuf) {
+        Package pkg = new Package();
+
+        int totalLen = byteBuf.getInt(0);
+        int headerLen = byteBuf.getInt(4);
+        int bodyLen = byteBuf.getInt(4 + 4);
+        short pkgType = byteBuf.getShort(4 + 4 + 4);
+
+        ByteBuf header = byteBuf.slice(FIXED_LEN, headerLen);
+        header.writerIndex(headerLen);
+
+        ByteBuf body = byteBuf.slice(FIXED_LEN + headerLen, bodyLen);
+        body.writerIndex(bodyLen);
+
+        pkg.setFixed(byteBuf.slice(0, FIXED_LEN));
+        pkg.setHeader(header);
+        pkg.setBody(body);
+        return pkg;
+    }
 }

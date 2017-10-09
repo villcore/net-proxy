@@ -204,12 +204,7 @@ public class Tunnel extends BasicWriteableImpl {
     public boolean write(Package pkg) {
         //LOG.debug("write pkg ...");
         if (channel == null || !channel.isOpen()) {
-            //LOG.debug("write pkg ...failed ...");
-//            pkg.toByteBuf().release();
-            PackageUtils.release(pkg.getFixed());
-            PackageUtils.release(pkg.getHeader());
-            PackageUtils.release(pkg.getBody());
-
+            PackageUtils.release(pkg);
         } else {
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
             int connId = Integer.valueOf(dataPackage.getLocalConnId());
@@ -217,34 +212,17 @@ public class Tunnel extends BasicWriteableImpl {
             int bytes = dataPackage.getBody().readableBytes();
             LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, bytes);
 
-            LOG.debug("================================{} ...", pkg.getBody().refCnt());
             channel.writeAndFlush(pkg.getBody());
-//            pkg.getHeader().release();
-//            pkg.getFixed().release();
-            //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
-            PackageUtils.release2(pkg.getFixed());
-            PackageUtils.release2(pkg.getHeader());
-            PackageUtils.release2(pkg.getBody());
 
+            PackageUtils.printRef("before ================"+getClass().getSimpleName(), pkg);
 
+            PackageUtils.release(pkg);
 
-            //LOG.debug("!!! write data pkg [{}] --> [{}]", dataPackage.getRemoteConnId(), dataPackage.getLocalConnId());
-
-
-//            try {
-//                LOG.debug("write pkg to {} >>>>>>>>>>\n [{}]\n... success...", connId, PackageUtils.toString(pkg.getBody().copy()));
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            PackageUtils.printRef("after ================"+getClass().getSimpleName(), pkg);
         }
         return true;
     }
 
-//    @Override
-//    public void touch(Package pkg) {
-//        lastTouch = System.currentTimeMillis();
-//        //pkg.toByteBuf().release();
-//    }
 
     @Override
     public void touch(int tunnelId) {
