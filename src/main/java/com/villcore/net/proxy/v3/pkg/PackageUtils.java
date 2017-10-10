@@ -96,7 +96,7 @@ public class PackageUtils {
 //
             release2(fix);
             release2(header);
-//            release2(body);
+//\            release2(body);
 //            LOG.debug("pkg {} part hashCode, fix = {}, header = {}, body = {}", new Object[]{pkg.getClass(), fix.hashCode(), header.hashCode(), body.hashCode()});
             LOG.debug("pkg class = {}, fix ref = {}/{}, header ref = {}/{}, body ref = {}/{}", new Object[]{pkg.getClass(), fixRef, fix.refCnt(), headerFix, header.refCnt(), bodyFix, body.refCnt()});
         } catch (Exception e) {
@@ -122,6 +122,7 @@ public class PackageUtils {
     }
 
     public static void release2(ByteBuf byteBuf) {
+
 //        LOG.debug("========================= before {}", byteBuf.refCnt());
         if(byteBuf.refCnt() > 0  && !byteBuf.release()) {
             byteBuf.release();

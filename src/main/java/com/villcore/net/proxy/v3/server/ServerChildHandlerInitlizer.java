@@ -3,6 +3,7 @@ package com.villcore.net.proxy.v3.server;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.common.*;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;

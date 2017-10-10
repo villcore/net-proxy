@@ -37,14 +37,14 @@ public class ClientLocalTest {
         ThreadUtils.newThread("write-service", writeService, false).start();
 
         //TunnelManager
-            TunnelManager tunnelManager = new TunnelManager(10000);
+        TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
         scheduleService.scheduleTaskAtFixedRate(tunnelManager,  60 * 1000, 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
-        Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 30 * 1000, 1 * 30 * 1000);
+        //Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 60 * 1000, 1 * 60 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);

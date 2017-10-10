@@ -6,6 +6,7 @@ import com.villcore.net.proxy.v3.pkg.Package;
 import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -61,8 +62,8 @@ public class ConnectionManager implements Runnable {
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 128 * 1024)
 
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
+//                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
+//                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
 
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override

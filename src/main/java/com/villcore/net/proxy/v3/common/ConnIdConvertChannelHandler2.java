@@ -89,12 +89,19 @@ public class ConnIdConvertChannelHandler2 extends ChannelInboundHandlerAdapter {
 
                     int connId = defaultDataPackage.getLocalConnId();
                     int corspondConnId = defaultDataPackage.getRemoteConnId();
+
+                    PackageUtils.release2(defaultDataPackage.getFixed());
 //                    defaultDataPackage.getFixed().release();
 //                    defaultDataPackage.getHeader().release();
-
+                    PackageUtils.printRef("convert before ---------------", defaultDataPackage);
                     DefaultDataPackage newPkg = PackageUtils.buildDataPackage(corspondConnId, connId, 1L, body);
+                    PackageUtils.printRef("convert after ---------------", newPkg);
+
 //                    ByteBuf release = defaultDataPackage.toByteBuf();
 //                    release.release(release.refCnt());
+
+//                    PackageUtils.release(defaultDataPackage);
+//                    PackageUtils.release2(body);
 
 //                    PackageUtils.release2(defaultDataPackage.getFixed());
 //                    PackageUtils.release2(defaultDataPackage.getHeader());

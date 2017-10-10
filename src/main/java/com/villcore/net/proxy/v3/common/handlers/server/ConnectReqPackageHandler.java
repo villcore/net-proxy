@@ -9,6 +9,7 @@ import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
@@ -55,7 +56,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                 .option(ChannelOption.SO_RCVBUF, 128 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 128 * 1024)
 
-//                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+//                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
 //                .option(ChannelOption.RCVBUF_ALLOCATOR, AdaptiveRecvByteBufAllocator.DEFAULT)
 
                 .channel(NioSocketChannel.class)
@@ -100,6 +101,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
 //                    PackageUtils.release(pkg.getBody());
 
                     PackageUtils.release(pkg);
+                    PackageUtils.release2(pkg.getBody());
 
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);

@@ -106,9 +106,24 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
             if(procotol.contains(POST) || procotol.contains(GET) || procotol.contains(HEAD)) {
 
                 InetSocketAddress address = HttpParser.parseAddress2(byteBuf.toString(Charset.forName("utf-8")).getBytes());
+
+                if(address == null) {
+                    channel.config().setAutoRead(false);
+                    curTunnel.shouldClose();
+                    curTunnel.close();
+                    PackageUtils.release2(byteBuf);
+                    return;
+                }
                 String hostName = address.getHostName();
                 short port = (short) address.getPort();
 
+                if(hostName == null) {
+                    channel.config().setAutoRead(false);
+                    curTunnel.shouldClose();
+                    curTunnel.close();
+                    PackageUtils.release2(byteBuf);
+                    return;
+                }
                 ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
                 DefaultDataPackage dataPackage = PackageUtils.buildDataPackage(connId, -1, userFlag, byteBuf);
 
