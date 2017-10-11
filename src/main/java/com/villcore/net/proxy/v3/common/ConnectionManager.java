@@ -70,7 +70,7 @@ public class ConnectionManager implements Runnable {
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
                         ch.pipeline().addLast(new PackageDecoder());
-                        ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
+                        //ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
                     }

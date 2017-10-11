@@ -44,4 +44,24 @@ public class ConnectRespPackage extends Package {
         header.writerIndex(header.capacity());
         return header;
     }
+
+    public static ConnectRespPackage valueOf2(ByteBuf byteBuf) {
+        ConnectRespPackage pkg = new ConnectRespPackage();
+
+        int readerIndex = byteBuf.readerIndex();
+
+        int totalLen = byteBuf.getInt(readerIndex);
+        int headerLen = byteBuf.getInt(readerIndex + 4);
+        int bodyLen = byteBuf.getInt(readerIndex + 4 + 4);
+        short pkgType = byteBuf.getShort(readerIndex + 4 + 4 + 4);
+
+        ByteBuf fixed = byteBuf.slice(readerIndex, FIXED_LEN);
+        ByteBuf header = byteBuf.slice(readerIndex + FIXED_LEN, headerLen);
+        ByteBuf body = byteBuf.slice(readerIndex + FIXED_LEN + headerLen, bodyLen);
+
+        pkg.setFixed(byteBuf.slice(0, FIXED_LEN));
+        pkg.setHeader(header);
+        pkg.setBody(body);
+        return pkg;
+    }
 }

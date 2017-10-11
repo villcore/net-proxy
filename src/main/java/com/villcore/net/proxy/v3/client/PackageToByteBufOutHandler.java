@@ -20,10 +20,10 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
         if(msg instanceof Package) {
             Package pkg = (Package) msg;
 //            ctx.writeAndFlush(pkg.toByteBuf());
-            ctx.write(pkg.toByteBuf());
 
             PackageUtils.printRef("before------------------"+getClass().getSimpleName(), pkg);
-            PackageUtils.release(pkg);
+            ctx.write(pkg.toByteBuf());
+//            PackageUtils.release(pkg);
             PackageUtils.printRef("after------------------"+getClass().getSimpleName(), pkg);
             return;
         }
@@ -41,9 +41,11 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
 //            byteBuf.release();
 //        }
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! cur ref cnt = 0 for {}",  msg.getClass());
-
-
+        if(ReferenceCountUtil.refCnt(msg) > 0) {
 //        ReferenceCountUtil.release(msg);
-        ctx.write(msg);
+            //System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx  " + ReferenceCountUtil.refCnt(msg));
+            ctx.write(msg);
+            //ReferenceCountUtil.release(msg);
+        }
     }
 }

@@ -17,7 +17,7 @@ public class PackageUtils {
 
         ConnectReqPackage pkg = new ConnectReqPackage();
         pkg.setHeader(header);
-        pkg.setBody(Unpooled.EMPTY_BUFFER);
+        pkg.setBody(Unpooled.wrappedBuffer(new byte[0]));
         return pkg;
     }
 
@@ -39,7 +39,7 @@ public class PackageUtils {
 
         ConnectRespPackage pkg = new ConnectRespPackage();
         pkg.setHeader(header);
-        pkg.setBody(Unpooled.EMPTY_BUFFER);
+        pkg.setBody(Unpooled.wrappedBuffer(new byte[0]));
         return pkg;
     }
 
@@ -50,7 +50,7 @@ public class PackageUtils {
 
         ChannelClosePackage pkg = new ChannelClosePackage();
         pkg.setHeader(header);
-        pkg.setBody(Unpooled.EMPTY_BUFFER);
+        pkg.setBody(Unpooled.wrappedBuffer(new byte[0]));
         return pkg;
     }
 
@@ -94,9 +94,9 @@ public class PackageUtils {
 //                release2(header);
 //            }
 //
-            release2(fix);
-            release2(header);
-//\            release2(body);
+//            release2(fix);
+//            release2(header);
+//            release2(body);
 //            LOG.debug("pkg {} part hashCode, fix = {}, header = {}, body = {}", new Object[]{pkg.getClass(), fix.hashCode(), header.hashCode(), body.hashCode()});
             LOG.debug("pkg class = {}, fix ref = {}/{}, header ref = {}/{}, body ref = {}/{}", new Object[]{pkg.getClass(), fixRef, fix.refCnt(), headerFix, header.refCnt(), bodyFix, body.refCnt()});
         } catch (Exception e) {

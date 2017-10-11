@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -152,6 +153,8 @@ public class Connection extends BasicWriteableImpl {
         //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
         //remoteChannel.writeAndFlush(pkg);
         remoteChannel.write(pkg);
+        PackageUtils.printRef("connection write pkg ------------------"+getClass().getSimpleName(), pkg);
+
         //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
 //        LOG.debug("connection write...{}", true);

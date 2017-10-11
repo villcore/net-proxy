@@ -92,16 +92,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                     String hostname = new String(pkg.getHostname());
                     int port = pkg.getPort();
 
-//                    pkg.getFixed().release();
-//                    pkg.getHeader().release();
-//                    pkg.getBody().release();
-//
-//                    PackageUtils.release(pkg.getFixed());
-//                    PackageUtils.release(pkg.getHeader());
-//                    PackageUtils.release(pkg.getBody());
-
                     PackageUtils.release(pkg);
-                    PackageUtils.release2(pkg.getBody());
 
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);
