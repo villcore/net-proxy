@@ -2,13 +2,12 @@ package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

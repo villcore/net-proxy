@@ -1,6 +1,6 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 
 import java.util.List;
 

@@ -2,12 +2,10 @@ package com.villcore.net.proxy.v3.common.handlers.client.connection;
 
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageType;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ConnectionAuthReqHandler implements PackageHandler {
 

@@ -1,7 +1,7 @@
-package com.villcore.net.proxy.v3.pkg.connection;
+package com.villcore.net.proxy.v3.pkg.v2.connection;
 
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageType;
+import com.villcore.net.proxy.v3.pkg.v2.PackageType;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 

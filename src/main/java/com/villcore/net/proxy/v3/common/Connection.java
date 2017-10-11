@@ -1,10 +1,8 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
-import io.netty.buffer.Unpooled;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.channel.Channel;
-import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

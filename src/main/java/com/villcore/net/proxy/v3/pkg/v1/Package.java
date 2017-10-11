@@ -1,7 +1,6 @@
-package com.villcore.net.proxy.v3.pkg;
+package com.villcore.net.proxy.v3.pkg.v1;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.io.Serializable;

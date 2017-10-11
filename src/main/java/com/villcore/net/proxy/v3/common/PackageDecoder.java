@@ -1,18 +1,12 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.*;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthReqPackage;
-import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthRespPackage;
+import com.villcore.net.proxy.v3.pkg.v1.*;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 读取ByteBuf并根据length信息构建 {@link Package}
@@ -186,6 +180,7 @@ public class PackageDecoder extends ChannelInboundHandlerAdapter {
     }
 
     private ChannelClosePackage correctChannelClosePackage(ByteBuf all, ByteBuf fixed, ByteBuf header, ByteBuf body) {
+        System.out.println(header.refCnt());
         int headerReaderIndex = header.readerIndex();
         int connId = header.getInt(headerReaderIndex);
         int corrspondConnId = header.getInt(headerReaderIndex + 4);

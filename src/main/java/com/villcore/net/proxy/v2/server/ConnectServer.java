@@ -1,7 +1,5 @@
 package com.villcore.net.proxy.v2.server;
 
-import com.villcore.net.proxy.v3.pkg.ConnectRespPackage;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,8 +10,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 public class ConnectServer {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectServer.class);

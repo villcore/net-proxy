@@ -1,15 +1,11 @@
 package com.villcore.net.proxy.v3.common.handlers.server;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
 import com.villcore.net.proxy.v3.common.*;
-import com.villcore.net.proxy.v3.pkg.*;
-import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.v1.*;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 import com.villcore.net.proxy.v3.server.DNS;
 import com.villcore.net.proxy.v3.server.ServerTunnelChannelReadHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
@@ -17,13 +13,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -40,11 +30,15 @@ public class ConnectReqPackageHandler implements PackageHandler {
 
     private static final short MAX_CONNECT_RETRY = 3;
 
+    private Bootstrap bootstrap;
+
     public ConnectReqPackageHandler(EventLoopGroup eventLoopGroup, WriteService writeService, TunnelManager tunnelManager, ConnectionManager connectionManager) {
         this.eventLoopGroup = eventLoopGroup;
         this.writeService = writeService;
         this.tunnelManager = tunnelManager;
         this.connectionManager = connectionManager;
+
+        bootstrap = initBoostrap();
     }
 
     private Bootstrap initBoostrap() {
@@ -84,15 +78,13 @@ public class ConnectReqPackageHandler implements PackageHandler {
         List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CONNECT_REQ).collect(Collectors.toList());
 
 //        LOG.debug("handle connect req package ...{}, {}", packages.size(), connectReqPackage.size());
-        connectReqPackage.stream()
-                .map(pkg -> ConnectReqPackage.class.cast(pkg))
-                .collect(Collectors.toList())
+        connectReqPackage.stream().map(pkg -> ConnectReqPackage.class.cast(pkg)).collect(Collectors.toList())
                 .forEach(pkg -> {
                     Integer correspondConnId = Integer.valueOf(pkg.getConnId());
                     String hostname = new String(pkg.getHostname());
                     int port = pkg.getPort();
 
-                    PackageUtils.release(pkg);
+                    PackageUtils.release(Optional.of(pkg));
 
                     LOG.debug("handle connect pkg, req address -> [{}:{}] ...", hostname, port);
                     //connectToDst(hostname, port, correspondConnId, connection);

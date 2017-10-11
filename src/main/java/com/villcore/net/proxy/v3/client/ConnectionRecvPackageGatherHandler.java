@@ -2,14 +2,11 @@ package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.ConnectionManager;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionRecvPackageGatherHandler.class);

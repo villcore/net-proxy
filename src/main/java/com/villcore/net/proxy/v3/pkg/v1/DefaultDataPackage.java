@@ -1,52 +1,53 @@
-package com.villcore.net.proxy.v3.pkg;
+package com.villcore.net.proxy.v3.pkg.v1;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.io.UnsupportedEncodingException;
-
-public class ChannelClosePackage extends Package {
+public class DefaultDataPackage extends Package {
     {
-        this.setPkgType(PackageType.PKG_CHANNEL_CLOSE);
+        setPkgType(PackageType.PKG_DEFAULT_DATA);
     }
-
 
     public int getLocalConnId() {
         int localConnId = -1;
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
 
-        localConnId = header.readInt();
+        localConnId = header.getInt(oriReadIndex);
         header.readerIndex(oriReadIndex);
 
         return localConnId;
     }
 
     public int getRemoteConnId() {
-        int remoteConnId = -1;
+        int localConnId = -1;
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
-
-        header.readInt();
-        remoteConnId = header.readInt();
+        localConnId = header.getInt(oriReadIndex + 4);
         header.readerIndex(oriReadIndex);
 
-        return remoteConnId;
+        return localConnId;
     }
 
-    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag){
-        //localConnId[4] + remoteConnId[4] + userFlag[8];
+    public void setRemoteConnId(int remoteConnId) {
+        ByteBuf header = getHeader();
+        int oriReadIndex = header.readerIndex();
+        header.setInt(oriReadIndex + 4, remoteConnId);
+        header.readerIndex(oriReadIndex);
+    }
+
+    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) {
+        //localConnId[4] + remoteConnid[4] + userFlag[8]
         ByteBuf header = Unpooled.buffer(4 + 4 + 8);
 
         header.writeInt(localConnId);
         header.writeInt(remoteConnId);
         header.writeLong(userFlag);
-        header.writerIndex(header.capacity());
         return header;
     }
 
-    public static ChannelClosePackage valueOf2(ByteBuf byteBuf) {
-        ChannelClosePackage pkg = new ChannelClosePackage();
+    public static DefaultDataPackage valueOf2(ByteBuf byteBuf) {
+        DefaultDataPackage pkg = new DefaultDataPackage();
 
         int readerIndex = byteBuf.readerIndex();
 

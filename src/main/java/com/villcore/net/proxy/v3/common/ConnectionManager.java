@@ -2,11 +2,9 @@ package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -46,10 +44,14 @@ public class ConnectionManager implements Runnable {
 
     private WriteService writeService;
 
+    private Bootstrap bootstrap;
+
     public ConnectionManager(EventLoopGroup eventLoopGroup, TunnelManager tunnelManager, WriteService writeService) {
         this.eventLoopGroup = eventLoopGroup;
         this.tunnelManager = tunnelManager;
         this.writeService = writeService;
+
+        bootstrap = initBootstrap();
     }
 
     private Bootstrap initBootstrap() {
@@ -70,7 +72,6 @@ public class ConnectionManager implements Runnable {
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
                         ch.pipeline().addLast(new PackageDecoder());
-                        //ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
                         ch.pipeline().addLast(new PackageToByteBufOutHandler());
                     }
@@ -146,7 +147,7 @@ public class ConnectionManager implements Runnable {
                 Connection finalConnection = connection;
 
                 LOG.debug("ready to connect ...");
-                Channel channel = initBootstrap().connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
+                Channel channel = bootstrap.connect(new InetSocketAddress(addr, port), new InetSocketAddress(60070)).sync().addListener(new GenericFutureListener<Future<? super Void>>() {
                     @Override
                     public void operationComplete(Future<? super Void> future) throws Exception {
                         if (future.isSuccess()) {

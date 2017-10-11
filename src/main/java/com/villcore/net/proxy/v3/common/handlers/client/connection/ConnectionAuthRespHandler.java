@@ -2,7 +2,7 @@ package com.villcore.net.proxy.v3.common.handlers.client.connection;
 
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
-import com.villcore.net.proxy.v3.pkg.Package;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 
 import java.util.List;
 

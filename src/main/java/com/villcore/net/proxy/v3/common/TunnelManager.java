@@ -1,9 +1,9 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.ConnectReqPackage;
+import com.villcore.net.proxy.v3.pkg.v1.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,19 +131,11 @@ public class TunnelManager implements Runnable {
 
                 dataPackages.forEach(pkg -> {
                     int connId = pkg.getLocalConnId();
-                    int corrspondConnId = pkg.getRemoteConnId();
 
                     Tunnel tunnel = tunnelFor(connId);
-//                    LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", corrspondConnId, connId, pkg.getBody().readableBytes());
-//                    try {
-//                        LOG.debug("connId = {}, corrspondConnId = {}, recv {x}", connId, corrspondConnId/*, PackageUtils.toString(pkg)*/);
-//                        LOG.debug("search tunnel = {}", tunnel == null ? " null" : tunnel.getConnId());
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-
                     if (tunnel == null || tunnel.shouldClose()) {
-                        pkg.toByteBuf().release();
+                        PackageUtils.release(Optional.of(pkg));
+                        //pkg.toByteBuf().release();
                         //LOG.debug("tunnel == null or tunnel should close...");
                     } else {
                         tunnel.addRecvPackage(pkg);
@@ -154,8 +146,6 @@ public class TunnelManager implements Runnable {
 
                 dataPackages.clear();
                 dataPackages = null;
-        //connId
-        //tunnel#putRecvQueue
     }
 
     //sync
@@ -251,8 +241,8 @@ public class TunnelManager implements Runnable {
             });
 //            connection.getWritePackages().forEach(pkg -> pkg.toByteBuf().release());
 //            connection.getRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
-            connection.getWritePackages().forEach(pkg -> PackageUtils.release(pkg));
-            connection.getRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
+            connection.getWritePackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
+            connection.getRecvPackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
             writeService.removeWrite(connection);
         }
     }

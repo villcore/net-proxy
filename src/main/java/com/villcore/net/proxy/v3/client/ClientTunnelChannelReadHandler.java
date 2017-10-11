@@ -5,10 +5,9 @@ import com.villcore.net.proxy.bio.util.HttpParser;
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.ConnectReqPackage;
+import com.villcore.net.proxy.v3.pkg.v1.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -23,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 /**
  * Channel 读取处理Handler
@@ -111,7 +111,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     channel.config().setAutoRead(false);
                     curTunnel.shouldClose();
                     curTunnel.close();
-                    PackageUtils.release2(byteBuf);
+                    PackageUtils.release(byteBuf);
                     return;
                 }
                 String hostName = address.getHostName();
@@ -121,7 +121,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                     channel.config().setAutoRead(false);
                     curTunnel.shouldClose();
                     curTunnel.close();
-                    PackageUtils.release2(byteBuf);
+                    PackageUtils.release(byteBuf);
                     return;
                 }
                 ConnectReqPackage connectReqPackage = PackageUtils.buildConnectPackage(hostName, port, connId, userFlag);
@@ -156,7 +156,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                         channel.config().setAutoRead(false);
                         curTunnel.shouldClose();
                         curTunnel.close();
-                        PackageUtils.release2(byteBuf);
+                        PackageUtils.release(byteBuf);
                         return;
                     }
                     String hostName = address.getHostName();
@@ -166,7 +166,7 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                         channel.config().setAutoRead(false);
                         curTunnel.shouldClose();
                         curTunnel.close();
-                        PackageUtils.release2(byteBuf);
+                        PackageUtils.release(byteBuf);
                         return;
                     }
 
@@ -185,8 +185,8 @@ public class ClientTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
         curTunnel.stopRead();
         curTunnel.shouldClose();
-        curTunnel.drainSendPackages().forEach(pkg -> PackageUtils.release(pkg));
-        curTunnel.drainRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
+        curTunnel.drainSendPackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
+        curTunnel.drainRecvPackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
 
         curTunnel.close();
         channel.close();

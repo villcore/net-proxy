@@ -1,4 +1,4 @@
-package com.villcore.net.proxy.v3.pkg;
+package com.villcore.net.proxy.v3.pkg.v1;
 
 public class PackageType {
     public static final short PKG_BASIC = 1;

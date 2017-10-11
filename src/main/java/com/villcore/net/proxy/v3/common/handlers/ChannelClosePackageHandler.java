@@ -4,14 +4,15 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageType;
+import com.villcore.net.proxy.v3.pkg.v1.ChannelClosePackage;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.PackageType;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -30,19 +31,20 @@ public class ChannelClosePackageHandler implements PackageHandler {
 
     @Override
     public List<Package> handlePackage(List<Package> packages, Connection connection) {
-        List<Package> connectReqPackage = packages.stream()
-                .filter(pkg -> pkg.getPkgType() == PackageType.PKG_CHANNEL_CLOSE)
+        List<Package> connectReqPackage = packages.stream().filter(pkg -> pkg.getPkgType() == PackageType.PKG_CHANNEL_CLOSE)
                 .collect(Collectors.toList());
 
-        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CHANNEL_CLOSE).collect(Collectors.toList());
+        List<Package> otherPackage = packages.stream().filter(pkg -> pkg.getPkgType() != PackageType.PKG_CHANNEL_CLOSE)
+                .collect(Collectors.toList());
 
-        connectReqPackage.stream()
-                .map(pkg -> ChannelClosePackage.class.cast(pkg))
+        connectReqPackage.stream().map(pkg -> ChannelClosePackage.class.cast(pkg))
                 .collect(Collectors.toList())
                 .forEach(pkg -> {
                     int connId = pkg.getLocalConnId();
                     int corresponConnId = pkg.getRemoteConnId();
-//                    LOG.debug("need handle channel close package ... connId = {}, correspondConnId = {}", connId, corresponConnId);
+
+                    PackageUtils.release(Optional.of(pkg));
+//                  LOG.debug("need handle channel close package ... connId = {}, correspondConnId = {}", connId, corresponConnId);
 
                     Tunnel tunnel = tunnelManager.tunnelFor(connId);
 
@@ -54,9 +56,7 @@ public class ChannelClosePackageHandler implements PackageHandler {
                         tunnel.stopRead();
                         tunnel.close();
                     }
-                    //pkg.toByteBuf().release();
                 });
-
         return otherPackage;
     }
 

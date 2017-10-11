@@ -1,12 +1,12 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.ConnectReqPackage;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v1.ConnectReqPackage;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -204,7 +205,7 @@ public class Tunnel extends BasicWriteableImpl {
     public boolean write(Package pkg) {
         //LOG.debug("write pkg ...");
         if (channel == null || !channel.isOpen()) {
-            PackageUtils.release(pkg);
+            PackageUtils.release(Optional.of(pkg));
         } else {
             DefaultDataPackage dataPackage = DefaultDataPackage.class.cast(pkg);
             int connId = Integer.valueOf(dataPackage.getLocalConnId());
@@ -216,7 +217,15 @@ public class Tunnel extends BasicWriteableImpl {
 
             PackageUtils.printRef("before ================"+getClass().getSimpleName(), pkg);
 
-            PackageUtils.release(pkg);
+            try {
+                ReferenceCountUtil.release(pkg);
+                //PackageUtils.release(pkg.getFixed());
+//                PackageUtils.release(pkg.getHeader());
+//                PackageUtils.release(pkg.getBody());
+
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+            }
 
             PackageUtils.printRef("after ================"+getClass().getSimpleName(), pkg);
         }
@@ -321,8 +330,8 @@ public class Tunnel extends BasicWriteableImpl {
         waitTunnelConnect();
 //        drainRecvPackages().forEach(pkg -> pkg.toByteBuf().release());
 //        drainSendPackages().forEach(pkg -> pkg.toByteBuf().release());
-        drainRecvPackages().forEach(pkg -> PackageUtils.release(pkg));
-        drainSendPackages().forEach(pkg -> PackageUtils.release(pkg));
+        drainRecvPackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
+        drainSendPackages().forEach(pkg -> PackageUtils.release(Optional.of(pkg)));
         channel.close().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {

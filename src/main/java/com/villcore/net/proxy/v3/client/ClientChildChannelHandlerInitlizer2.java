@@ -4,10 +4,8 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.ConnectionManager;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
+import com.villcore.net.proxy.v3.pkg.v1.ChannelClosePackage;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
 import io.netty.channel.*;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -61,7 +59,7 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
         tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
         channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager, connection));
-        channel.pipeline().addLast(new PackageToByteBufOutHandler());
+//        channel.pipeline().addLast(new PackageToByteBufOutHandler());
 //        channel.pipeline().addLast(new ChannelOutboundHandlerAdapter() {
 //            @Override
 //            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {

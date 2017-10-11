@@ -1,12 +1,11 @@
 package com.villcore.net.proxy.v3.client;
 
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.PackageUtils;
-import io.netty.buffer.ByteBuf;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
-import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,29 +22,23 @@ public class PackageToByteBufOutHandler extends ChannelOutboundHandlerAdapter {
 
             PackageUtils.printRef("before------------------"+getClass().getSimpleName(), pkg);
             ctx.write(pkg.toByteBuf());
-//            PackageUtils.release(pkg);
+            ctx.write(Unpooled.EMPTY_BUFFER);
+//            try {
+//                PackageUtils.release(Optional.of(pkg));
+//            } catch (Exception e) {
+//                LOG.error(e.getMessage(), e);
+//            }
             PackageUtils.printRef("after------------------"+getClass().getSimpleName(), pkg);
             return;
         }
-//        if(msg instanceof ByteBuf) {
-//            ByteBuf byteBuf = (ByteBuf) msg;
-//            if(byteBuf.release()) {
-//                LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! cur ref cnt = 0 for {}", byteBuf.getClass());
-//            } else {
-//                ctx.writeAndFlush(byteBuf);
-//            }
-//            return;
-//        }
-//        if(msg instanceof ByteBuf) {
-//            ByteBuf byteBuf = (ByteBuf) msg;
-//            byteBuf.release();
-//        }
+
         LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!! cur ref cnt = 0 for {}",  msg.getClass());
-        if(ReferenceCountUtil.refCnt(msg) > 0) {
-//        ReferenceCountUtil.release(msg);
-            //System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx  " + ReferenceCountUtil.refCnt(msg));
-            ctx.write(msg);
-            //ReferenceCountUtil.release(msg);
-        }
+//        if(ReferenceCountUtil.refCnt(msg) > 0) {
+////        ReferenceCountUtil.release(msg);
+//            //System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx  " + ReferenceCountUtil.refCnt(msg));
+//            ctx.write(msg);
+//            ReferenceCountUtil.release(msg);
+//        }
+        ctx.write(msg);
     }
 }

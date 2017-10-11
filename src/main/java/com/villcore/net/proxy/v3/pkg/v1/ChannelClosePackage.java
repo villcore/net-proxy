@@ -1,13 +1,11 @@
-package com.villcore.net.proxy.v3.pkg;
+package com.villcore.net.proxy.v3.pkg.v1;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.io.UnsupportedEncodingException;
-
-public class ConnectRespPackage extends Package {
+public class ChannelClosePackage extends Package {
     {
-        this.setPkgType(PackageType.PKG_CONNECT_RESP);
+        this.setPkgType(PackageType.PKG_CHANNEL_CLOSE);
     }
 
 
@@ -16,7 +14,7 @@ public class ConnectRespPackage extends Package {
         ByteBuf header = getHeader();
         int oriReadIndex = header.readerIndex();
 
-        localConnId = new Integer(header.readInt());
+        localConnId = header.readInt();
         header.readerIndex(oriReadIndex);
 
         return localConnId;
@@ -28,13 +26,13 @@ public class ConnectRespPackage extends Package {
         int oriReadIndex = header.readerIndex();
 
         header.readInt();
-        remoteConnId = new Integer(header.readInt());
+        remoteConnId = header.readInt();
         header.readerIndex(oriReadIndex);
 
         return remoteConnId;
     }
 
-    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag) {
+    public static ByteBuf newHeader(int localConnId, int remoteConnId, long userFlag){
         //localConnId[4] + remoteConnId[4] + userFlag[8];
         ByteBuf header = Unpooled.buffer(4 + 4 + 8);
 
@@ -45,8 +43,8 @@ public class ConnectRespPackage extends Package {
         return header;
     }
 
-    public static ConnectRespPackage valueOf2(ByteBuf byteBuf) {
-        ConnectRespPackage pkg = new ConnectRespPackage();
+    public static ChannelClosePackage valueOf2(ByteBuf byteBuf) {
+        ChannelClosePackage pkg = new ChannelClosePackage();
 
         int readerIndex = byteBuf.readerIndex();
 

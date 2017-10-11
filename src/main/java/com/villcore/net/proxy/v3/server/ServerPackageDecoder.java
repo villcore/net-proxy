@@ -1,10 +1,10 @@
 package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v3.common.Connection;
-import com.villcore.net.proxy.v3.pkg.*;
-import com.villcore.net.proxy.v3.pkg.Package;
-import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthReqPackage;
-import com.villcore.net.proxy.v3.pkg.connection.ConnectAuthRespPackage;
+import com.villcore.net.proxy.v3.pkg.v1.*;
+import com.villcore.net.proxy.v3.pkg.v1.connection.ConnectAuthReqPackage;
+import com.villcore.net.proxy.v3.pkg.v1.connection.ConnectAuthRespPackage;
+import com.villcore.net.proxy.v3.pkg.v1.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
