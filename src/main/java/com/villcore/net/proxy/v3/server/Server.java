@@ -5,6 +5,7 @@ import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.server.ChannelReadControlHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.ConnectReqPackageHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
 import io.netty.bootstrap.Bootstrap;
@@ -43,24 +44,26 @@ public class Server {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(20000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 60 * 1000, 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager, 5 * 60 * 1000, 5 * 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 60 * 1000, 1 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
         //authorized handler
         //connect req handler //channel close handler  // invalid data handler
+
         PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
+        PackageHandler readControlHandler = new ChannelReadControlHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
         //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
 
         //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
-        packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addRecvHandler(connectReqHandler, readControlHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();

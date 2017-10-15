@@ -1,6 +1,6 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,8 +72,7 @@ public class PackageProcessService extends LoopTask {
         time = System.currentTimeMillis();
 
         try {
-            List<Connection> connections = connectionManager.allConnected();
-            connections.forEach(connection -> {
+            connectionManager.allConnected().forEach(connection -> {
                 if (connection.sendPackageReady()) {
                     //LOG.debug(">>>");
                     List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);

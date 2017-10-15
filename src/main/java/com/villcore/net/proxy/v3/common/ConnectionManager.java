@@ -1,9 +1,8 @@
 package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
-import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
-import com.villcore.net.proxy.v3.pkg.v1.Package;
-import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
+import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
@@ -70,10 +69,9 @@ public class ConnectionManager implements Runnable {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
-                        ch.pipeline().addLast(new PackageDecoder());
+                        ch.pipeline().addLast(new ConnectionMessageDecoder());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
-                        ch.pipeline().addLast(new PackageToByteBufOutHandler());
+                        ch.pipeline().addLast(new ConnectionMessageEncoder());
                     }
                 });
         return bootstrap;

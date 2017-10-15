@@ -19,6 +19,8 @@ public class PackageUtils {
         ConnectReqPackage pkg = new ConnectReqPackage();
         pkg.setHeader(header);
         pkg.setBody(new byte[0]);
+
+//        System.out.println(pkg.getBodyLen() + "" + pkg.getBody().length);
         return pkg;
     }
 
@@ -45,5 +47,29 @@ public class PackageUtils {
         pkg.setHeader(header);
         pkg.setBody(new byte[0]);
         return pkg;
+    }
+
+    public static ChannelReadPausePackage buildChannelReadPausePackage(int localConnId, int remoteConnId, long userFlag) {
+        byte[] header = ChannelReadPausePackage.newHeader(localConnId, remoteConnId, userFlag);
+        ChannelReadPausePackage pkg = new ChannelReadPausePackage();
+        pkg.setHeader(header);
+        pkg.setBody(new byte[0]);
+        return pkg;
+    }
+
+    public static ChannelReadStartPackage buildChannelReadStartPackage(int localConnId, int remoteConnId, long userFlag) {
+        byte[] header = ChannelReadStartPackage.newHeader(localConnId, remoteConnId, userFlag);
+        ChannelReadStartPackage pkg = new ChannelReadStartPackage();
+        pkg.setHeader(header);
+        pkg.setBody(new byte[0]);
+        return pkg;
+    }
+
+    public static void release(ByteBuf byteBuf) {
+        byteBuf.release();
+    }
+
+    public static void release(Optional<Package> pkg) {
+
     }
 }

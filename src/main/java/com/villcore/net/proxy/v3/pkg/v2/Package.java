@@ -1,5 +1,8 @@
 package com.villcore.net.proxy.v3.pkg.v2;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -7,6 +10,8 @@ import java.nio.ByteBuffer;
  * make sure construct Package with exist ByteBuf read/writer index correct
  */
 public class Package implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Package.class);
+
     public static final int FIXED_LEN = 4 + 4 + 4 + 2;
 
     protected byte[] fixed = new byte[FIXED_LEN];
@@ -57,7 +62,7 @@ public class Package implements Serializable {
 
     public void setBody(byte[] body) {
         this.body = body;
-        ByteBuffer.wrap(fixed).putInt(4 + 4, header.length);
+        ByteBuffer.wrap(fixed).putInt(4 + 4, body.length);
         setTotolLen();
     }
 
@@ -67,7 +72,7 @@ public class Package implements Serializable {
     }
 
     public void setPkgType(short type) {
-        ByteBuffer.wrap(fixed).putInt(4 + 4 + 4, type);
+        ByteBuffer.wrap(fixed).putShort(4 + 4 + 4, type);
     }
 
     @Override
@@ -99,14 +104,17 @@ public class Package implements Serializable {
                 '}';
     }
 
-    public static Package valueOf(byte[] bytes) {
-        Package pkg = new Package();
-
+    public Package valueOf(byte[] bytes) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         int totalLen = byteBuffer.getInt();
         int headerLen = byteBuffer.getInt(4);
         int bodyLen = byteBuffer.getInt(4 + 4);
         short pkgType = byteBuffer.getShort(4 + 4 + 4);
+
+
+//        LOGGER.debug("bytes size = {}, totalLen = {}, headerLen = {}, bodyLen = {}, pkgType = {}", new Object[]{
+//                bytes.length, totalLen, headerLen, bodyLen, pkgType
+//        });
 
         byte[] fixed = new byte[FIXED_LEN];
         byte[] header = new byte[headerLen];
@@ -114,11 +122,13 @@ public class Package implements Serializable {
 
         System.arraycopy(bytes, 0, fixed, 0, FIXED_LEN);
         System.arraycopy(bytes, FIXED_LEN, header, 0, headerLen);
+
+        //LOGGER.debug("src pos = {}, dst len = {}", FIXED_LEN + headerLen, body.length);
         System.arraycopy(bytes, FIXED_LEN + headerLen, body, 0, bodyLen);
 
-        pkg.setFixed(fixed);
-        pkg.setHeader(header);
-        pkg.setBody(body);
-        return pkg;
+        setFixed(fixed);
+        setHeader(header);
+        setBody(body);
+        return this;
     }
 }

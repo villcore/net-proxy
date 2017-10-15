@@ -39,12 +39,12 @@ public class ClientLocalTest {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager,  60 * 1000, 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager,  5 * 60 * 1000, 5 * 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
         //Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 60 * 1000, 1 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
@@ -63,11 +63,14 @@ public class ClientLocalTest {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1 * 60 * 60 * 1000)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
+                    //.childOption(ChannelOption.AUTO_READ, false)
+
+
                     .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort)));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {

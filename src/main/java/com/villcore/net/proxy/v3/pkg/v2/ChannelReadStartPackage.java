@@ -1,13 +1,10 @@
 package com.villcore.net.proxy.v3.pkg.v2;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 import java.nio.ByteBuffer;
 
-public class ChannelClosePackage extends com.villcore.net.proxy.v3.pkg.v2.Package {
+public class ChannelReadStartPackage extends Package {
     {
-        this.setPkgType(PackageType.PKG_CHANNEL_CLOSE);
+        this.setPkgType(PackageType.PKG_CHANNEL_CONTROL_START);
     }
 
     public int getLocalConnId() {

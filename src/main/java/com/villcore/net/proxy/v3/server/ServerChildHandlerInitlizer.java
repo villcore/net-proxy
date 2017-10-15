@@ -1,12 +1,9 @@
 package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
-import com.villcore.net.proxy.v3.client.PackageToByteBufOutHandler;
 import com.villcore.net.proxy.v3.common.*;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
@@ -42,10 +39,11 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
             }
         });
 
-        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
-        ch.pipeline().addLast(new PackageDecoder());
+        //ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
+        ch.pipeline().addLast(new ConnectionMessageDecoder());
         //ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
-        ch.pipeline().addLast(new PackageToByteBufOutHandler());
+//        ch.pipeline().addLast(new PackageToByteBufOutHandler());
+        ch.pipeline().addLast(new ConnectionMessageEncoder());
     }
 }

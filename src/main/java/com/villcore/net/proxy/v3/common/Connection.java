@@ -1,7 +1,7 @@
 package com.villcore.net.proxy.v3.common;
 
-import com.villcore.net.proxy.v3.pkg.v1.Package;
-import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
+import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Connection extends BasicWriteableImpl {
     private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
-    private static final int SEND_HIGH_WATER_MARKER = 1000;
+    private static final int SEND_HIGH_WATER_MARKER = 10;
     private volatile boolean connected;
 
     private String remoteAddr;
@@ -151,11 +151,8 @@ public class Connection extends BasicWriteableImpl {
         //LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> connection send ->>{}", pkg.toByteBuf().readableBytes());
         //remoteChannel.writeAndFlush(pkg);
         remoteChannel.write(pkg);
-        PackageUtils.printRef("connection write pkg ------------------"+getClass().getSimpleName(), pkg);
-
-        //remoteChannel.writeAndFlush(Unpooled.EMPTY_BUFFER);
         connectionTouch(System.currentTimeMillis());
-//        LOG.debug("connection write...{}", true);
+        //LOG.debug("connection write...{}", true);
         return true;
     }
 

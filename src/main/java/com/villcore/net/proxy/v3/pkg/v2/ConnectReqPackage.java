@@ -85,7 +85,7 @@ public class ConnectReqPackage extends com.villcore.net.proxy.v3.pkg.v2.Package 
         byte[] headerBytes = new byte[4 + 8 + 4 + addrBytes.length  + 2];
         ByteBuffer header = ByteBuffer.wrap(headerBytes);
 
-        System.arraycopy(addrBytes, 0, headerBytes, 4 + 8 + 4, headerBytes.length);
+        System.arraycopy(addrBytes, 0, headerBytes, 4 + 8 + 4, addrBytes.length);
         header.putInt(localConnId);
         header.putLong(4, userFlag);
         header.putInt(4 + 8, addrBytes.length);

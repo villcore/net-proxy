@@ -4,8 +4,8 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.v1.*;
-import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v2.*;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

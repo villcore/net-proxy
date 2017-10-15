@@ -8,4 +8,7 @@ public class PackageType {
     public static final short PKG_CHANNEL_CLOSE = 5;
     public static final short PKG_CONNECTION_AUTH_REQ = 6;
     public static final short PKG_CONNECTION_AUTH_RESP = 7;
+    public static final short PKG_HEART_BEAT = 8;
+    public static final short PKG_CHANNEL_CONTROL_PAUSE = 9;
+    public static final short PKG_CHANNEL_CONTROL_START = 10;
 }

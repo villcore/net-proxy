@@ -2,8 +2,8 @@ package com.villcore.net.proxy.v3.server;
 
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.v1.DefaultDataPackage;
-import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v2.DefaultDataPackage;
+import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -27,7 +27,7 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        //LOG.debug("|||||server tunnel channel read success ...");
+        LOG.debug("|||||server tunnel channel read success ...");
         Channel channel = ctx.channel();
 
         if(msg instanceof ByteBuf) {
@@ -38,19 +38,23 @@ public class ServerTunnelChannelReadHandler extends ChannelInboundHandlerAdapter
                 return;
             }
             tunnel.touch(-1);
-            
+
             int connId = tunnel.getConnId();
             int corrspondConnId = tunnel.getCorrespondConnId();
 
             if(!tunnel.readWaterMarkerSafe()) {
                 tunnel.getChannel().config().setAutoRead(false);
             }
-            DefaultDataPackage defaultDataPackage = PackageUtils.buildDataPackage(connId, corrspondConnId, 1L, data);
+            byte[] bytes = new byte[data.readableBytes()];
+            data.readBytes(bytes);
+            PackageUtils.release(data);
+
+            DefaultDataPackage defaultDataPackage = PackageUtils.buildDataPackage(connId, corrspondConnId, 1L, bytes);
             //LOG.debug("add send pkg [{}] -> [{}]", connId, corrspondConnId);
             tunnel.addSendPackage(defaultDataPackage);
 //            LOG.debug("read content >>>\n [{}]\n>>>>>>>", PackageUtils.toString(data));
-            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", tunnel.getConnId(), tunnel.getCorrespondConnId(), data.readableBytes());
-//            LOG.debug("tunnel [{}] read content ========================\n{}\n==============================", connId, PackageUtils.toString(data.copy()));
+            LOG.debug("tunnel [{}] -> [{}] need send {} bytes ...", tunnel.getConnId(), tunnel.getCorrespondConnId(), bytes.length);
+            //LOG.debug("tunnel [{}] read content ========================\n{}\n==============================", connId, new String(bytes));
 
         } else {
             ctx.fireChannelRead(msg);

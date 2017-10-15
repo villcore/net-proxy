@@ -2,7 +2,7 @@ package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.ConnectionManager;
-import com.villcore.net.proxy.v3.pkg.v1.Package;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -19,6 +19,7 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        //LOG.debug("recv pkg = {}", msg.getClass().getSimpleName());
         //TODO connection == null ?
         Connection connection = connectionManager.channelFor(ctx.channel());
 
@@ -32,7 +33,7 @@ public class ConnectionRecvPackageGatherHandler extends ChannelInboundHandlerAda
             Package pkg = Package.class.cast(msg);
             connection.addRecvPackage(pkg);
             connection.connectionTouch(System.currentTimeMillis());
-            //LOG.debug("add to recv to conn {}...", connection.toString());
+           // LOG.debug("add to recv to conn {}...", connection.toString());
         } else {
             ctx.fireChannelRead(ctx);
         }

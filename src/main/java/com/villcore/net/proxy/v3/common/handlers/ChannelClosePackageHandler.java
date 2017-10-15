@@ -4,10 +4,10 @@ import com.villcore.net.proxy.v3.common.Connection;
 import com.villcore.net.proxy.v3.common.PackageHandler;
 import com.villcore.net.proxy.v3.common.Tunnel;
 import com.villcore.net.proxy.v3.common.TunnelManager;
-import com.villcore.net.proxy.v3.pkg.v1.ChannelClosePackage;
-import com.villcore.net.proxy.v3.pkg.v1.Package;
-import com.villcore.net.proxy.v3.pkg.v1.PackageType;
-import com.villcore.net.proxy.v3.pkg.v1.PackageUtils;
+import com.villcore.net.proxy.v3.pkg.v2.ChannelClosePackage;
+import com.villcore.net.proxy.v3.pkg.v2.Package;
+import com.villcore.net.proxy.v3.pkg.v2.PackageType;
+import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
