@@ -112,6 +112,7 @@ public class ConnectionManager implements Runnable {
                 public void operationComplete(Future<? super Void> future) throws Exception {
                     if (future.isSuccess()) {
                         connection.setConnected(false);
+                        connection.setAuthed(false);
                     }
                 }
             });
@@ -131,7 +132,7 @@ public class ConnectionManager implements Runnable {
      * @param port
      * @return
      */
-    public Connection connectTo(String addr, int port) {
+    public Connection connectTo(String addr, int port, String username, String password) {
         Connection connection = null;
         synchronized (updateLock) {
             connection = connectionMap.get(addrAndPortKey(addr, port));
@@ -149,9 +150,9 @@ public class ConnectionManager implements Runnable {
                     @Override
                     public void operationComplete(Future<? super Void> future) throws Exception {
                         if (future.isSuccess()) {
-                            connectSuccess(addr, port, finalConnection);
+                            connectSuccess(addr, port, finalConnection, username, password);
                         } else {
-                            connectFailed(addr, port, finalConnection);
+                            connectFailed(addr, port, finalConnection, username, password);
                         }
                     }
                 }).channel();
@@ -159,24 +160,24 @@ public class ConnectionManager implements Runnable {
                 channel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
                     @Override
                     public void operationComplete(Future<? super Void> future) throws Exception {
-                        connectFailed(addr, port, finalConnection);
+                        connectFailed(addr, port, finalConnection, username, password);
                     }
                 });
                 connection.setRemoteChannel(channel);
                 //channel.writeAndFlush(Unpooled.EMPTY_BUFFER);
             } catch (Exception e) {
                 LOG.debug(e.getMessage(), e);
-                connectFailed(addr, port, connection);
+                connectFailed(addr, port, connection, username, password);
             }
             return connection;
         }
     }
 
-    private void connectFailed(String addr, int port, Connection finalConnection) {
+    private void connectFailed(String addr, int port, Connection finalConnection, String username, String password) {
         //TODO failed
         LOG.debug("connect to remote [{}:{}] server failed...", addr, port);
         finalConnection.setConnected(false);
-
+        finalConnection.setAuthed(false);
         Short curRetry = retryCountMap.getOrDefault(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         LOG.debug("cur retry = {}", curRetry);
         if (curRetry++ < MAX_RETRY_COUNT) {
@@ -184,7 +185,7 @@ public class ConnectionManager implements Runnable {
             eventLoopGroup.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    connectTo(addr, port);
+                    connectTo(addr, port, username, password);
                 }
             }, 1000, TimeUnit.MILLISECONDS);
             //connectTo(addr, port);
@@ -195,10 +196,18 @@ public class ConnectionManager implements Runnable {
         writeService.removeWrite(finalConnection);
     }
 
-    private void connectSuccess(String addr, int port, Connection finalConnection) {
+    private void connectSuccess(String addr, int port, Connection finalConnection, String username, String passowrd) {
         //TODO success
         LOG.debug("connect to remote [{}:{}] server success...", addr, port);
         finalConnection.setConnected(true);
+
+        //finalConnection.getRemoteChannel().config().setAutoRead(false);
+        try {
+            finalConnection.addSendPackages(Collections.singletonList(PackageUtils.buildConnectAuthReqPackage(username, passowrd)));
+            LOG.debug("send auth req ...");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         finalConnection.connectionTouch(System.currentTimeMillis());
         retryCountMap.put(addrAndPortKey(addr, port), Short.valueOf((short) 0));
         writeService.addWrite(finalConnection);
@@ -276,7 +285,7 @@ public class ConnectionManager implements Runnable {
         }
     }
 
-    public Connection getConnection(String remoteAddr, int remotePort) {
+    public Connection getConnection(String remoteAddr, int remotePort, String username, String password) {
         String connectionKey = addrAndPortKey(remoteAddr, remotePort);
         synchronized (updateLock) {
             if (connectionMap.containsKey(connectionKey)) {
@@ -288,7 +297,7 @@ public class ConnectionManager implements Runnable {
         //LOG.debug("get a new connection ...");
 
         // already sync and put into map ...
-        Connection connection = connectTo(remoteAddr, remotePort);
+        Connection connection = connectTo(remoteAddr, remotePort, username, password);
         return connection;
     }
 }

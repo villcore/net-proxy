@@ -26,18 +26,23 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
     private String remoteAddr;
     private int remotePort;
 
-    public ClientChildChannelHandlerInitlizer2(TunnelManager tunnelManager, ConnectionManager connectionManager, String remoteAddr, int remotePort) {
+    private String username;
+    private String password;
+
+    public ClientChildChannelHandlerInitlizer2(TunnelManager tunnelManager, ConnectionManager connectionManager, String remoteAddr, int remotePort, String username, String password) {
         this.tunnelManager = tunnelManager;
         this.connectionManager = connectionManager;
         this.remoteAddr = remoteAddr;
         this.remotePort = remotePort;
+        this.username = username;
+        this.password = password;
     }
 
     @Override
     protected void initChannel(Channel channel) throws Exception {
 //        channel.config().setAllocator(UnpooledByteBufAllocator.DEFAULT);
 
-        Connection connection = connectionManager.getConnection(remoteAddr, remotePort);
+        Connection connection = connectionManager.getConnection(remoteAddr, remotePort, username, password);
         Tunnel tunnel = tunnelManager.newTunnel(channel);
         LOG.debug("init tunnel [{}] for channel [{}]...", tunnel.getConnId(), channel.remoteAddress().toString());
 

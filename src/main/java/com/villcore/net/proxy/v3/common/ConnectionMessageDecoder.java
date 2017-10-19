@@ -2,6 +2,8 @@ package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.pkg.v2.*;
 import com.villcore.net.proxy.v3.pkg.v2.Package;
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthReqPackage;
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthRespPackage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -127,9 +129,13 @@ public class ConnectionMessageDecoder extends ByteToMessageDecoder {
             break;
 
             case PackageType.PKG_CONNECTION_AUTH_REQ:
+                ConnectAuthReqPackage connectAuthReqPackage = (ConnectAuthReqPackage) new ConnectAuthReqPackage().valueOf(all);
+                pkg = connectAuthReqPackage;
                 break;
 
             case PackageType.PKG_CONNECTION_AUTH_RESP:
+                ConnectAuthRespPackage connectAuthRespPackage = (ConnectAuthRespPackage) new ConnectAuthRespPackage().valueOf(all);
+                pkg = connectAuthRespPackage;
                 break;
             default:
                 break;

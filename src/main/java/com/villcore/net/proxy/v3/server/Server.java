@@ -4,9 +4,9 @@ package com.villcore.net.proxy.v3.server;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
-import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.ChannelReadControlHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.ConnectReqPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.client.connection.ConnectAuthReqHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -35,6 +35,8 @@ public class Server {
         ScheduleService scheduleService = new ScheduleService();
         Bootstrap bootstrap = new Bootstrap();
 
+        SimpleUserManager simpleUserManager = new SimpleUserManager();
+
         //核心的运行任务
         //WriteService
         WriteService writeService = new WriteService(10L);
@@ -55,6 +57,7 @@ public class Server {
         //authorized handler
         //connect req handler //channel close handler  // invalid data handler
 
+        PackageHandler connectAuthReqHandler = new ConnectAuthReqHandler(simpleUserManager);
         PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
         PackageHandler readControlHandler = new ChannelReadControlHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
@@ -63,7 +66,7 @@ public class Server {
         //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
 
         //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
-        packageProcessService.addRecvHandler(connectReqHandler, readControlHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addRecvHandler(connectAuthReqHandler, connectReqHandler, readControlHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();

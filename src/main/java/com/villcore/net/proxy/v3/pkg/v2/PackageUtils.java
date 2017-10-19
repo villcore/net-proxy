@@ -1,5 +1,7 @@
 package com.villcore.net.proxy.v3.pkg.v2;
 
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthReqPackage;
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthRespPackage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
@@ -60,6 +62,22 @@ public class PackageUtils {
     public static ChannelReadStartPackage buildChannelReadStartPackage(int localConnId, int remoteConnId, long userFlag) {
         byte[] header = ChannelReadStartPackage.newHeader(localConnId, remoteConnId, userFlag);
         ChannelReadStartPackage pkg = new ChannelReadStartPackage();
+        pkg.setHeader(header);
+        pkg.setBody(new byte[0]);
+        return pkg;
+    }
+
+    public static ConnectAuthReqPackage buildConnectAuthReqPackage(String username, String password) throws UnsupportedEncodingException {
+        byte[] header = ConnectAuthReqPackage.newHeader(username, password);
+        ConnectAuthReqPackage pkg = new ConnectAuthReqPackage();
+        pkg.setHeader(header);
+        pkg.setBody(new byte[0]);
+        return pkg;
+    }
+
+    public static ConnectAuthRespPackage buildConnectAuthRespPackage(String username, short stateCode) throws UnsupportedEncodingException {
+        byte[] header = ConnectAuthRespPackage.newHeader(username, stateCode);
+        ConnectAuthRespPackage pkg = new ConnectAuthRespPackage();
         pkg.setHeader(header);
         pkg.setBody(new byte[0]);
         return pkg;

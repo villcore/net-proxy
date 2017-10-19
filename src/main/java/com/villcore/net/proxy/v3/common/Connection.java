@@ -2,6 +2,7 @@ package com.villcore.net.proxy.v3.common;
 
 import com.villcore.net.proxy.v3.pkg.v2.Package;
 import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
+import com.villcore.net.proxy.v3.server.UserInfo;
 import io.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +41,9 @@ public class Connection extends BasicWriteableImpl {
     private long lastTouch;
 
     private long authId = -1L;
+    private boolean authed = false;
 
-
+    private UserInfo userInfo;
 
     public Connection(String addr, int port, TunnelManager tunnelManager) {
         this.remoteAddr = addr;
@@ -79,7 +81,8 @@ public class Connection extends BasicWriteableImpl {
 
     public boolean sendPackageReady() {
         //LOG.debug("cur send water marker = {}", curSendWaterMarker);
-        return connected && (curSendWaterMarker <= SEND_HIGH_WATER_MARKER);
+        //LOG.debug("cur connection is auth = {}", isAuthed());
+        return connected && isAuthed() && (curSendWaterMarker <= SEND_HIGH_WATER_MARKER);
     }
 
     public List<Package> getRecvPackages() {
@@ -190,5 +193,17 @@ public class Connection extends BasicWriteableImpl {
     @Override
     public void flush() {
         remoteChannel.flush();
+    }
+
+    public boolean isAuthed() {
+        return authed;
+    }
+
+    public void setAuthed(boolean auth) {
+        this.authed = auth;
+    }
+
+    public void setUserInfo(UserInfo userInfo) {
+        this.userInfo = userInfo;
     }
 }

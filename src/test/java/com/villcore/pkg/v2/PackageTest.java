@@ -5,6 +5,8 @@ import com.villcore.net.proxy.v3.pkg.v2.ConnectReqPackage;
 import com.villcore.net.proxy.v3.pkg.v2.ConnectRespPackage;
 import com.villcore.net.proxy.v3.pkg.v2.*;
 import com.villcore.net.proxy.v3.pkg.v2.Package;
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthReqPackage;
+import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthRespPackage;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -88,5 +90,45 @@ public class PackageTest {
         System.out.println(defaultDataPackage.getLocalConnId());
         System.out.println(defaultDataPackage.getRemoteConnId());
         System.out.println(new String(defaultDataPackage.getBody()));
+    }
+
+    @Test
+    public void testConnAuthReqPackag() throws Exception {
+        Package pkg = (Package) PackageUtils.buildConnectAuthReqPackage("villcore", "123123");
+
+        System.out.println(pkg.getTotalLen());
+        System.out.println(pkg.getFixed().length);
+        System.out.println(pkg.getHeaderLen());
+        System.out.println(pkg.getBodyLen());
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byteArrayOutputStream.write(pkg.getFixed());
+        byteArrayOutputStream.write(pkg.getHeader());
+        byteArrayOutputStream.write(pkg.getBody());
+
+        ConnectAuthReqPackage connectAuthReqPackage = (ConnectAuthReqPackage) new ConnectAuthReqPackage().valueOf(byteArrayOutputStream.toByteArray());
+        System.out.println(connectAuthReqPackage.getUsername());
+        System.out.println(connectAuthReqPackage.getPassword());
+        System.out.println(new String(connectAuthReqPackage.getBody()));
+    }
+
+    @Test
+    public void testConnAuthRespPackag() throws Exception {
+        Package pkg = (Package) PackageUtils.buildConnectAuthRespPackage("villcore", (short)100);
+
+        System.out.println(pkg.getTotalLen());
+        System.out.println(pkg.getFixed().length);
+        System.out.println(pkg.getHeaderLen());
+        System.out.println(pkg.getBodyLen());
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byteArrayOutputStream.write(pkg.getFixed());
+        byteArrayOutputStream.write(pkg.getHeader());
+        byteArrayOutputStream.write(pkg.getBody());
+
+        ConnectAuthRespPackage authRespPackage = (ConnectAuthRespPackage) new ConnectAuthRespPackage().valueOf(byteArrayOutputStream.toByteArray());
+        System.out.println(authRespPackage.getUsername());
+        System.out.println(authRespPackage.getStateCode());
+        System.out.println(new String(authRespPackage.getBody()));
     }
 }

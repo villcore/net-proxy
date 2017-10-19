@@ -369,7 +369,10 @@ public class Tunnel extends BasicWriteableImpl {
     public void resetReadState() {
         if (readWaterMarkerSafe()) {
             channel.config().setAutoRead(true);
+            setPause(true);
         } else {
+            setPause(false);
+            channel.read();
             channel.config().setAutoRead(false);
         }
     }

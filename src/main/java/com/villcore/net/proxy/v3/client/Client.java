@@ -4,6 +4,7 @@ import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.server.connection.ConnectionAuthRespHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
@@ -28,6 +29,8 @@ public class Client {
 //        String remoteAddress = "172.93.36.103";
 
         String remotePort = "20081";
+        String username = "villcore";
+        String password = "123123";
 
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         ScheduleService scheduleService = new ScheduleService();
@@ -41,22 +44,23 @@ public class Client {
         //TunnelManager
         TunnelManager tunnelManager = new TunnelManager(10000);
         tunnelManager.setWriteService(writeService);
-        scheduleService.scheduleTaskAtFixedRate(tunnelManager,  60 * 1000, 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(tunnelManager,  5 * 60 * 1000, 5 * 60 * 1000);
 
         //Connection connection = new Connection();
         ConnectionManager connectionManager = new ConnectionManager(eventLoopGroup, tunnelManager, writeService);
         //Connection connection = connectionManager.connectTo(remoteAddress, Integer.valueOf(remotePort));
-        scheduleService.scheduleTaskAtFixedRate(connectionManager, 1 * 60 * 1000, 1 * 60 * 1000);
+        scheduleService.scheduleTaskAtFixedRate(connectionManager, 10 * 60 * 1000, 10 * 60 * 1000);
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
+        PackageHandler connectAuthRespHandler = new ConnectionAuthRespHandler();
         PackageHandler connectRespHandler = new ConnectRespPackageHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
         // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
         //packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
-        packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addRecvHandler(connectAuthRespHandler, connectRespHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
@@ -65,12 +69,15 @@ public class Client {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(eventLoopGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30 * 1000)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1 * 60 * 60 * 1000)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_RCVBUF, 128 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 128 * 1024)
-                    .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort)));
+                    //.childOption(ChannelOption.AUTO_READ, false)
+
+
+                    .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort), username, password));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);
