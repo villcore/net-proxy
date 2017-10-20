@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Package 处理服务，主要针对发送的Package与接收的Package进行处理，通过添加Handler进行逻辑处理
  *
+ * PackageProcessService 使用线程池技术, 持有PackageHandler,对所有获取到的包进行处理
+ *
  */
 public class PackageProcessService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(PackageProcessService.class);

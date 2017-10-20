@@ -11,4 +11,5 @@ public class PackageType {
     public static final short PKG_HEART_BEAT = 8;
     public static final short PKG_CHANNEL_CONTROL_PAUSE = 9;
     public static final short PKG_CHANNEL_CONTROL_START = 10;
+    public static final short PKG_WRAP_TRANSFER = 10;
 }
