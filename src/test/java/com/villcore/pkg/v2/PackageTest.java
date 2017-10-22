@@ -131,4 +131,30 @@ public class PackageTest {
         System.out.println(authRespPackage.getStateCode());
         System.out.println(new String(authRespPackage.getBody()));
     }
+
+    @Test
+    public void testTransferPackag() throws Exception {
+        Package pkg = (Package) PackageUtils.buildConnectAuthRespPackage("villcore", (short)100);
+        Package transferPackage = PackageUtils.buildTransferPackage(pkg.getPkgType(), CompressType.COMPRESS_GZIP, new byte[16], pkg.toBytes());
+
+        System.out.println(transferPackage.getTotalLen());
+        System.out.println(transferPackage.getFixed().length);
+        System.out.println(transferPackage.getHeaderLen());
+        System.out.println(transferPackage.getBodyLen());
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byteArrayOutputStream.write(transferPackage.getFixed());
+        byteArrayOutputStream.write(transferPackage.getHeader());
+        byteArrayOutputStream.write(transferPackage.getBody());
+
+
+        TransferPackage transferPackage2 = (TransferPackage) new TransferPackage().valueOf(byteArrayOutputStream.toByteArray());
+        byte[] wrapBytes = transferPackage2.getBody();
+        System.out.println("wrap bytes len = " + wrapBytes.length);
+        ConnectAuthRespPackage authRespPackage = (ConnectAuthRespPackage) new ConnectAuthRespPackage().valueOf(wrapBytes);
+
+        System.out.println(authRespPackage.getUsername());
+        System.out.println(authRespPackage.getStateCode());
+        System.out.println(new String(authRespPackage.getBody()));
+    }
 }

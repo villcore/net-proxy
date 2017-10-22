@@ -1,9 +1,13 @@
 package com.villcore.net.proxy.v3.server;
 
 
+import com.villcore.net.proxy.bio.compressor.Compressor;
+import com.villcore.net.proxy.bio.compressor.GZipCompressor;
+import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.TransferHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.ChannelReadControlHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.ConnectReqPackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.client.connection.ConnectAuthReqHandler;
@@ -17,13 +21,16 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.NoSuchPaddingException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * remote vps server side
  */
 public class Server {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NoSuchPaddingException, NoSuchAlgorithmException {
         //load configuration
         //TODO load form conf file
         String listenPort = "20081";
@@ -57,16 +64,26 @@ public class Server {
         //authorized handler
         //connect req handler //channel close handler  // invalid data handler
 
+        CryptHelper cryptHelper = new CryptHelper();
+        Compressor compressor = new GZipCompressor();
+
+        PackageHandler transferDecoderHandler = new TransferHandler(cryptHelper, compressor, true);
+        PackageHandler transferEncoderHandler = new TransferHandler(cryptHelper, compressor, false);
+
+
         PackageHandler connectAuthReqHandler = new ConnectAuthReqHandler(simpleUserManager);
-        PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager);
+        PackageHandler connectReqHandler = new ConnectReqPackageHandler(eventLoopGroup, writeService, tunnelManager, connectionManager, transferEncoderHandler);
         PackageHandler readControlHandler = new ChannelReadControlHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
+
         //packageProcessService.addRecvHandler(connectReqHandler, channelCloseHandler /*invalidDataHandler*/);
 
         //packageProcessService.addRecvHandler(connectReqHandler /*, channelCloseHandler, invalidDataHandler*/);
-        packageProcessService.addRecvHandler(connectAuthReqHandler, connectReqHandler, readControlHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addSendHandler(transferEncoderHandler);
+
+        packageProcessService.addRecvHandler(transferDecoderHandler, connectAuthReqHandler, connectReqHandler, readControlHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();

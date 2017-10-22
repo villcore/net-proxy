@@ -5,13 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Package 处理服务，主要针对发送的Package与接收的Package进行处理，通过添加Handler进行逻辑处理
- *
+ * <p>
  * PackageProcessService 使用线程池技术, 持有PackageHandler,对所有获取到的包进行处理
- *
  */
 public class PackageProcessService extends LoopTask {
     private static final Logger LOG = LoggerFactory.getLogger(PackageProcessService.class);
@@ -24,11 +25,10 @@ public class PackageProcessService extends LoopTask {
     private Set<PackageHandler> sendHandlers = new LinkedHashSet<>();
     private Set<PackageHandler> recvHandlers = new LinkedHashSet<>();
 
-    private Set<PackageHandler> connectionReqHandlers = new LinkedHashSet<>();
-    private Set<PackageHandler> connectionRespHandlers = new LinkedHashSet<>();
-
-
     private long time;
+
+    private BlockingQueue<Package> sendPackageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<Package> recvPackageQueue = new LinkedBlockingQueue<>();
 
     public PackageProcessService(TunnelManager tunnelManager, ConnectionManager connectionManager) {
         this.tunnelManager = tunnelManager;
@@ -51,63 +51,38 @@ public class PackageProcessService extends LoopTask {
         recvHandlers.addAll(Arrays.asList(packageHandler));
     }
 
-    public void addConnectionReqHandler(PackageHandler packageHandler) {
-        connectionReqHandlers.add(packageHandler);
-    }
-
-    public void addConnectionReqHandler(PackageHandler... packageHandler) {
-        connectionReqHandlers.addAll(Arrays.asList(packageHandler));
-    }
-
-    public void addConnectionRespHandler(PackageHandler packageHandler) {
-        connectionRespHandlers.add(packageHandler);
-    }
-
-    public void addConnectionRespHandler(PackageHandler... packageHandler) {
-        connectionRespHandlers.addAll(Arrays.asList(packageHandler));
-    }
-
-
     @Override
     public void loop() throws InterruptedException {
-        //LOG.debug("package process service loop ...");
+//        LOG.debug("package process service running ... send handler size = {}, recv handler size = {}", sendHandlers.size(), recvHandlers.size());
         time = System.currentTimeMillis();
 
         try {
             connectionManager.allConnected().forEach(connection -> {
                 if (connection.sendPackageReady()) {
-                    //LOG.debug(">>>");
+//                    System.out.println("==============================================================================");
+
                     List<Package> avaliableSendPackages = tunnelManager.gatherSendPackages(connection);
-                    if(avaliableSendPackages.size() > 0) {
-//                        LOG.debug("tunnels has pkg to send ...");
+                    if (avaliableSendPackages.isEmpty()) {
+                        return;
                     } else {
-                        //LOG.debug("tunnels has no pkg to send ...");
                     }
                     for (PackageHandler handler : sendHandlers) {
+//                        System.out.println("==============================================================================");
                         avaliableSendPackages = handler.handlePackage(avaliableSendPackages, connection);
+                        LOG.debug("handle send pkg ...");
                     }
+                    LOG.debug("add send pkg ...");
                     connection.addSendPackages(avaliableSendPackages);
                 } else {
-//                    LOG.debug("===");
                 }
             });
 
             connectionManager.allConnected().forEach(connection -> {
                 List<Package> avaliableRecvPackages = connection.getRecvPackages();
-//                if(!avaliableRecvPackages.isEmpty()) {
-//                    LOG.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}, {}", avaliableRecvPackages.size(), avaliableRecvPackages.size());
-//                } else {
-//                    LOG.debug("recv queue for conn {} empty ...", connection);
-//                }
-
-                //LOG.debug("before {}", avaliableRecvPackages.size());
                 for (PackageHandler handler : recvHandlers) {
-                    //LOG.debug("{}", handler.getClass().toString());
                     if (!avaliableRecvPackages.isEmpty())
-                    avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
+                        avaliableRecvPackages = handler.handlePackage(avaliableRecvPackages, connection);
                 }
-                //LOG.debug("---");
-                //LOG.debug("after {}", avaliableRecvPackages.size());
                 tunnelManager.scatterRecvPackage(avaliableRecvPackages);
             });
         } catch (Exception e) {
@@ -115,7 +90,7 @@ public class PackageProcessService extends LoopTask {
         }
 
         long workTime = System.currentTimeMillis() - time;
-        if(workTime < SLEEP_INTERVAL) {
+        if (workTime < SLEEP_INTERVAL) {
             TimeUnit.MILLISECONDS.sleep(SLEEP_INTERVAL - workTime);
         }
     }

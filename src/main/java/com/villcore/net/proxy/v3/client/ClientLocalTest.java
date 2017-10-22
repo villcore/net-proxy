@@ -1,8 +1,12 @@
 package com.villcore.net.proxy.v3.client;
 
+import com.villcore.net.proxy.bio.compressor.Compressor;
+import com.villcore.net.proxy.bio.compressor.GZipCompressor;
+import com.villcore.net.proxy.bio.crypt.CryptHelper;
 import com.villcore.net.proxy.v3.common.*;
 import com.villcore.net.proxy.v3.common.handlers.ChannelClosePackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.InvalidDataPackageHandler;
+import com.villcore.net.proxy.v3.common.handlers.TransferHandler;
 import com.villcore.net.proxy.v3.common.handlers.client.ConnectRespPackageHandler;
 import com.villcore.net.proxy.v3.common.handlers.server.connection.ConnectionAuthRespHandler;
 import com.villcore.net.proxy.v3.util.ThreadUtils;
@@ -14,21 +18,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.NoSuchPaddingException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  *
  */
 public class ClientLocalTest {
     private static final Logger LOG = LoggerFactory.getLogger(ClientLocalTest.class);
 
-    public static void main(String[] args) {
-        /**
-         * 192.168.137.101;192.168.137.102;192.168.137.103;192.168.137.104;192.168.137.105;192.168.137.106;192.168.137.107;192.168.137.108;192.168.137.101
-         */
+    public static void main(String[] args) throws NoSuchPaddingException, NoSuchAlgorithmException {
         //TODO 配置信息需要从文件中读取
         String proxyPort = "10081";
 
-        //String remoteAddress = "127.0.0.1";
-        String remoteAddress = "45.63.120.186";
+        String remoteAddress = "127.0.0.1";
+        //String remoteAddress = "45.63.120.186";
         String remotePort = "20081";
 
         String username = "villcore";
@@ -55,14 +59,22 @@ public class ClientLocalTest {
 
         //ProcessService
         PackageProcessService packageProcessService = new PackageProcessService(tunnelManager, connectionManager);
+        CryptHelper cryptHelper = new CryptHelper();
+        Compressor compressor = new GZipCompressor();
+
+        PackageHandler transferDecoderHandler = new TransferHandler(cryptHelper, compressor, true);
+
         PackageHandler connectAuthRespHandler = new ConnectionAuthRespHandler();
         PackageHandler connectRespHandler = new ConnectRespPackageHandler(tunnelManager);
         PackageHandler channelCloseHandler = new ChannelClosePackageHandler(tunnelManager);
         PackageHandler invalidDataHandler = new InvalidDataPackageHandler(tunnelManager);
 
-       // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
+        PackageHandler transferEncoderHandler = new TransferHandler(cryptHelper, compressor, false);
+
+        // packageProcessService.addRecvHandler(connectRespHandler, channelCloseHandler /*invalidDataHandler*/);
         //packageProcessService.addRecvHandler(connectRespHandler/*, channelCloseHandler, invalidDataHandler*/);
-        packageProcessService.addRecvHandler(connectAuthRespHandler, connectRespHandler, channelCloseHandler, invalidDataHandler);
+        packageProcessService.addSendHandler(transferEncoderHandler);
+        packageProcessService.addRecvHandler(transferDecoderHandler, connectAuthRespHandler, connectRespHandler, channelCloseHandler, invalidDataHandler);
 
         packageProcessService.start();
         ThreadUtils.newThread("package-process-service", packageProcessService, false).start();
@@ -79,7 +91,7 @@ public class ClientLocalTest {
                     //.childOption(ChannelOption.AUTO_READ, false)
 
 
-                    .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort), username, password));
+                    .childHandler(new ClientChildChannelHandlerInitlizer2(tunnelManager, connectionManager, remoteAddress, Integer.valueOf(remotePort), username, password, transferEncoderHandler));
             serverBootstrap.bind(Integer.valueOf(proxyPort)).sync().channel().closeFuture().sync();
         } catch (Throwable t) {
             LOG.error(t.getMessage(), t);

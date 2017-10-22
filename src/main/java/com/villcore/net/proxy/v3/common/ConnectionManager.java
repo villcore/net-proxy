@@ -3,6 +3,7 @@ package com.villcore.net.proxy.v3.common;
 import com.villcore.net.proxy.v3.client.ConnectionRecvPackageGatherHandler;
 import com.villcore.net.proxy.v3.pkg.v2.Package;
 import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
+import com.villcore.net.proxy.v3.server.UserInfo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
@@ -69,15 +70,15 @@ public class ConnectionManager implements Runnable {
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new ConnectionMessageDecoder());
+                        //ch.pipeline().addLast(new ConnectionMessageDecoder());
+                        ch.pipeline().addLast(new ConnectionPackageDecoder());
                         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(ConnectionManager.this));
-                        ch.pipeline().addLast(new ConnectionMessageEncoder());
+                        //ch.pipeline().addLast(new ConnectionMessageEncoder());
+                        ch.pipeline().addLast(new ConnectionPackageEncoder());
                     }
                 });
         return bootstrap;
     }
-
-    //TODO need sync
 
     /**
      * server side invoke
@@ -121,9 +122,6 @@ public class ConnectionManager implements Runnable {
             return connection;
         }
     }
-
-
-    //TODO need sync
 
     /**
      * client side invoke, 客户端调用
@@ -298,6 +296,7 @@ public class ConnectionManager implements Runnable {
 
         // already sync and put into map ...
         Connection connection = connectTo(remoteAddr, remotePort, username, password);
+        connection.setUserInfo(new UserInfo(username, password));
         return connection;
     }
 }

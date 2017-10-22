@@ -43,6 +43,7 @@ public class ConnectAuthReqHandler implements PackageHandler {
                             UserInfo userInfo = new UserInfo(username, password);
                             connection.addSendPackages(Collections.singletonList(PackageUtils.buildConnectAuthRespPackage(username, AuthStateCode.AU_SUCCESS)));
                             connection.setAuthed(true);
+                            connection.setUserInfo(userInfo);
 
                         } else {
                             connection.addSendPackages(Collections.singletonList(PackageUtils.buildConnectAuthRespPackage(username, AuthStateCode.AU_FAIL)));

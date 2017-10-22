@@ -8,6 +8,7 @@ import com.villcore.net.proxy.v3.pkg.v2.PackageType;
 import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
 import com.villcore.net.proxy.v3.pkg.v2.connection.ConnectAuthRespPackage;
 import com.villcore.net.proxy.v3.server.AuthStateCode;
+import com.villcore.net.proxy.v3.server.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

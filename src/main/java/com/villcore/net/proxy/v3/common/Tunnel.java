@@ -116,7 +116,7 @@ public class Tunnel extends BasicWriteableImpl {
 //        if(!connected) {
 //            return Collections.emptyList();
 //        }
-        if(!failRecvQueue.isEmpty()) {
+        if (!failRecvQueue.isEmpty()) {
             List<Package> avaliablePackages = new LinkedList<>();
             failRecvQueue.drainTo(avaliablePackages);
             return avaliablePackages;
@@ -199,28 +199,33 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public boolean canWrite() {
         boolean canWriteNew = channel != null && channel.isOpen() && channel.isWritable();
+//        LOG.debug("tunnel [{}] can write == {}", connId, canWriteNew);
+//        LOG.debug("channel writable = {}, buffer = {}", channel.isWritable(), channel.bytesBeforeUnwritable());
 
         if (!canWriteNew) {
-            //addSendPackage(PackageUtils.buildChannelReadPausePackage(connId, correspondConnId, 1L));
-            try {
-                if(this.canWrite) {
-                    LOG.debug("tunnel is {}, channel open = {}, channel write = {}", connId, channel.isOpen(), channel.isWritable());
-                    addSendPackage(PackageUtils.buildChannelReadPausePackage(connId, correspondConnId, 1L));
-                    this.canWrite = false;
-                    LOG.debug("too many message, need slow down ......................................");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            addSendPackage(PackageUtils.buildChannelReadPausePackage(connId, correspondConnId, 1L));
+            LOG.debug("tunnel [{}] too many message, need slow down ......................................", connId);
+            this.canWrite = false;
+
+//            try {
+//                if(this.canWrite) {
+//                    LOG.debug("tunnel is {}, channel open = {}, channel write = {}", connId, channel.isOpen(), channel.isWritable());
+//                    addSendPackage(PackageUtils.buildChannelReadPausePackage(connId, correspondConnId, 1L));
+//                    this.canWrite = false;
+//                    LOG.debug("too many message, need slow down ......................................");
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
         } else {
-            if(!this.canWrite && failRecvQueue.isEmpty() && recvQueue.isEmpty() && channel.bytesBeforeUnwritable() > 65480) {
-                this.canWrite = true;
-                //LOG.debug("can read xxxxxxxxxxxxxxxxxxxxxx");
-                addSendPackage(PackageUtils.buildChannelReadStartPackage(connId, correspondConnId, 1L));
-            }
+//            if (!this.canWrite && failRecvQueue.isEmpty() && recvQueue.isEmpty() && channel.bytesBeforeUnwritable() > 65480) {
+//                this.canWrite = true;
+//                LOG.debug("tunnel [{}] can read xxxxxxxxxxxxxxxxxxxxxx", connId);
+//                addSendPackage(PackageUtils.buildChannelReadStartPackage(connId, correspondConnId, 1L));
+//            }
         }
 //        LOG.debug("tunnel [{}] can write = {}", getConnId(), canWriteNew);
-//        LOG.debug("channel = {}, channel open = {}, channel write = {}", channel == null, channel.isOpen(), channel.isWritable()+ "-" +channel.bytesBeforeUnwritable());
+        LOG.debug("tunnel [{}], channel null = {}, channel open = {}, channel write = {}", new Object[]{connId, channel == null, channel.isOpen(), channel.isWritable()+ "-" +channel.bytesBeforeUnwritable()});
         return true;
     }
 
@@ -266,7 +271,7 @@ public class Tunnel extends BasicWriteableImpl {
 
     @Override
     public List<Package> getWritePackages() {
-        if(!failRecvQueue.isEmpty()) {
+        if (!failRecvQueue.isEmpty()) {
             return drainFailRecvPackages();
         }
         return drainRecvPackages();
@@ -275,12 +280,20 @@ public class Tunnel extends BasicWriteableImpl {
     @Override
     public void write() {
         List<Package> writePackages = getWritePackages();
+        if(writePackages.isEmpty()) {
+            if (!this.canWrite && failRecvQueue.isEmpty() && recvQueue.isEmpty() && channel.bytesBeforeUnwritable() > 65480) {
+                this.canWrite = true;
+                LOG.debug("tunnel [{}] can read xxxxxxxxxxxxxxxxxxxxxx", connId);
+                addSendPackage(PackageUtils.buildChannelReadStartPackage(connId, correspondConnId, 1L));
+            }
+            return;
+        }
 
         boolean canWrite = canWrite();
 
         for (Package pkg : writePackages) {
             canWrite = !canWrite ? false : canWrite();
-            if(!canWrite) {
+            if (!canWrite) {
                 failWrite(pkg);
                 int tunnelId = parseTunnelId(pkg);
                 continue;
@@ -368,12 +381,11 @@ public class Tunnel extends BasicWriteableImpl {
 
     public void resetReadState() {
         if (readWaterMarkerSafe()) {
-            channel.config().setAutoRead(true);
-            setPause(true);
+            channel.config().setAutoRead(true && !isPause());
+            //setPause(false);
         } else {
-            setPause(false);
-            channel.read();
-            channel.config().setAutoRead(false);
+            //setPause(true);
+            channel.config().setAutoRead(false && !isPause());
         }
     }
 
@@ -405,6 +417,14 @@ public class Tunnel extends BasicWriteableImpl {
 
     public void setPause(boolean pause) {
         this.pause = pause;
+        //System.out.println(pause);
+        if (!pause) {
+            //channel.read();
+            channel.config().setAutoRead(true);
+        } else {
+            channel.config().setAutoRead(false);
+        }
+        channel.config().setAutoRead(false);
     }
 
     public boolean isHttps() {

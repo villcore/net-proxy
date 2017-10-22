@@ -206,4 +206,8 @@ public class Connection extends BasicWriteableImpl {
     public void setUserInfo(UserInfo userInfo) {
         this.userInfo = userInfo;
     }
+
+    public UserInfo getUserInfo() {
+        return this.userInfo;
+    }
 }

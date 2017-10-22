@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.v3.common.handlers.server;
 
 import com.villcore.net.proxy.v3.common.*;
+import com.villcore.net.proxy.v3.common.handlers.TransferHandler;
 import com.villcore.net.proxy.v3.pkg.v2.*;
 import com.villcore.net.proxy.v3.pkg.v2.Package;
 import com.villcore.net.proxy.v3.server.DNS;
@@ -39,11 +40,15 @@ public class ConnectReqPackageHandler implements PackageHandler {
 
     private Bootstrap bootstrap;
 
-    public ConnectReqPackageHandler(EventLoopGroup eventLoopGroup, WriteService writeService, TunnelManager tunnelManager, ConnectionManager connectionManager) {
+    private PackageHandler transferEncoder;
+
+    public ConnectReqPackageHandler(EventLoopGroup eventLoopGroup, WriteService writeService, TunnelManager tunnelManager,
+                                    ConnectionManager connectionManager, PackageHandler transferEncoder) {
         this.eventLoopGroup = eventLoopGroup;
         this.writeService = writeService;
         this.tunnelManager = tunnelManager;
         this.connectionManager = connectionManager;
+        this.transferEncoder = transferEncoder;
 
         bootstrap = initBoostrap();
     }
@@ -71,24 +76,19 @@ public class ConnectReqPackageHandler implements PackageHandler {
                         ch.pipeline().addLast(new ChannelOutboundHandlerAdapter(){
                             @Override
                             public void read(ChannelHandlerContext ctx) throws Exception {
-//                                Attribute<Boolean> pause = ctx.channel().attr(AttributeKey.<Boolean>valueOf("pause"));
-//                                if(pause.get() == null) {
-//                                    pause.set(false);
+//                                Tunnel curTunnel = tunnelManager.tunnelFor(ctx.channel());
+//                                if(curTunnel == null) {
+//                                    return;
 //                                }
-//                                if(!pause.get()){
-//                                    super.read(ctx);
+//
+//                                if(curTunnel.isPause()) {
+//                                    LOG.debug("pause ...");
+//                                    System.out.println("pause ...");
+//                                    return;
 //                                }
-                                Tunnel curTunnel = tunnelManager.tunnelFor(ctx.channel());
-                                if(curTunnel == null) {
-                                    return;
-                                }
-
-                                if(curTunnel.isPause()) {
-                                    LOG.debug("pause ...");
-                                    return;
-                                }
+////
                                 super.read(ctx);
-                                LOG.debug("read ...");
+//                                LOG.debug("read ...{}", curTunnel.isPause());
                             }
 
                             @Override
@@ -97,8 +97,6 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                 ctx.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
                             }
                         });
-
-
                     }
                 });
         return bootstrap;
@@ -155,6 +153,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                         tunnel.setCorrespondConnId(correspondConnId);
                         tunnelManager.bindConnection(connection, tunnel);
                         tunnel.setConnect(true);
+                        tunnel.setPause(false);
                         ConnectRespPackage connectRespPackage = PackageUtils.buildConnectRespPackage(tunnel.getConnId(), correspondConnId, 1L);
                         //LOG.debug("connect resp [CID{}:CCID{}]", tunnel.getConnId(), correspondConnId);
                         tunnel.addSendPackage(connectRespPackage);
@@ -169,7 +168,7 @@ public class ConnectReqPackageHandler implements PackageHandler {
                                     //TODO build channel close package and send
                                     List<Package> packages = tunnel.drainSendPackages();
                                     if (!packages.isEmpty()) {
-                                        connection.addSendPackages(packages);
+                                        connection.addSendPackages(transferEncoder.handlePackage(packages, connection));
                                     }
                                     LOG.debug("server tunnel [{}] close ...", tunnel.getConnId());
                                 }

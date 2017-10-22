@@ -40,10 +40,14 @@ public class ServerChildHandlerInitlizer extends ChannelInitializer<SocketChanne
         });
 
         //ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(1 * 1024 * 1024, 0, 4, -4, 0));
-        ch.pipeline().addLast(new ConnectionMessageDecoder());
+//        ch.pipeline().addLast(new ConnectionMessageDecoder());
+        ch.pipeline().addLast(new ConnectionPackageDecoder());
+
         //ch.pipeline().addLast(new ConnIdConvertChannelHandler2());
         ch.pipeline().addLast(new ConnectionRecvPackageGatherHandler(connectionManager));
 //        ch.pipeline().addLast(new PackageToByteBufOutHandler());
-        ch.pipeline().addLast(new ConnectionMessageEncoder());
+//        ch.pipeline().addLast(new ConnectionMessageEncoder());
+        ch.pipeline().addLast(new ConnectionPackageEncoder());
+
     }
 }

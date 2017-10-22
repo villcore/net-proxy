@@ -83,6 +83,15 @@ public class PackageUtils {
         return pkg;
     }
 
+    public static TransferPackage buildTransferPackage(short pkgType, short compressType, byte[] ivBytes, byte[] body) throws UnsupportedEncodingException {
+        byte[] header = TransferPackage.newHeader(pkgType, compressType, ivBytes);
+        TransferPackage pkg = new TransferPackage();
+        pkg.setHeader(header);
+        pkg.setBody(body);
+
+        return pkg;
+    }
+
     public static void release(ByteBuf byteBuf) {
         byteBuf.release();
     }

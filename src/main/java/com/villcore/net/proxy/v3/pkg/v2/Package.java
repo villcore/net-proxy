@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.v3.pkg.v2;
 
+import com.villcore.net.proxy.bio.util.ByteArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,14 @@ public class Package implements Serializable {
 
     public void setPkgType(short type) {
         ByteBuffer.wrap(fixed).putShort(4 + 4 + 4, type);
+    }
+
+    public byte[] toBytes() {
+        byte[] all = new byte[FIXED_LEN + getHeaderLen() + getBodyLen()];
+        ByteArrayUtils.cpyToNew(fixed, all, 0, 0, fixed.length);
+        ByteArrayUtils.cpyToNew(getHeader(), all, 0, fixed.length, getHeaderLen());
+        ByteArrayUtils.cpyToNew(getBody(), all, 0, fixed.length + getHeaderLen(), getBodyLen());
+        return all;
     }
 
     @Override

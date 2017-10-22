@@ -1,4 +1,4 @@
-package com.villcore.net.proxy.bio.crypt;
+package com.villcore.net.proxy.v3.common.handlers;
 
 import com.villcore.net.proxy.bio.pkg.PkgConf;
 import org.apache.commons.codec.binary.Base64;
@@ -8,7 +8,10 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public class CryptHelper {
 

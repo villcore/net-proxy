@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.v3.client;
 
 import com.villcore.net.proxy.v3.common.*;
+import com.villcore.net.proxy.v3.common.handlers.TransferHandler;
 import com.villcore.net.proxy.v3.pkg.v2.ChannelClosePackage;
 import com.villcore.net.proxy.v3.pkg.v2.DefaultDataPackage;
 import com.villcore.net.proxy.v3.pkg.v2.PackageUtils;
@@ -29,13 +30,18 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
     private String username;
     private String password;
 
-    public ClientChildChannelHandlerInitlizer2(TunnelManager tunnelManager, ConnectionManager connectionManager, String remoteAddr, int remotePort, String username, String password) {
+    private PackageHandler transferEncoder;
+
+    public ClientChildChannelHandlerInitlizer2(TunnelManager tunnelManager, ConnectionManager connectionManager,
+                                               String remoteAddr, int remotePort, String username, String password,
+                                               PackageHandler transferEncoder) {
         this.tunnelManager = tunnelManager;
         this.connectionManager = connectionManager;
         this.remoteAddr = remoteAddr;
         this.remotePort = remotePort;
         this.username = username;
         this.password = password;
+        this.transferEncoder = transferEncoder;
     }
 
     @Override
@@ -53,7 +59,7 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
                     tunnel.needClose();
                     ChannelClosePackage channelClosePackage = PackageUtils
                             .buildChannelClosePackage(tunnel.getConnId(), tunnel.getCorrespondConnId(), 1L);
-                    connection.addSendPackages(tunnel.drainSendPackages());
+                    connection.addSendPackages(transferEncoder.handlePackage(tunnel.drainSendPackages(), connection));
                     connection.addSendPackages(Collections.singletonList(channelClosePackage));
                     tunnel.close();
                 }
