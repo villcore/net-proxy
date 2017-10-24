@@ -69,18 +69,6 @@ public class ClientChildChannelHandlerInitlizer2 extends ChannelInitializer<Chan
         tunnel.setBindConnection(connection);
         tunnelManager.bindConnection(connection, tunnel);
         channel.pipeline().addLast(new ClientTunnelChannelReadHandler(tunnelManager, connection));
-//        channel.pipeline().addLast(new ClientTunnelEncoder(tunnelManager, connection));
         channel.pipeline().addLast(new TunnelMessageEncoder());
-//        channel.pipeline().addLast(new ChannelOutboundHandlerAdapter() {
-//            @Override
-//            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-//                if(msg instanceof ByteBuf) {
-//                    ByteBuf byteBuf = ByteBuf.class.cast(msg);
-//                    ctx.writeAndFlush(byteBuf);
-//                } else {
-//                    ctx.write(msg);
-//                }
-//            }
-//        })
     }
 }

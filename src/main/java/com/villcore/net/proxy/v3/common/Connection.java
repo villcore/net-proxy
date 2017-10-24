@@ -25,6 +25,7 @@ public class Connection extends BasicWriteableImpl {
 
     private String remoteAddr;
     private int remotePort;
+
     private Channel remoteChannel;
 
     //TunnelManager
