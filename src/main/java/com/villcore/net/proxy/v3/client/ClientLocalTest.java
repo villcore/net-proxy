@@ -32,7 +32,9 @@ public class ClientLocalTest {
         String proxyPort = "10081";
 
         //String remoteAddress = "127.0.0.1";
-        String remoteAddress = "45.63.120.186";
+        //String remoteAddress = "45.63.120.186";
+        String remoteAddress = "45.32.81.174";
+        //
         String remotePort = "20081";
 
         String username = "villcore";
