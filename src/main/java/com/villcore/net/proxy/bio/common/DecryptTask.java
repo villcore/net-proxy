@@ -46,22 +46,13 @@ public class DecryptTask implements Runnable {
 
         while (running) {
             try {
-                //LOG.debug("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-
                 Package pkg = new Package();
                 pkg.readPackageWithHeader(inputStream);
-                //LOG.debug("decrypt task read pkg size = {}, header len = {}, body len = {}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
+
                 for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
                     pkg = entry.getValue().handle(pkg);
-                    //LOG.debug("decrypt [{}] handle package size = {}, header = {}, body = {}", new Object[]{entry.getKey(), pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen()});
                 }
-
-                //LOG.debug("request content = \n==\n{}\n==", new String(pkg.getBody(), "utf-8"));
                 pkg.writePackageWithoutHeader(outputStream);
-//                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", new String(pkg.getBody()));
-//                LOG.debug("write to decrypting =  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n{}\n", "");
-
-                //LOG.debug("decryt task write pkg...");
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
                 stop();
@@ -81,63 +72,6 @@ public class DecryptTask implements Runnable {
         }
         close();
     }
-    /*
-    @Override
-    public void run() {
-//        byte[] bytes = new byte[1 * 1024 * 1024];
-//        int pos = -1;
-        while (running) {
-            try {
-//                pos = inputStream.read(bytes);
-//                if(pos > 0) {
-//                    outputStream.write(bytes, 0, pos);
-//                    outputStream.flush();
-//                }
-//
-//                if(pos == -1) {
-//                    throw new IOException("socket closed...");
-//                }
-                //LOG.debug("decryt task running...");
-                Package pkg = new EncryptPackage();
-                //Package pkg = new DefaultPackage();
-                //Package pkg = new TransferPackage();
-                //pkg.LOG = LOG;
-
-                pkg.readPackageWithHeader(inputStream);
-                LOG.debug("decrypt task read pkg header len = {}, body len = {}", pkg.getHeader().length, pkg.getBody().length);
-                //byte[] bytes = new byte[20];
-                //LOG.debug("decrypt read bytes = {}", inputStream.read(bytes));
-                //LOG.debug("decryt read pkg...");
-
-                for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
-                    pkg = entry.getValue().handle(pkg);
-                }
-
-                //TransferPackage.wrap(pkg).writePackageWithHeader(outputStream);
-                pkg.writePackageWithoutHeader(outputStream);
-//                outputStream.write(pkg.getBody());
-//                outputStream.flush();
-                LOG.debug("decryt task write pkg...");
-            } catch (IOException e) {
-                LOG.error(e.getMessage(), e);
-                stop();
-            } catch (BadPaddingException e) {
-                LOG.error(e.getMessage(), e);
-                stop();
-            } catch (InvalidAlgorithmParameterException e) {
-                LOG.error(e.getMessage(), e);
-                stop();
-            } catch (IllegalBlockSizeException e) {
-                LOG.error(e.getMessage(), e);
-                stop();
-            } catch (InvalidKeyException e) {
-                LOG.error(e.getMessage(), e);
-                stop();
-            }
-        }
-        close();
-    }
-    */
 
     public void start() {
         running = true;

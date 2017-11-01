@@ -19,21 +19,16 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * This server do not use squid3 as http proxy, this parse first package from client when connection build,
- * Then parse first package to address and port, and build connection use socket with address and port
- *
- * Created by Administrator on 2017/7/17.
+ * Created by villcore on 2017/7/17.
  */
 public class Server2 {
     private static final Logger LOG = LoggerFactory.getLogger(Server2.class);
 
     public static void main(String[] args) throws NoSuchPaddingException, NoSuchAlgorithmException {
         List<Connection> connections = Collections.synchronizedList(new LinkedList<>());
-        //ExecutorService executorService = new ThreadPoolExecutor(1, 10, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(100));
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         int listenPort = 20080;
-        //InetSocketAddress remoteAddress = new InetSocketAddress("127.0.0.1", 3128);
 
         ServerSocket serverSocket = null;
         final ServerSocket finalServerSocket = serverSocket;

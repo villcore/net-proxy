@@ -31,7 +31,6 @@ public abstract class Connection {
     }
 
     public void init() throws Exception {
-        LOG.debug("init...");
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
         inputStream2 = socket2.getInputStream();
