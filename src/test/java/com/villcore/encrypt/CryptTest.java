@@ -64,6 +64,7 @@ public class CryptTest {
         SecretKey key = cryptHelper.getSecretKey("123123");
 
         byte[] bytes = cryptHelper.encryptBody(ivBytes, key, MSG.getBytes("utf-8"));
+        System.out.println(MSG.getBytes("utf-8").length);
         System.out.println(bytes.length);
         byte[] decryptBytes = cryptHelper.decryptBody(ivBytes, key, bytes);
 
