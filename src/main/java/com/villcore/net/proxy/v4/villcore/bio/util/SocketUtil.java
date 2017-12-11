@@ -10,6 +10,7 @@ import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.channels.SocketChannel;
 
 /**
  * Created by villcre on 2017/7/17.
@@ -22,6 +23,7 @@ public class SocketUtil {
     public static Socket connect(InetSocketAddress address) {
         try {
             Socket socket = new Socket();
+            configSocket(socket);
             socket.connect(address, TIME_OUT);
             return socket;
         } catch (IOException e) {

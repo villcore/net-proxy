@@ -24,7 +24,7 @@ public class Client {
         final List<Connection> connections = new LinkedList<>();
 
         int listenPort = Integer.valueOf("50081");
-        String remoteAddr = "207.246.98.97";
+        String remoteAddr = "127.0.0.1";
         int remotePort = Integer.valueOf("60082");
 
         InetSocketAddress remoteAddress = new InetSocketAddress(remoteAddr, remotePort);
