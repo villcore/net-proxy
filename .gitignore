@@ -1,0 +1,16 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/libraries/Maven__com_googlecode_json_simple_json_simple_1_1_1.xml
+.idea/libraries/Maven__junit_junit_4_12.xml
+.idea/libraries/Maven__log4j_log4j_1_2_17.xml
+.idea/libraries/Maven__org_bouncycastle_bcprov_jdk15on_1_52.xml
+.idea/libraries/Maven__org_hamcrest_hamcrest_core_1_3.xml
+.idea/libraries/Maven__org_slf4j_slf4j_api_1_7_21.xml
+.idea/libraries/Maven__org_slf4j_slf4j_log4j12_1_7_21.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/net-proxy.iml
+.idea/vcs.xml
+.idea/workspace.xml
+target/

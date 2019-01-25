@@ -3,8 +3,6 @@ package com.villcore.net.proxy.bio.client;
 import com.villcore.net.proxy.bio.common.Connection;
 import com.villcore.net.proxy.bio.util.SocketUtil;
 import com.villcore.net.proxy.conf.ClientConfig;
-import com.villcore.net.proxy.conf.Config;
-import com.villcore.net.proxy.sysproxy.WinSystemProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

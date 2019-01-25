@@ -1,6 +1,6 @@
 package com.villcore.net.proxy.nio;
 
-import com.villcore.net.proxy.sysproxy.WinSystemProxy;
+import com.villcore.net.proxy.sys.WinSystemProxy;
 
 import java.io.IOException;
 
