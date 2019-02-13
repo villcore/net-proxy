@@ -34,10 +34,10 @@ public class ClientConnection extends Connection {
         super.encryptTask = new EncryptTask(connection, inputStream, outputStream2);
         super.encryptTask.addHandler("pack_default_to_user", new ToUserPackageHandler(-1, 1001L));
         super.encryptTask.addHandler("encrypt", encryptHander);
-        super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
+        // super.encryptTask.addHandler("compress", new CompressHandler(new GZipCompressor()));
 
         super.decryptTask = new DecryptTask(connection, inputStream2, outputStream);
-        super.decryptTask.addHandler("decompress", new DecompressHandler(new GZipCompressor()));
+        // super.decryptTask.addHandler("decompress", new DecompressHandler(new GZipCompressor()));
         super.decryptTask.addHandler("decrypt", decryptHander);
         super.decryptTask.addHandler("user_to_default", new FromUserPackageHandler());
     }

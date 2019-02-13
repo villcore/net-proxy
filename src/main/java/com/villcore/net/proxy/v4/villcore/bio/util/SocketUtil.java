@@ -18,7 +18,7 @@ import java.nio.channels.SocketChannel;
 public class SocketUtil {
     private static final Logger LOG = LoggerFactory.getLogger(Socket.class);
 
-    private static final int TIME_OUT = 2 * 60 * 1000;
+    private static final int TIME_OUT = 5 * 60 * 1000;
 
     public static Socket connect(InetSocketAddress address) {
         try {
@@ -55,6 +55,11 @@ public class SocketUtil {
     public static void configSocket(Socket socket) throws SocketException {
         socket.setTcpNoDelay(true);
         socket.setKeepAlive(true);
+        socket.setReuseAddress(true);
+        // socket.setSoLinger();
+        // socket.setOOBInline();
+        // .setPerformancePreferences();
+        // socket.setTrafficClass();
         socket.setSendBufferSize(128 * 1024);
         socket.setReceiveBufferSize(128 * 1024);
         socket.setSoTimeout(TIME_OUT);

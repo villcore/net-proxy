@@ -23,16 +23,15 @@ public class Client {
     public static void start(ClientConfig config) throws IOException {
         List<Connection> connections = new LinkedList<>();
 
-        int listenPort = Integer.valueOf(config.getProxyPort());
-        String remoteAddr = config.getRemoteAddr();
-        int remotePort = Integer.valueOf(config.getRemotePort());
+        final int listenPort = Integer.valueOf(config.getProxyPort());
+        final String remoteAddr = config.getRemoteAddr();
+        final int remotePort = Integer.valueOf(config.getRemotePort());
 
-        InetSocketAddress remoteAddress = new InetSocketAddress(remoteAddr, remotePort);
+        final InetSocketAddress remoteAddress = new InetSocketAddress(remoteAddr, remotePort);
 
         ServerSocket serverSocket = null;
 
         ServerSocket finalServerSocket = serverSocket;
-
         Runtime.getRuntime().addShutdownHook(new Thread(){
             @Override
             public void run() {

@@ -23,9 +23,9 @@ public class Client {
     public static void start() throws IOException {
         final List<Connection> connections = new LinkedList<>();
 
-        int listenPort = Integer.valueOf("50081");
-        String remoteAddr = "207.246.98.97";
-        int remotePort = Integer.valueOf("60081");
+        int listenPort = Integer.valueOf("50082");
+        String remoteAddr = "localhost";
+        int remotePort = Integer.valueOf("60082");
 
         InetSocketAddress remoteAddress = new InetSocketAddress(remoteAddr, remotePort);
 

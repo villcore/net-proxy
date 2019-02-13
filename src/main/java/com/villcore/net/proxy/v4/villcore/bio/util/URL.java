@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class URL {
+
     private String scheme;
     private String host;
     private String IP;

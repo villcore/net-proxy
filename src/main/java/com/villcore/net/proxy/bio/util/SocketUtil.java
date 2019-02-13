@@ -55,6 +55,7 @@ public class SocketUtil {
         socket.setKeepAlive(true);
         socket.setSendBufferSize(128 * 1024);
         socket.setReceiveBufferSize(128 * 1024);
+        socket.setReuseAddress(true);
         socket.setSoTimeout(TIME_OUT);
     }
 }
