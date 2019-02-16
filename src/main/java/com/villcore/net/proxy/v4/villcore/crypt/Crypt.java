@@ -70,7 +70,7 @@ public class Crypt {
 
     public byte[] generateIv() {
         byte[] bytes = new byte[IV_LEN];
-        new SecureRandom().nextBytes(bytes);
+        //new SecureRandom().nextBytes(bytes);
         return bytes;
     }
 

@@ -1,9 +1,11 @@
 package com.villcore.net.proxy.client.handler;
 
+import com.villcore.net.proxy.client.ChannelAttrKeys;
 import com.villcore.net.proxy.client.Crypt;
 import com.villcore.net.proxy.client.Package;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,13 +19,16 @@ public class PackageEncipher extends SimpleChannelInboundHandler<Package> {
     private boolean ivSend;
 
     // TODO metric.
-
-    public PackageEncipher(Crypt crypt) {
-        this.crypt = crypt;
+    public PackageEncipher() {
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
+        if (crypt == null) {
+            crypt = ctx.channel().attr(AttributeKey.<Crypt>valueOf(ChannelAttrKeys.CRYPT)).get();
+            LOG.info("Package Enceipher crypt {}", crypt.hashCode());
+        }
+
         Package newPkg = null;
         byte[] bytes = pkg.getBody();
         if(!ivSend) {
@@ -35,7 +40,6 @@ public class PackageEncipher extends SimpleChannelInboundHandler<Package> {
             tmp.putInt(iv.length);
             tmp.put(iv);
             encryptHeader = tmp.array();
-
             newPkg = Package.buildPackage(encryptHeader, encryptBody);
             ivSend = true;
         } else {
@@ -45,7 +49,7 @@ public class PackageEncipher extends SimpleChannelInboundHandler<Package> {
         }
 
         // TODO metric.
-        LOG.info("Encipher package {} \n {}", Package.toBytes(newPkg).length, new String(crypt.decrypt(newPkg.getBody())));
+        // LOG.info("Encipher package {} \n {}", Package.toBytes(newPkg).length, new String(crypt.decrypt(newPkg.getBody())));
         if (newPkg != null) {
             ctx.fireChannelRead(newPkg);
         }

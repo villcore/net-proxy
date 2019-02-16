@@ -3,6 +3,8 @@ package com.villcore.net.proxy.v4.villcore.bio.common;
 import com.villcore.net.proxy.v4.villcore.bio.handler.Handler;
 import com.villcore.net.proxy.v4.villcore.bio.pkg2.Package;
 
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,12 +44,20 @@ public class PackageToBytesTask implements Runnable {
     public void run() {
         while (running) {
             try {
+                int avali = inputStream.available();
+                byte[] avabytes = new byte[avali];
+                inputStream.read(avabytes);
+                LOG.info("receiver: \n{}", ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(avabytes)));
+
                 Package pkg = new Package();
                 pkg.readPackageWithHeader(inputStream);
-
+                String bytes = ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(Package.toBytes(pkg)));
+                LOG.info("receiver: size: {}, header len :{}, body len: {}\n{}", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen(), bytes);
                 for (Map.Entry<String, Handler> entry : handlers.entrySet()) {
                     pkg = entry.getValue().handle(pkg);
                 }
+                LOG.info("receiver: content: {}", ByteBufUtil.prettyHexDump(Unpooled.wrappedBuffer(pkg.getBody())));
+
                 pkg.writePackageWithoutHeader(outputStream);
             } catch (Exception e) {
                 LOG.error(e.getMessage(), e);

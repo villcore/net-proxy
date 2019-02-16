@@ -2,6 +2,7 @@ package com.villcore.net.proxy.client.handler;
 
 import com.villcore.net.proxy.client.Package;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
@@ -31,9 +32,9 @@ public class RemotePackageDecoder extends ByteToMessageDecoder {
             headerLen = in.readInt();
             bodyLen = in.readInt();
             headerRead = true;
-            LOG.info("Decode remote package size {}, header len {}, body len {}", packageSize, headerLen, bodyLen);
-        } else {
-            return;
+            if (LOG.isDebugEnabled()) {
+                LOG.info("Decode remote package size {}, header len {}, body len {}", packageSize, headerLen, bodyLen);
+            }
         }
 
         if (in.readableBytes() >= headerLen + bodyLen) {
@@ -41,13 +42,15 @@ public class RemotePackageDecoder extends ByteToMessageDecoder {
             byte[] body = new byte[bodyLen];
             in.readBytes(header).readBytes(body);
 
-            Package pkg = Package.buildPackage(header, body);
-            out.add(pkg);
-
             packageSize = 0;
             headerLen = 0;
             bodyLen = 0;
             headerRead = false;
+            Package pkg = Package.buildPackage(Package.EMPTY_BYTE_ARRAY, body);
+            out.add(pkg);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Decode remote package size {}, header len {}, body len {} complete ", pkg.getSize(), pkg.getHeaderLen(), pkg.getBodyLen());
+            }
         }
     }
 }

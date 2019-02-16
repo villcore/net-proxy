@@ -105,13 +105,13 @@ public class Crypt {
         dec.init(false, cipherParameters);
     }
 
-    public byte[] encrypt(byte[] src) {
+    public synchronized byte[] encrypt(byte[] src) {
         byte[] dst = new byte[src.length];
         int processed = enc.processBytes(src, 0, src.length, dst, 0);
         return dst;
     }
 
-    public byte[] decrypt(byte[] src) {
+    public synchronized byte[] decrypt(byte[] src) {
         byte[] dst = new byte[src.length];
         int processed = dec.processBytes(src, 0, src.length, dst, 0);
         return dst;
@@ -132,23 +132,19 @@ public class Crypt {
 
     public static void main(String[] args) {
         Crypt crypt = new Crypt();
-
         byte[] key = crypt.generateKey("villcore");
         byte[] iv = crypt.generateIv();
 
+        crypt.setIv(iv);
+        crypt.setKey(key);
+        crypt.initEncrypt();
+        crypt.initDecrypt();
+
         try {
-            byte[] readIv = read("d://iv.dat");
-            byte[] readEncrypt = read("d://encrypt.dat");
-
-            System.out.println(readIv.length);
-            System.out.println(readEncrypt.length);
-            crypt.setIv(readIv);
-            crypt.setKey(key);
-            crypt.initDecrypt();
-
-            byte[] real = crypt.decrypt(readEncrypt);
-            System.out.println("--" + new String(real));
-        } catch (IOException e) {
+            byte[] readEncrypt = crypt.encrypt("hello".getBytes());
+            byte[] realDecrypt = crypt.decrypt(readEncrypt);
+            System.out.println(new String(realDecrypt));
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

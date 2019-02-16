@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class LocalPackageDecoder extends ByteToMessageDecoder {
 
@@ -27,12 +26,10 @@ public class LocalPackageDecoder extends ByteToMessageDecoder {
         in.readBytes(newBytes, 0, readableBytesSize);
         Package pkg = Package.buildPackage(Package.EMPTY_BYTE_ARRAY, newBytes);
         out.add(pkg);
-        // TODO record bytes.
-        LOG.info("Current bytes \n{}", new String(newBytes, StandardCharsets.UTF_8));
-        try {
-            TimeUnit.MILLISECONDS.sleep(100);
-        } catch (Exception e) {
 
+        // TODO record bytes.
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Local read {} bytes, content \n{}", newBytes.length, new String(newBytes, StandardCharsets.UTF_8));
         }
     }
 }

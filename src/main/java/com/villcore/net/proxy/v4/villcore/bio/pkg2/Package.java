@@ -102,6 +102,7 @@ public class Package {
         setHeader(header);
         setBody(body);
         //LOG.debug("read page without header, header size = {}, body size = {} ", getHeader().length, getBody().length);
+
     }
 
     public void readPackageWithoutHeader(InputStream inputStream) throws IOException {

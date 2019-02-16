@@ -20,19 +20,11 @@ public class NetProxyClient {
     public NetProxyClient(Config config) {
         // TODO parser argument
         listenPort = 50082;
-        remoteAddress = "localhost";
-        remotePort = 60082;
-        password = "villcore";
+        remoteAddress = "207.246.108.224";
+        remotePort = 20081;
+        password = "villcore2";
 
-        Crypt crypt = new Crypt();
-        byte[] key = crypt.generateKey(password);
-        byte[] iv = crypt.generateIv();
-        crypt.setIv(iv);
-        crypt.setKey(key);
-        crypt.initDecrypt();
-        crypt.initEncrypt();
-
-        socketServer = new SocketServer(listenPort, remoteAddress, remotePort, crypt);
+        socketServer = new SocketServer(listenPort, remoteAddress, remotePort, password);
     }
 
     public void startup() {
@@ -46,10 +38,6 @@ public class NetProxyClient {
         LOG.info("Shutdowning NetProxyClient");
         socketServer.shutdown();
         LOG.info("Shutdown NetProxyClient completed");
-    }
-
-    private void startSocketServer(int listenPort, String remoteAddress, int remotePort, String password) {
-
     }
 
     public static void main(String[] args) {
