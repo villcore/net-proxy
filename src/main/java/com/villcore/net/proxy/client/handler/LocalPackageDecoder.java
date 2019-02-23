@@ -15,7 +15,6 @@ public class LocalPackageDecoder extends ByteToMessageDecoder {
     private static final Logger LOG = LoggerFactory.getLogger(LocalPackageDecoder.class);
 
     // TODO metric
-
     public LocalPackageDecoder() {
     }
 

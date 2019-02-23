@@ -5,6 +5,7 @@ import com.villcore.net.proxy.client.Crypt;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,8 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
         LOG.info("Init local conn {}", ch.remoteAddress());
         ch.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(createCrypt(password));
         ChannelPipeline channelPipeline = ch.pipeline();
-        channelPipeline.addLast(new LocalPackageDecoder());
+        channelPipeline.addLast(new LocalHttpDecoder(4096));
+//        channelPipeline.addLast(new LocalPackageDecoder());
         channelPipeline.addLast(new PackageEncipher());
         channelPipeline.addLast(remotePackageForwarder);
     }

@@ -8,9 +8,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.Attribute;
+    import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
@@ -46,7 +44,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         // TODO just debug
         // LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
 
-        this.eventLoopGroup = new NioEventLoopGroup(1);
+        this.eventLoopGroup = new NioEventLoopGroup(3);
         this.bootstrap = new Bootstrap();
         this.bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
@@ -87,6 +85,14 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         Crypt crypt = cryptAttribute.get();
         remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(crypt);
         channelMap.put(localChannel, remoteChannel);
+        remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                LOG.info("Close channel {} close complete", localChannel.remoteAddress());
+                channelMap.remove(localChannel);
+                localChannel.close();
+            }
+        });
         LOG.info("Connect remote channel {} complete", remoteChannel.remoteAddress());
     }
 
@@ -95,6 +101,9 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         super.channelInactive(ctx);
         Channel localChannel = ctx.channel();
         Channel remoteChannel = channelMap.remove(localChannel);
+        if (remoteChannel == null) {
+            return;
+        }
         remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {

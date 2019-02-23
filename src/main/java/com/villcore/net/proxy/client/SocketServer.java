@@ -2,6 +2,7 @@ package com.villcore.net.proxy.client;
 
 import com.villcore.net.proxy.client.handler.ClientChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -44,9 +45,11 @@ public class SocketServer {
                     .option(ChannelOption.SO_BACKLOG, 100)
                     .option(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false))
                     .childOption(ChannelOption.TCP_NODELAY, true)
-                    .childOption(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
-                    .childOption(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
-                    .childOption(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false))
+                    .childOption(ChannelOption.SO_REUSEADDR, true)
+                    .childOption(ChannelOption.SO_RCVBUF, 1024 * 1024 * 1024)
+                    .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
+                    .childOption(ChannelOption.AUTO_CLOSE, true)
+                    .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                     .childHandler(new ClientChannelInitializer(remoteAddress, remotePort, password));
 
             ChannelFuture channelFuture = serverBootstrap.bind(listenPort).sync().addListener(new GenericFutureListener<Future<? super Void>>() {

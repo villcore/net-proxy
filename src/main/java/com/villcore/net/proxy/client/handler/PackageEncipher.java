@@ -26,7 +26,6 @@ public class PackageEncipher extends SimpleChannelInboundHandler<Package> {
     protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
         if (crypt == null) {
             crypt = ctx.channel().attr(AttributeKey.<Crypt>valueOf(ChannelAttrKeys.CRYPT)).get();
-            LOG.info("Package Enceipher crypt {}", crypt.hashCode());
         }
 
         Package newPkg = null;

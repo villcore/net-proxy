@@ -53,4 +53,10 @@ public class RemotePackageDecoder extends ByteToMessageDecoder {
             }
         }
     }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        super.exceptionCaught(ctx, cause);
+        LOG.error("Remote channel exception", cause);
+    }
 }

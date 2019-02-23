@@ -20,9 +20,9 @@ public class NetProxyClient {
     public NetProxyClient(Config config) {
         // TODO parser argument
         listenPort = 50082;
-        remoteAddress = "207.246.108.224";
-        remotePort = 20081;
-        password = "villcore2";
+        remoteAddress = "localhost";
+        remotePort = 60082;
+        password = "villcore";
 
         socketServer = new SocketServer(listenPort, remoteAddress, remotePort, password);
     }
