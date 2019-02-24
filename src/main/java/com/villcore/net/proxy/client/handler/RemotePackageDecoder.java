@@ -1,16 +1,13 @@
 package com.villcore.net.proxy.client.handler;
 
-import com.villcore.net.proxy.client.Package;
+import com.villcore.net.proxy.packet.Package;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class RemotePackageDecoder extends ByteToMessageDecoder {
 

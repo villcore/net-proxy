@@ -1,50 +1,66 @@
 package com.villcore.net.proxy.client;
 
+import com.villcore.net.proxy.util.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Properties;
 
 /**
  * create by WangTao on 2019/1/25
  */
 public class NetProxyClient {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NetProxyClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NetProxyClient.class);
+
+    private static final String LISTEN_PORT_KEY = "client.listen.port";
+    private static final String REMOTE_ADDR_KEY = "client.remote.addr";
+    private static final String REMOTE_PORT_KEY = "client.remote.port";
+    private static final String PASSWORD_KEY = "client.password";
 
     private final int listenPort;
-    private final String remoteAddress;
+    private final String remoteAddr;
     private final int remotePort;
     private final String password;
 
-    private final SocketServer socketServer;
+    private SocketServer socketServer;
 
-    public NetProxyClient(Config config) {
-        // TODO parser argument
-        listenPort = 50082;
-        remoteAddress = "207.246.108.224";
-        remotePort = 20081;
-        password = "villcore2";
-
-        socketServer = new SocketServer(listenPort, remoteAddress, remotePort, password);
+    public NetProxyClient(Properties prop) {
+        // TODO parser argument form config
+        this.listenPort = ConfigUtil.getInt(prop, LISTEN_PORT_KEY);
+        this.remoteAddr = ConfigUtil.get(prop, REMOTE_ADDR_KEY);
+        this.remotePort = ConfigUtil.getInt(prop, REMOTE_PORT_KEY);
+        this.password = ConfigUtil.get(prop, PASSWORD_KEY);
     }
 
     public void startup() {
-        LOG.info("Starting NetProxyClient, listen port {}, remote address {}, remote port {}", listenPort, remoteAddress, remotePort);
-        LOG.info("Start NetProxyClient completed");
+        LOGGER.info("Starting NetProxyClient, listen port {}, remote address {}, remote port {}", listenPort, remoteAddr, remotePort);
+        LOGGER.info("Start NetProxyClient completed");
         // TODO start socket server listen
+        socketServer = new SocketServer(listenPort, remoteAddr, remotePort, password);
         socketServer.startup();
     }
 
     public void shutdown() {
-        LOG.info("Shutdowning NetProxyClient");
+        LOGGER.info("Shutdowning NetProxyClient");
         socketServer.shutdown();
-        LOG.info("Shutdown NetProxyClient completed");
+        LOGGER.info("Shutdown NetProxyClient completed");
     }
 
     public static void main(String[] args) {
-        Config clientConfig = null;
-        NetProxyClient client = new NetProxyClient(clientConfig);
+        if (args.length != 1) {
+            System.err.println("Usage: <client_config>");
+            Runtime.getRuntime().halt(1);
+            return;
+        }
+
+        NetProxyClient client = new NetProxyClient(ConfigUtil.loadConfig(args[0]));
         client.startup();
 
+        // add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {

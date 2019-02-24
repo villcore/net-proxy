@@ -1,6 +1,6 @@
 package com.villcore.net.proxy.client.handler;
 
-import com.villcore.net.proxy.client.Package;
+import com.villcore.net.proxy.packet.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

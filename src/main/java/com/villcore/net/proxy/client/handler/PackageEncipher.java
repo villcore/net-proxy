@@ -1,8 +1,7 @@
 package com.villcore.net.proxy.client.handler;
 
-import com.villcore.net.proxy.client.ChannelAttrKeys;
-import com.villcore.net.proxy.client.Crypt;
-import com.villcore.net.proxy.client.Package;
+import com.villcore.net.proxy.crypt.Crypt;
+import com.villcore.net.proxy.packet.Package;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;

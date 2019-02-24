@@ -1,11 +1,9 @@
 package com.villcore.net.proxy.client.handler;
 
-import com.villcore.net.proxy.client.ChannelAttrKeys;
-import com.villcore.net.proxy.client.Crypt;
+import com.villcore.net.proxy.crypt.Crypt;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
