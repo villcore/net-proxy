@@ -60,8 +60,10 @@ public class SocketServer {
     }
 
     public void shutdown() {
+        LOG.info("Shutdowning SocketServer");
         shutdownEventGroup(this.bossEventGroup);
         shutdownEventGroup(this.workerEventGroup);
+        LOG.info("Shutdown SocketServer completed");
     }
 
     private void shutdownEventGroup(EventLoopGroup eventLoopGroup) {
