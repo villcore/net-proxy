@@ -49,8 +49,8 @@ public class SocketServer {
                     .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                     .childHandler(new ClientChannelInitializer(remoteAddress, remotePort, password));
 
-            ChannelFuture channelFuture = serverBootstrap.bind(listenPort).sync()
-                    .addListener(future -> LOG.info("Start SocketServer completed"));
+            ChannelFuture channelFuture = serverBootstrap.bind(listenPort).await();
+            LOG.info("Start SocketServer completed");
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
             LOG.error("Start SocketServer error", e);

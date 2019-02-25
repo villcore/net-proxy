@@ -4,6 +4,7 @@ import com.villcore.net.proxy.packet.Package;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,16 @@ public class RemotePackageDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        boolean localForward = ctx.channel().attr(AttributeKey.<Boolean>valueOf(ChannelAttrKeys.LOCAL_FORWARD)).get();
+        if (localForward) {
+            int readableBytesSize = in.readableBytes();
+            byte[] newBytes = new byte[readableBytesSize];
+            in.readBytes(newBytes, 0, readableBytesSize);
+            Package pkg = Package.buildPackage(Package.EMPTY_BYTE_ARRAY, newBytes);
+            out.add(pkg);
+            return;
+        }
+
         if (!headerRead && in.readableBytes() >= 12) {
             packageSize = in.readInt();
             headerLen = in.readInt();

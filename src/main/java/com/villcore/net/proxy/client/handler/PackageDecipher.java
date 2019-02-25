@@ -21,6 +21,12 @@ public class PackageDecipher extends SimpleChannelInboundHandler<Package> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
+        boolean localForward = ctx.channel().attr(AttributeKey.<Boolean>valueOf(ChannelAttrKeys.LOCAL_FORWARD)).get();
+        if (localForward) {
+            ctx.fireChannelRead(pkg);
+            return;
+        }
+
         if (crypt == null) {
             Attribute<Crypt> cryptAttribute = ctx.channel().attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT));
             crypt = cryptAttribute.get();

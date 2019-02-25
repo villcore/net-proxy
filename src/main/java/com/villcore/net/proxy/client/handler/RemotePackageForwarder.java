@@ -1,5 +1,6 @@
 package com.villcore.net.proxy.client.handler;
 
+import com.villcore.net.proxy.client.HostPort;
 import com.villcore.net.proxy.crypt.Crypt;
 import com.villcore.net.proxy.packet.Package;
 import io.netty.bootstrap.Bootstrap;
@@ -7,7 +8,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-    import io.netty.util.Attribute;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
@@ -54,7 +56,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
-                        // pipeline.addLast(loggingHandler);
+                        pipeline.addLast(new LoggingHandler());
                         pipeline.addLast(new RemotePackageDecoder());
                         pipeline.addLast(new PackageDecipher());
                         pipeline.addLast(new SimpleChannelInboundHandler<Package>() {
@@ -76,23 +78,23 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
-        Channel localChannel = ctx.channel();
-        Channel remoteChannel = this.bootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
-        Attribute<Channel> sourceChannelAttr = remoteChannel.attr(AttributeKey.<Channel>valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
-        sourceChannelAttr.set(localChannel);
-        Attribute<Crypt> cryptAttribute = localChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT));
-        Crypt crypt = cryptAttribute.get();
-        remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(crypt);
-        channelMap.put(localChannel, remoteChannel);
-        remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
-            @Override
-            public void operationComplete(Future<? super Void> future) throws Exception {
-                LOG.info("Close channel {} close complete", localChannel.remoteAddress());
-                channelMap.remove(localChannel);
-                localChannel.close();
-            }
-        });
-        LOG.info("Connect remote channel {} complete", remoteChannel.remoteAddress());
+//        Channel localChannel = ctx.channel();
+//        Channel remoteChannel = this.bootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
+//        Attribute<Channel> sourceChannelAttr = remoteChannel.attr(AttributeKey.<Channel>valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
+//        sourceChannelAttr.set(localChannel);
+//        Attribute<Crypt> cryptAttribute = localChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT));
+//        Crypt crypt = cryptAttribute.get();
+//        remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(crypt);
+//        channelMap.put(localChannel, remoteChannel);
+//        remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+//            @Override
+//            public void operationComplete(Future<? super Void> future) throws Exception {
+//                LOG.info("Close channel {} close complete", localChannel.remoteAddress());
+//                channelMap.remove(localChannel);
+//                localChannel.close();
+//            }
+//        });
+//        LOG.info("Connect remote channel {} complete", remoteChannel.remoteAddress());
     }
 
     @Override
@@ -113,10 +115,15 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
+        if (!channelMap.containsKey(ctx.channel())) {
+            initRemoteChannel(ctx);
+        }
         Channel localChannel = ctx.channel();
         Channel remoteChannel = channelMap.get(localChannel);
+        boolean localForward = ctx.channel().attr(AttributeKey.<Boolean>valueOf(ChannelAttrKeys.LOCAL_FORWARD)).get();
         if (remoteChannel != null) {
             byte[] bytes = Package.toBytes(pkg);
+            bytes = localForward ? pkg.getBody() : bytes;
             remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Forward {} bytes from local channel {} to remote channel {} complete", bytes.length, localChannel.remoteAddress(), remoteChannel.remoteAddress());
@@ -125,5 +132,35 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
             LOG.warn("Forward local channel {} to not exist remote channel error", localChannel.remoteAddress());
         }
         ReferenceCountUtil.release(pkg);
+    }
+
+    private void initRemoteChannel(ChannelHandlerContext ctx) throws InterruptedException {
+        Channel localChannel = ctx.channel();
+        boolean localForward = ctx.channel().attr(AttributeKey.<Boolean>valueOf(ChannelAttrKeys.LOCAL_FORWARD)).get();
+        HostPort hostPort = ctx.channel().attr(AttributeKey.<HostPort>valueOf(ChannelAttrKeys.HOST_PORT)).get();
+
+        Channel remoteChannel = null;
+        if (localForward) {
+            remoteChannel = this.bootstrap.connect(hostPort.getHost(), hostPort.getPort()).sync().channel();
+        } else {
+            remoteChannel = this.bootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
+        }
+        Attribute<Channel> sourceChannelAttr = remoteChannel.attr(AttributeKey.<Channel>valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
+        sourceChannelAttr.set(localChannel);
+        Attribute<Crypt> cryptAttribute = localChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT));
+        Crypt crypt = cryptAttribute.get();
+        remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(crypt);
+        remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.LOCAL_FORWARD)).set(localForward);
+
+        channelMap.put(localChannel, remoteChannel);
+        remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                LOG.info("Close channel {} close complete", localChannel.remoteAddress());
+                channelMap.remove(localChannel);
+                localChannel.close();
+            }
+        });
+        LOG.info("Connect remote channel {} complete", remoteChannel.remoteAddress());
     }
 }

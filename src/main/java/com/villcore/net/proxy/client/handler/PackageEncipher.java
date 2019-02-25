@@ -23,6 +23,12 @@ public class PackageEncipher extends SimpleChannelInboundHandler<Package> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
+        boolean localForward = ctx.channel().attr(AttributeKey.<Boolean>valueOf(ChannelAttrKeys.LOCAL_FORWARD)).get();
+        if (localForward) {
+            ctx.fireChannelRead(pkg);
+            return;
+        }
+
         if (crypt == null) {
             crypt = ctx.channel().attr(AttributeKey.<Crypt>valueOf(ChannelAttrKeys.CRYPT)).get();
         }
