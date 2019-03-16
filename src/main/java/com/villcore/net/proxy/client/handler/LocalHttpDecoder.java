@@ -48,7 +48,10 @@ public class LocalHttpDecoder extends ByteToMessageDecoder {
         in.readBytes(newBytes, 0, newBytes.length);
         requestBatch.write(newBytes);
         if (isValid(newBytes)) {
-            HostPort hostPort = parseHostPort(newBytes);
+            byte[] fullHttpBytes = requestBatch.toByteArray();
+            requestBatch.close();
+            // LOG.info("valid http \n {}\n", new String(fullHttpBytes));
+            HostPort hostPort = parseHostPort(fullHttpBytes);
             boolean localForward = DNS.isAccessable(hostPort);
             if (HostPort.isValid(hostPort)) {
                 ctx.channel().attr(AttributeKey.valueOf(ChannelAttrKeys.LOCAL_FORWARD)).set(localForward);
@@ -61,7 +64,7 @@ public class LocalHttpDecoder extends ByteToMessageDecoder {
                 }
             }
 
-            Package pkg = Package.buildPackage(Package.EMPTY_BYTE_ARRAY, requestBatch.toByteArray());
+            Package pkg = Package.buildPackage(Package.EMPTY_BYTE_ARRAY, fullHttpBytes);
             out.add(pkg);
             requestBatch = null;
             connected = true;

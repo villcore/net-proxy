@@ -3,6 +3,7 @@ package com.villcore.net.proxy.client.handler;
 import com.villcore.net.proxy.client.HostPort;
 import com.villcore.net.proxy.crypt.Crypt;
 import com.villcore.net.proxy.packet.Package;
+import com.villcore.net.proxy.util.SocketUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -17,6 +18,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

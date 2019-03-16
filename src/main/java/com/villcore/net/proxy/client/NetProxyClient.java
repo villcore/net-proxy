@@ -35,10 +35,10 @@ public class NetProxyClient {
 
     public void startup() {
         LOGGER.info("Starting NetProxyClient, listen port {}, remote address {}, remote port {}", listenPort, remoteAddr, remotePort);
-        LOGGER.info("Start NetProxyClient completed");
         // TODO start socket server listen
         socketServer = new SocketServer(listenPort, remoteAddr, remotePort, password);
         socketServer.startup();
+        LOGGER.info("Start NetProxyClient completed");
     }
 
     public void shutdown() {
