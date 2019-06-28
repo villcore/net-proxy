@@ -41,7 +41,7 @@ public class SocketServer {
             serverBootstrap.group(bossEventGroup, workerEventGroup)
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, 100)
-                    .option(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false))
+                    .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                     .childOption(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_REUSEADDR, true)
                     .childOption(ChannelOption.SO_RCVBUF, 1024 * 1024 * 1024)

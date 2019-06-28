@@ -3,8 +3,10 @@ package com.villcore.net.proxy.client.handler;
 import com.villcore.net.proxy.client.HostPort;
 import com.villcore.net.proxy.crypt.Crypt;
 import com.villcore.net.proxy.packet.Package;
+import com.villcore.net.proxy.util.NamedThreadFactory;
 import com.villcore.net.proxy.util.SocketUtils;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -50,13 +52,14 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         // TODO just debug
         // LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
 
-        this.eventLoopGroup = new NioEventLoopGroup(3);
+        this.eventLoopGroup = new NioEventLoopGroup(8, new NamedThreadFactory("local-event-loop"));
         this.bootstrap = new Bootstrap();
         this.bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
@@ -78,13 +81,14 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                     }
                 });
 
-        this.remoteEventLoopGroup = new NioEventLoopGroup(3);
+        this.remoteEventLoopGroup = new NioEventLoopGroup(8, new NamedThreadFactory("remote-event-loop"));
         this.remoteBootstrap = new Bootstrap();
         this.remoteBootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
