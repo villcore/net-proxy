@@ -36,7 +36,7 @@ public class SocketServer {
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             bossEventGroup = new NioEventLoopGroup(1);
-            workerEventGroup = new NioEventLoopGroup(2);             // defulat processor * 2
+            workerEventGroup = new NioEventLoopGroup(4);             // defulat processor * 2
 
             serverBootstrap.group(bossEventGroup, workerEventGroup)
                     .channel(NioServerSocketChannel.class)
@@ -47,6 +47,8 @@ public class SocketServer {
                     .childOption(ChannelOption.SO_RCVBUF, 1024 * 1024 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
                     .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
+                    .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
+                    .childOption(ChannelOption.SO_TIMEOUT, 1)
                     .childHandler(new ClientChannelInitializer(remoteAddress, remotePort, password));
 
             ChannelFuture channelFuture = serverBootstrap.bind(listenPort).await();

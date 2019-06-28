@@ -34,6 +34,9 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
     private EventLoopGroup eventLoopGroup;
     private Bootstrap bootstrap;
 
+    private EventLoopGroup remoteEventLoopGroup;
+    private Bootstrap remoteBootstrap;
+
     private final ConcurrentMap<Channel, Channel> channelMap = new ConcurrentHashMap<>();
 
     public RemotePackageForwarder(String proxyServerAddress, int proxyServerPort) {
@@ -58,7 +61,34 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast(new LoggingHandler());
+                        pipeline.addLast(new RemotePackageDecoder());
+                        pipeline.addLast(new PackageDecipher());
+                        pipeline.addLast(new SimpleChannelInboundHandler<Package>() {
+                            @Override
+                            protected void channelRead0(ChannelHandlerContext ctx, Package pkg) throws Exception {
+                                Channel channel = ctx.channel();
+                                Attribute<Channel> sourceChannelAttr = channel.attr(AttributeKey.valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
+                                Channel localChannel = sourceChannelAttr.get();
+                                localChannel.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Write to local channel content \n {}", new String(pkg.getBody(), StandardCharsets.UTF_8));
+                                }
+                            }
+                        });
+                    }
+                });
+
+        this.remoteEventLoopGroup = new NioEventLoopGroup(3);
+        this.remoteBootstrap = new Bootstrap();
+        this.remoteBootstrap.group(eventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
+                .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .handler(new ChannelInitializer<NioSocketChannel>() {
+                    @Override
+                    protected void initChannel(NioSocketChannel ch) throws Exception {
+                        ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new RemotePackageDecoder());
                         pipeline.addLast(new PackageDecipher());
                         pipeline.addLast(new SimpleChannelInboundHandler<Package>() {
@@ -145,7 +175,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         if (localForward) {
             remoteChannel = this.bootstrap.connect(hostPort.getHost(), hostPort.getPort()).sync().channel();
         } else {
-            remoteChannel = this.bootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
+            remoteChannel = this.remoteBootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
         }
         Attribute<Channel> sourceChannelAttr = remoteChannel.attr(AttributeKey.<Channel>valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
         sourceChannelAttr.set(localChannel);

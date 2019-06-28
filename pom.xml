@@ -14,6 +14,8 @@
         <slf4j.version>1.7.21</slf4j.version>
         <netty.version>4.1.15.Final</netty.version>
         <jdk.version>1.8</jdk.version>
+        <jdk.version>1.8</jdk.version>
+        <jmh.version>1.21</jmh.version>
     </properties>
 
     <dependencies>
@@ -64,6 +66,19 @@
             <groupId>org.pcap4j</groupId>
             <artifactId>pcap4j-packetfactory-static</artifactId>
             <version>1.7.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--<dependency>-->

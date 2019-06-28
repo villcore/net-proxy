@@ -1,15 +1,23 @@
 package com.villcore.net.proxy.dns;
 
 import com.villcore.net.proxy.client.HostPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class DNS {
+
+    private static final Logger logger = LoggerFactory.getLogger(DNS.class);
 
     private static final Map<String, Boolean> ADDRESS_ACCESSABLITY = new LinkedHashMap<String, Boolean>() {
         @Override
@@ -20,6 +28,34 @@ public class DNS {
             return false;
         }
     };
+
+    private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    static {
+        // auto clean expire
+        scheduler.scheduleAtFixedRate(() -> {
+            synchronized (DNS.class) {
+               Iterator<Map.Entry<String, Boolean>> entryIterator = ADDRESS_ACCESSABLITY.entrySet().iterator();
+               while (entryIterator.hasNext()) {
+                   Boolean accessablity = entryIterator.next().getValue();
+                   if(accessablity == null || !accessablity) {
+                       entryIterator.remove();
+                   }
+               }
+            }
+        }, 30L, 30L, TimeUnit.SECONDS);
+
+        // auto print access urls
+        scheduler.scheduleAtFixedRate(() -> {
+            synchronized (DNS.class) {
+                logger.info(" ================================================== ");
+                ADDRESS_ACCESSABLITY.forEach((k, v) -> {
+                    logger.info("url: {} -> {}", k, v);
+                });
+                logger.info(" ================================================= ");
+            }
+        }, 3L, 3L, TimeUnit.SECONDS);
+    }
 
     public static boolean isAccessable(HostPort hostPort) {
         return isAccessable(hostPort.getHost(), hostPort.getPort());
@@ -41,7 +77,7 @@ public class DNS {
     private static boolean connect(String address, int port) {
         try (Socket socket = SocketFactory.getDefault().createSocket()) {
             socket.setReuseAddress(true);
-            socket.connect(new InetSocketAddress(address, port), 100);
+            socket.connect(new InetSocketAddress(address, port), 3000);
             return true;
         } catch (IOException e) {
             return false;
