@@ -1,8 +1,8 @@
 package com.villcore.net.proxy.client.handler;
 
 import com.villcore.net.proxy.crypt.Crypt;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import com.villcore.net.proxy.packet.Package;
+import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
@@ -49,5 +49,12 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
 //        channelPipeline.addLast(new LocalPackageDecoder());
         channelPipeline.addLast(new PackageEncipher());
         channelPipeline.addLast(remotePackageForwarder);
+        channelPipeline.addLast(new ChannelInboundHandlerAdapter(){
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                LOG.error("{}", cause);
+                ctx.close();
+            }
+        });
     }
 }

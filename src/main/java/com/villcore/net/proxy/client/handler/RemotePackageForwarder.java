@@ -52,13 +52,14 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         // TODO just debug
         // LoggingHandler loggingHandler = new LoggingHandler(LogLevel.INFO);
 
-        this.eventLoopGroup = new NioEventLoopGroup(8, new NamedThreadFactory("local-event-loop"));
+        this.eventLoopGroup = new NioEventLoopGroup(4, new NamedThreadFactory("client-local-forward-worker"));
         this.bootstrap = new Bootstrap();
         this.bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
@@ -78,16 +79,24 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                                 }
                             }
                         });
+                        pipeline.addLast(new ChannelInboundHandlerAdapter(){
+                            @Override
+                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                                LOG.error("{}", cause);
+                                ctx.close();
+                            }
+                        });
                     }
                 });
 
-        this.remoteEventLoopGroup = new NioEventLoopGroup(8, new NamedThreadFactory("remote-event-loop"));
+        this.remoteEventLoopGroup = new NioEventLoopGroup(4, new NamedThreadFactory("client-remote-forward-worker"));
         this.remoteBootstrap = new Bootstrap();
         this.remoteBootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
@@ -105,6 +114,13 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Write to local channel content \n {}", new String(pkg.getBody(), StandardCharsets.UTF_8));
                                 }
+                            }
+                        });
+                        pipeline.addLast(new ChannelInboundHandlerAdapter(){
+                            @Override
+                            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                                LOG.error("{}", cause);
+                                ctx.close();
                             }
                         });
                     }

@@ -21,13 +21,7 @@ public class StreamRunTest {
     }
 
     public static void main(String[] args) {
-        List<String> stringList = new ArrayList<>(Arrays.asList("1", "2", "3"));
-        System.out.println(stringList.iterator().getClass());
-        for (String str : stringList) {
-            if ("2".equals(str)) {
-                stringList.remove(str);
-            }
-            System.out.println(str);
-        }
+        String str = "0123456";
+        System.out.println(str.substring(str.length() - 6));
     }
 }

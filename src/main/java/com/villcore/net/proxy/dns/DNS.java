@@ -46,15 +46,15 @@ public class DNS {
         }, 30L, 30L, TimeUnit.SECONDS);
 
         // auto print access urls
-        scheduler.scheduleAtFixedRate(() -> {
-            synchronized (DNS.class) {
-                logger.info(" ================================================== ");
-                ADDRESS_ACCESSABLITY.forEach((k, v) -> {
-                    logger.info("url: {} -> {}", k, v);
-                });
-                logger.info(" ================================================= ");
-            }
-        }, 3L, 3L, TimeUnit.SECONDS);
+//        scheduler.scheduleAtFixedRate(() -> {
+//            synchronized (DNS.class) {
+//                logger.info(" ================================================== ");
+//                ADDRESS_ACCESSABLITY.forEach((k, v) -> {
+//                    logger.info("url: {} -> {}", k, v);
+//                });
+//                logger.info(" ================================================= ");
+//            }
+//        }, 3L, 3L, TimeUnit.SECONDS);
     }
 
     public static boolean isAccessable(HostPort hostPort) {

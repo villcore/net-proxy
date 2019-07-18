@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.client;
 
 import com.villcore.net.proxy.client.handler.ClientChannelInitializer;
+import com.villcore.net.proxy.util.NamedThreadFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -35,9 +36,8 @@ public class SocketServer {
         LOG.info("Starting SocketServer");
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
-            bossEventGroup = new NioEventLoopGroup(1);
-            workerEventGroup = new NioEventLoopGroup(4);             // defulat processor * 2
-
+            bossEventGroup = new NioEventLoopGroup(2, new NamedThreadFactory("client-boss"));
+            workerEventGroup = new NioEventLoopGroup(4, new NamedThreadFactory("client-worker"));
             serverBootstrap.group(bossEventGroup, workerEventGroup)
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, 100)
@@ -46,9 +46,9 @@ public class SocketServer {
                     .childOption(ChannelOption.SO_REUSEADDR, true)
                     .childOption(ChannelOption.SO_RCVBUF, 1024 * 1024 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
+                    .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
                     .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                     .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
-                    .childOption(ChannelOption.SO_TIMEOUT, 1)
                     .childHandler(new ClientChannelInitializer(remoteAddress, remotePort, password));
 
             ChannelFuture channelFuture = serverBootstrap.bind(listenPort).await();
