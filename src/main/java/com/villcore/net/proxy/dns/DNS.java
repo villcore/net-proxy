@@ -62,6 +62,9 @@ public class DNS {
     }
 
     public static boolean isAccessable(String address, int port) {
+        if (address.contains("google")) {
+            return false;
+        }
         Boolean accessablity = getAccessablity(address);
         if (accessablity == Boolean.TRUE) {
             return true;
