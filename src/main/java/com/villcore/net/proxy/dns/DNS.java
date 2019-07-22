@@ -8,6 +8,7 @@ import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -93,6 +94,10 @@ public class DNS {
 
     private static synchronized Boolean getAccessablity(String address) {
         return ADDRESS_ACCESSABLITY.get(address);
+    }
+
+    public static synchronized Map<String, Boolean> getAddressAccessablity() {
+        return new HashMap<>(ADDRESS_ACCESSABLITY);
     }
 
     public static void main(String[] args) {

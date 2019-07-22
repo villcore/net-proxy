@@ -48,6 +48,10 @@ public class NetProxyClient {
     }
 
     public static void main(String[] args) {
+        run(args);
+    }
+
+    public static void run(String[] args) {
         if (args.length != 1) {
             System.err.println("Usage: <client_config>");
             Runtime.getRuntime().halt(1);
