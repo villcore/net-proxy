@@ -34,17 +34,17 @@ public class DNS {
 
     static {
         // auto clean expire
-        scheduler.scheduleAtFixedRate(() -> {
-            synchronized (DNS.class) {
-               Iterator<Map.Entry<String, Boolean>> entryIterator = ADDRESS_ACCESSABLITY.entrySet().iterator();
-               while (entryIterator.hasNext()) {
-                   Boolean accessablity = entryIterator.next().getValue();
-                   if(accessablity == null || !accessablity) {
-                       entryIterator.remove();
-                   }
-               }
-            }
-        }, 30L, 30L, TimeUnit.SECONDS);
+//        scheduler.scheduleAtFixedRate(() -> {
+//            synchronized (DNS.class) {
+//               Iterator<Map.Entry<String, Boolean>> entryIterator = ADDRESS_ACCESSABLITY.entrySet().iterator();
+//               while (entryIterator.hasNext()) {
+//                   Boolean accessablity = entryIterator.next().getValue();
+//                   if(accessablity == null || !accessablity) {
+//                       entryIterator.remove();
+//                   }
+//               }
+//            }
+//        }, 30L, 30L, TimeUnit.SECONDS);
 
         // auto print access urls
 //        scheduler.scheduleAtFixedRate(() -> {
@@ -88,11 +88,11 @@ public class DNS {
         }
     }
 
-    private static synchronized void updateAccessablity(String address, Boolean accessablity) {
+    public static synchronized void updateAccessablity(String address, Boolean accessablity) {
         ADDRESS_ACCESSABLITY.put(address, accessablity);
     }
 
-    private static synchronized Boolean getAccessablity(String address) {
+    public static synchronized Boolean getAccessablity(String address) {
         return ADDRESS_ACCESSABLITY.get(address);
     }
 
