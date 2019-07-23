@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Admin</title>
+    <script src="./jquery-3.3.1.min.js"></script>
+    <script src="./vue.min.js"></script>
+    <script src="./vue-resource.min.js"></script>
+    <script src="./element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="./element-ui/lib/theme-chalk/index.css"/>
+    <link rel="icon" type="image/ico" href="./favicon.ico">
+</head>
+<body>
+<div id="admin" class="outer-admin">
+    <el-container>
+        <el-header style="height: 80px; background-color: #296BB5;">
+            <span class="head-text">用户管理系统</span>
+            <div class="head-right">
+                <el-dropdown @command="dropDownCommand">
+                    <span class="el-dropdown-link" style="color: #303133">
+                        {{ user.name }}<i class="el-icon-arrow-down el-icon--right"></i>
+                    </span>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item command="a">修改个人信息</el-dropdown-item>
+                        <el-dropdown-item command="b">修改密码</el-dropdown-item>
+                        <el-dropdown-item command="c">退出登录</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
+            </div>
+        </el-header>
+        <el-form style="margin-top: 20px">
+          <el-button @click="openEditDialog()">新增用户</el-button>
+        </el-form>
+        <el-main class="mainTable">
+            <el-table borer
+                      style="width: 100%; margin-top: 10px;"
+                      :data="tableDatas">
+                <el-table-column
+                        type="index"
+                        label="序号"
+                        width="50"></el-table-column>
+                <el-table-column
+                        prop="name"
+                        label="姓名"></el-table-column>
+                <el-table-column
+                        prop="roleName"
+                        label="身份"></el-table-column>
+                <el-table-column
+                        prop="address"
+                        label="地址"></el-table-column>
+                <el-table-column
+                        prop="ip"
+                        label="网站"></el-table-column>
+                <el-table-column
+                        prop="lastLoginTime"
+                        label="最后登录"
+                        :formatter="dateFormat"></el-table-column>
+                <el-table-column label="操作" v-if="user.role == 1">
+                    <template slot-scope="scope">
+                        <el-button size="small" icon="el-icon-edit" @click="openEditDialog(scope.row)">编辑</el-button>
+                        <el-button size="small" icon="el-icon-delete" @click="deleteUser(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <el-dialog
+                    title="修改密码"
+                    :visible.sync="passDialogVisible"
+                    class="dialog">
+                <el-form ref="passForm" :model="passForm" :rules="passFormRules" label-width="100px">
+                    <el-form-item label="旧密码" prop="oldPass">
+                        <el-input v-model="passForm.oldPass" type="password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="新密码" prop="newPass">
+                        <el-input v-model="passForm.newPass" type="password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="重复新密码" prop="reNewPass">
+                        <el-input v-model="passForm.reNewPass" type="password"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="cancel('pass')">取消</el-button>
+                        <el-button type="primary" @click="changePassword()">确认</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-dialog>
+
+            <el-dialog
+                    title="编辑用户信息"
+                    :visible.sync="editDialogVisible"
+                    class="dialog">
+                <el-form ref="userForm" :model="userForm" label-width="80px">
+                    <el-form-item label="姓名">
+                        <el-input v-model="userForm.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="密码" v-if="!userForm.id">
+                        <el-input v-model="userForm.password"></el-input>
+                    </el-form-item>
+                    <el-form-item label="地址">
+                        <el-input v-model="userForm.address"></el-input>
+                    </el-form-item>
+                    <el-form-item label="个人网站">
+                        <el-input v-model="userForm.ip"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="cancel('edit')">取消</el-button>
+                        <el-button type="primary" @click="editUser()">确认</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-dialog>
+        </el-main>
+    </el-container>
+</div>
+
+<script>
+    let vm = new Vue({
+        el: '#admin',
+        data: {
+            user: JSON.parse(window.localStorage.getItem("user")),
+            passDialogVisible: false,
+            editDialogVisible: false,
+            tableDatas: [],
+            passForm: {
+                // 修改密码的表单
+                oldPass: '',
+                newPass: '',
+                reNewPass: ''
+            },
+            passFormRules: {
+                oldPass: [
+                    {required: true, message: '原密码不能为空', trigger: 'blur'}
+                ],
+                newPass: [
+                    {required: true, message: '新密码不能为空', trigger: 'blur'},
+                    {min: 6, max: 12, message: '密码长度应该是6到12位', trigger: 'blur'}
+                ],
+                reNewPass: [
+                    {required: true, message: '重复密码不能为空', trigger: 'blur'},
+                    {min: 6, max: 12, message: '密码长度应该是6到12位', trigger: 'blur'}
+                ]
+            },
+            userForm: {
+                id: '',
+                name: '',
+                password: '',
+                role: '',
+                address: '',
+                ip: ''
+            }
+        },
+        methods: {
+            logout() {
+                let _this = this;
+                $.ajax({
+                    url: '/api/logout?id=' + _this.user.id,
+                    async: true,
+                    type: 'GET',
+                    success: function (data) {
+                        if (data.success) {
+                            _this.$message.success('退出成功');
+                            window.localStorage.removeItem("user");
+                            window.setTimeout("window.location.href = \"/api\";", 500); // 延迟0.5s后跳转至登录页
+                        } else {
+                            _this.$message.warning(data.msg);
+                        }
+                    },
+                    error: function (data) {
+                        _this.$message.error("系统错误");
+                    }
+                });
+            },
+            query: function (v) {
+                let _this = this;
+                $.ajax({
+                    url: '/api/user/list',
+                    async: true,
+                    type: 'GET',
+                    success: function (data) {
+                        if (data.success) {
+                            let userList = data.data.userList;
+                            if (userList != null && userList.length > 0) {
+                                for (let i = 0; i < userList.length; i++) {
+                                    if (userList[i].role == 0) {
+                                        userList[i].roleName = "用户";
+                                    } else if (userList[i].role == 1) {
+                                        userList[i].roleName = "管理员";
+                                    }
+                                }
+                            }
+                            _this.tableDatas = userList;
+                            console.log("tableDatas: " + JSON.stringify(_this.tableDatas));
+                        } else {
+                            _this.$message.warning(data.msg);
+                        }
+                    },
+                    error: function(data) {
+                        _this.$message.error("系统错误");
+                    }
+                });
+            },
+            dropDownCommand: function(v) {
+                // 右侧下拉菜单
+                if (v === 'a') {
+                    this.openEditDialog(this.user);
+                } else if (v === 'b') {
+                    this.openPasswordDialog();
+                } else if (v === 'c') {
+                    this.logout();
+                }
+            },
+            openPasswordDialog: function() {
+               console.log("修改密码");
+               this.passForm = {};
+               this.passDialogVisible = true;
+            },
+            openEditDialog: function(v) {
+                console.log("openEditDialog");
+                this.userForm = {};
+                if (v!= null) {
+                  this.userForm = {
+                    id: v.id,
+                    name: v.name,
+                    role: v.role,
+                    address: v.address,
+                    ip: v.ip
+                  };
+                }
+
+                this.editDialogVisible = true;
+            },
+            changePassword: function() {
+                this.$refs.passForm.validate((valid) => {
+                   if (valid) {
+                       if (this.passForm.newPass !== this.passForm.reNewPass) {
+                           this.$message.warning("两次输入的密码不一致");
+                           return false;
+                       }
+                       console.log("准备修改用户密码：" + JSON.stringify(this.passForm));
+                       let _this = this;
+                       $.ajax({
+                           url: 'user/change_password',
+                           type: 'PUT',
+                           async: true,
+                           data: _this.passForm,
+                           success: function (data) {
+                               console.log("success:" + JSON.stringify(data));
+                               if (data.success) {
+                                   _this.passDialogVisible = false;
+                                   _this.$message.success("修改成功");
+                               } else {
+                                   _this.$message.error(data.msg);
+                               }
+                           },
+                           error: function (data) {
+                               console.log("error:" + JSON.stringify(data));
+                               _this.$message.error("系统错误");
+                           }
+                       });
+                   } else {
+                       console.log('error change!!');
+                       return false;
+                   }
+                });
+            },
+            editUser: function() {
+                if (!this.userForm.id) {
+                    if (!this.userForm.name) {
+                        this.$message.warning("用户名不能为空");
+                        return false;
+                    }
+                    if (!this.userForm.password) {
+                        this.$message.warning("密码不能为空");
+                        return false;
+                    }
+                }
+                console.log("准备编辑：" + JSON.stringify(this.userForm));
+                let _this = this;
+                $.ajax({
+                    url: 'user/save',
+                    type: 'POST',
+                    async: true,
+                    data: _this.userForm,
+                    success: function (data) {
+                        console.log("success:" + JSON.stringify(data));
+                        if (data.success) {
+                            _this.editDialogVisible = false;
+                            _this.query();
+                            _this.$message.success("更新成功");
+                        } else {
+                            _this.$message.error(data.msg);
+                        }
+                    },
+                    error: function (data) {
+                        console.log("error:" + JSON.stringify(data));
+                        _this.$message.error("系统错误");
+                    }
+                });
+            },
+            deleteUser: function(v) {
+                this.$confirm('确认删除用户' + v.name + '？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.delete(v.id);
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            delete(id) {
+              let _this = this;
+              $.ajax({
+                  url: 'user/delete/' + id,
+                  type: 'DELETE',
+                  async: true,
+                  success: function (data) {
+                      console.log("success:" + JSON.stringify(data));
+                      if (data.success) {
+                          _this.query();
+                          _this.$message.success("删除成功");
+                      } else {
+                          _this.$message.error(data.msg);
+                      }
+                  },
+                  error: function (data) {
+                      console.log("error:" + JSON.stringify(data));
+                      _this.$message.error("系统错误");
+                  }
+              });
+            },
+            dateFormat(row, column){  //日期格式化
+                let date = row[column.property];
+                if (date == null || date === '') {
+                    return '';
+                }
+                date = new Date(date);
+                let year = date.getFullYear();
+                let month = date.getMonth() + 1;
+                let day = date.getDate();
+                let hour = date.getHours();
+                let minute = date.getMinutes();
+                return year + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day) +
+                    ' ' + (hour < 10 ? '0' + hour : hour) + ':' + (minute < 10 ? '0' + minute : minute);
+            },
+            cancel: function (v) {
+                if (v == 'pass') {
+                    // 取消修改密码
+                    this.passForm = {};
+                    this.passDialogVisible = false;
+                } else if (v == 'edit') {
+                    // 取消编辑用户信息
+                    this.userForm = {};
+                    this.editDialogVisible = false;
+                }
+            }
+        },
+        mounted: function() {
+            this.query();
+        }
+    });
+</script>
+<style>
+    .outer-admin {
+        width: 1200px;
+        margin: 0 auto;
+    }
+    .head-text {
+        font-size: 32px;
+    }
+    .head-right {
+        float: right;
+        margin-top: 20px;
+    }
+    .mainTable {
+        margin: 0 auto;
+        width: 1200px;
+    }
+
+    .dialog {
+        margin: 0 auto;
+        width: 800px;
+    }
+</style>
+</body>

@@ -52,7 +52,7 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
         channelPipeline.addLast(new ChannelInboundHandlerAdapter(){
             @Override
             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                LOG.error("{}", cause);
+                // LOG.error("{}", cause);
                 ctx.close();
             }
         });
