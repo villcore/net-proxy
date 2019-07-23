@@ -82,7 +82,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                         pipeline.addLast(new ChannelInboundHandlerAdapter(){
                             @Override
                             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                                LOG.error("{}", cause);
+//                                LOG.error("{}", cause);
                                 ctx.close();
                             }
                         });
@@ -119,7 +119,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                         pipeline.addLast(new ChannelInboundHandlerAdapter(){
                             @Override
                             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                                LOG.error("{}", cause);
+//                                LOG.error("{}", cause);
                                 ctx.close();
                             }
                         });
