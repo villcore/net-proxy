@@ -26,4 +26,11 @@ public class ClientController {
             @RequestParam(name = "accessablity") boolean accessablity) {
         DNS.updateAccessablity(address, accessablity);
     }
+
+    @RequestMapping(value = "/global_proxy", method = RequestMethod.GET)
+    @ResponseBody
+    public void setGlobalProxy(
+            @RequestParam(name = "globalProxy") Boolean globalProxy) {
+        DNS.setGlobalProxy(globalProxy);
+    }
 }

@@ -1,18 +1,62 @@
 package com.villcore.net.proxy.web.controller;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import com.villcore.net.proxy.dns.DNS;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Date;
+import java.util.Map;
 
 /**
  * created by WangTao on 2019-07-23
  */
-@Controller
+@RestController
 public class IndexController {
     @RequestMapping(value = {"/index", "/"})
-    public String index() {
-        System.out.println(new Date());
-        return "templates/index.html";
+    public ModelAndView index() {
+        return new ModelAndView("client_management")
+                .addObject("accessablityMap", DNS.getAddressAccessablity())
+                .addObject("globalProxy", DNS.isGlobalProxy());
+    }
+
+    @RequestMapping(value = "/accessablity", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Boolean> getAllAccessablity() {
+        return DNS.getAddressAccessablity();
+    }
+
+    @RequestMapping(value = "/accessablity/update", method = RequestMethod.GET)
+    @ResponseBody
+    public void updateAllAccessablity(
+            @RequestParam(name = "address") String address,
+            @RequestParam(name = "accessablity") boolean accessablity) {
+        DNS.updateAccessablity(address, accessablity);
+    }
+
+    @RequestMapping(value = "/global_proxy", method = RequestMethod.GET)
+    public ModelAndView  setGlobalProxy(
+            @RequestParam(name = "globalProxy") Boolean globalProxy) {
+        DNS.setGlobalProxy(globalProxy);
+        return index();
+    }
+
+    @RequestMapping(value = "/proxy", method = RequestMethod.GET)
+    public ModelAndView proxy(
+            @RequestParam(name = "address") String address) {
+        DNS.updateAccessablity(address, false);
+        return index();
+    }
+
+    @RequestMapping(value = "/local", method = RequestMethod.GET)
+    public ModelAndView local(
+            @RequestParam(name = "address") String address) {
+        DNS.updateAccessablity(address, true);
+        return index();
+    }
+
+    @RequestMapping(value = "/remove", method = RequestMethod.GET)
+    public ModelAndView remove(
+            @RequestParam(name = "address") String address) {
+        DNS.removeAccessablity(address);
+        return index();
     }
 }

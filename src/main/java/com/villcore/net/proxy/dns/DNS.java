@@ -9,16 +9,16 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class DNS {
 
     private static final Logger logger = LoggerFactory.getLogger(DNS.class);
+
+    private static volatile boolean globalProxy = false;
 
     private static final Map<String, Boolean> ADDRESS_ACCESSABLITY = new LinkedHashMap<String, Boolean>() {
         @Override
@@ -63,6 +63,10 @@ public class DNS {
     }
 
     public static boolean isAccessable(String address, int port) {
+        if (globalProxy) {
+            return false;
+        }
+
         if (address.contains("google")) {
             return false;
         }
@@ -92,6 +96,10 @@ public class DNS {
         ADDRESS_ACCESSABLITY.put(address, accessablity);
     }
 
+    public static synchronized void removeAccessablity(String address) {
+        ADDRESS_ACCESSABLITY.remove(address);
+    }
+
     public static synchronized Boolean getAccessablity(String address) {
         return ADDRESS_ACCESSABLITY.get(address);
     }
@@ -100,6 +108,13 @@ public class DNS {
         return new HashMap<>(ADDRESS_ACCESSABLITY);
     }
 
+    public static boolean isGlobalProxy() {
+        return globalProxy;
+    }
+
+    public static void setGlobalProxy(boolean _globalProxy) {
+        globalProxy = _globalProxy;
+    }
     public static void main(String[] args) {
         for (int i = 0; i < 100; i++) {
             System.out.println(isAccessable("www.youtube.com", 80));

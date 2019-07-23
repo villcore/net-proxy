@@ -1,7 +1,0 @@
-server:
-  port: 8080
-spring:
-  thymeleaf:
-    mode: LEGACYHTML5
-  resources:
-    static-locations: classpath:/
