@@ -36,16 +36,33 @@
         <td style="font-weight: bold">操作</td>
     </tr>
     <c:forEach items="${accessablityMap}" var="entry">
-        <tr <c:if test="not ${entry.accessable}">style='font-weight: bold; color:royalblue'</c:if>>
-            <td>${entry.address}</td>
-            <td>${entry.accessable}</td>
-            <td>${entry.count}</td>
-            <td>
-                <a href="${pageContext.request.contextPath}/proxy?address=${entry.address}">代理</a>
-                <a href="${pageContext.request.contextPath}/local?address=${entry.address}">本地</a>
-                <a href="${pageContext.request.contextPath}/remove?address=${entry.address}">删除</a>
-            </td>
-        </tr>
+        <c:choose>
+            <c:when test="${entry.address}">
+                <tr style="color: forestgreen; font-weight: bold">
+                    <td>${entry.address}</td>
+                    <td>${entry.accessable}</td>
+                    <td>${entry.count}</td>
+                    <td>
+                        <a href="${pageContext.request.contextPath}/proxy?address=${entry.address}">代理</a>
+                        <a href="${pageContext.request.contextPath}/local?address=${entry.address}">本地</a>
+                        <a href="${pageContext.request.contextPath}/remove?address=${entry.address}">删除</a>
+                    </td>
+                </tr>
+            </c:when>
+            <c:otherwise>
+                <tr style="color: blue; font-weight: bold">
+                    <td>${entry.address}</td>
+                    <td>${entry.accessable}</td>
+                    <td>${entry.count}</td>
+                    <td>
+                        <a href="${pageContext.request.contextPath}/proxy?address=${entry.address}">代理</a>
+                        <a href="${pageContext.request.contextPath}/local?address=${entry.address}">本地</a>
+                        <a href="${pageContext.request.contextPath}/remove?address=${entry.address}">删除</a>
+                    </td>
+                </tr>
+            </c:otherwise>
+        </c:choose>
+
     </c:forEach>
 
 </table>
