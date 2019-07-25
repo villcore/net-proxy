@@ -32,16 +32,18 @@
     <tr align="center">
         <td style="font-weight: bold">地址</td>
         <td style="font-weight: bold">是否直连</td>
+        <td style="font-weight: bold">打开连接</td>
         <td style="font-weight: bold">操作</td>
     </tr>
     <c:forEach items="${accessablityMap}" var="entry">
         <tr>
-            <td>${entry.key}</td>
-            <td>${entry.value}</td>
+            <td>${entry}</td>
+            <td>${entry.accessable}</td>
+            <td>${entry.count}</td>
             <td>
-                <a href="${pageContext.request.contextPath}/proxy?address=${entry.key}">代理</a>
-                <a href="${pageContext.request.contextPath}/local?address=${entry.key}">本地</a>
-                <a href="${pageContext.request.contextPath}/remove?address=${entry.key}">删除</a>
+                <a href="${pageContext.request.contextPath}/proxy?address=${entry.address}">代理</a>
+                <a href="${pageContext.request.contextPath}/local?address=${entry.address}">本地</a>
+                <a href="${pageContext.request.contextPath}/remove?address=${entry.address}">删除</a>
             </td>
         </tr>
     </c:forEach>

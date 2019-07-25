@@ -5,7 +5,7 @@ import com.villcore.net.proxy.metric.ClientMetrics;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Map;
+import java.util.*;
 
 /**
  * created by WangTao on 2019-07-23
@@ -15,7 +15,7 @@ public class IndexController {
     @RequestMapping(value = {"/index", "/"})
     public ModelAndView index() {
         return new ModelAndView("client_management")
-                .addObject("accessablityMap", DNS.getAddressAccessablity())
+                .addObject("accessablityMap", getAllAccessablity())
                 .addObject("globalProxy", DNS.isGlobalProxy())
                 .addObject("localChannels", ClientMetrics.openLocalChannels())
                 .addObject("remoteChannels", ClientMetrics.openRemoteChannels())
@@ -24,8 +24,19 @@ public class IndexController {
 
     @RequestMapping(value = "/accessablity", method = RequestMethod.GET)
     @ResponseBody
-    public Map<String, Boolean> getAllAccessablity() {
-        return DNS.getAddressAccessablity();
+    public List<DNS.Accessiblity> getAllAccessablity() {
+
+        List<DNS.Accessiblity> accessiblityList = new ArrayList<>(DNS.getAddressAccessablity().values().size());
+        DNS.getAddressAccessablity().values().forEach(v -> {
+            accessiblityList.add(new DNS.Accessiblity(v.getAddress(), v.isAccessable(), v.getCount()));
+        });
+        accessiblityList.sort(new Comparator<DNS.Accessiblity>() {
+            @Override
+            public int compare(DNS.Accessiblity o1, DNS.Accessiblity o2) {
+                return o2.getCount() - o2.getCount();
+            }
+        });
+        return accessiblityList;
     }
 
     @RequestMapping(value = "/accessablity/update", method = RequestMethod.GET)

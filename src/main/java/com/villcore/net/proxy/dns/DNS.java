@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -21,9 +22,9 @@ public class DNS {
 
     private static volatile boolean globalProxy = false;
 
-    private static final Map<String, Boolean> ADDRESS_ACCESSABLITY = new LinkedHashMap<String, Boolean>() {
+    private static final Map<String, Accessiblity> ADDRESS_ACCESSABLITY = new LinkedHashMap<String, Accessiblity>() {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, Accessiblity> eldest) {
             if (this.size() >= 1000) {
                 return true;
             }
@@ -64,49 +65,57 @@ public class DNS {
     }
 
     public static boolean isAccessable(String address, int port) {
+        Accessiblity accessablity = getAccessablity(address);
+        if (accessablity == null) {
+            accessablity = connect(address, port);
+            updateAccessablity(address, accessablity.accessable);
+        }
+        return accessablity.accessable;
+    }
+
+    private static Accessiblity connect(String address, int port) {
         if (globalProxy) {
-            return false;
+            return new Accessiblity(address, false, 0);
         }
 
         if (address.contains("google")) {
-            return false;
-        }
-        Boolean accessablity = getAccessablity(address);
-        if (accessablity == Boolean.TRUE) {
-            return true;
+            return new Accessiblity(address, false, 0);
         }
 
-        if (accessablity == null) {
-            accessablity = connect(address, port);
-            updateAccessablity(address, Boolean.valueOf(accessablity));
-        }
-        return accessablity;
-    }
-
-    private static boolean connect(String address, int port) {
         try (Socket socket = SocketFactory.getDefault().createSocket()) {
             socket.setReuseAddress(true);
             socket.connect(new InetSocketAddress(address, port), 3000);
-            return true;
+            return new Accessiblity(address, true, 0);
         } catch (IOException e) {
-            return false;
+            return new Accessiblity(address, false, 0);
         }
     }
 
     public static synchronized void updateAccessablity(String address, Boolean accessablity) {
-        ADDRESS_ACCESSABLITY.put(address, accessablity);
+        Accessiblity access = ADDRESS_ACCESSABLITY.computeIfAbsent(address, k -> new Accessiblity(address,true, 0));
+        access.accessable = accessablity;
     }
 
     public static synchronized void removeAccessablity(String address) {
         ADDRESS_ACCESSABLITY.remove(address);
     }
 
-    public static synchronized Boolean getAccessablity(String address) {
+    public static synchronized Accessiblity getAccessablity(String address) {
         return ADDRESS_ACCESSABLITY.get(address);
     }
 
-    public static synchronized Map<String, Boolean> getAddressAccessablity() {
+    public static synchronized Map<String, Accessiblity> getAddressAccessablity() {
         return new HashMap<>(ADDRESS_ACCESSABLITY);
+    }
+
+    public static synchronized void connectAddr(String address) {
+        Accessiblity access = ADDRESS_ACCESSABLITY.computeIfAbsent(address, k -> new Accessiblity(address, true, 0));
+        access.count = access.count + 1;
+    }
+
+    public static synchronized void disConnectAddr(String address) {
+        Accessiblity access = ADDRESS_ACCESSABLITY.computeIfAbsent(address, k -> new Accessiblity(address, true, 0));
+        access.count = access.count - 1;
     }
 
     public static boolean isGlobalProxy() {
@@ -116,9 +125,54 @@ public class DNS {
     public static void setGlobalProxy(boolean _globalProxy) {
         globalProxy = _globalProxy;
     }
-    public static void main(String[] args) {
-        for (int i = 0; i < 100; i++) {
-            System.out.println(isAccessable("www.youtube.com", 80));
+
+    public static class Accessiblity {
+        String address;
+        boolean accessable;
+        int count;
+
+        public Accessiblity(String address, boolean accessable, int count) {
+            this.accessable = accessable;
+            this.count = count;
+        }
+
+        public boolean isAccessable() {
+            return accessable;
+        }
+
+        public void setAccessable(boolean accessable) {
+            this.accessable = accessable;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            this.count = count;
+        }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Accessiblity that = (Accessiblity) o;
+            return accessable == that.accessable &&
+                    count == that.count &&
+                    address.equals(that.address);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(address, accessable, count);
         }
     }
 }

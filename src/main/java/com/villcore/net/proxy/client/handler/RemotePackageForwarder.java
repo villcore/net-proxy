@@ -2,6 +2,8 @@ package com.villcore.net.proxy.client.handler;
 
 import com.villcore.net.proxy.client.HostPort;
 import com.villcore.net.proxy.crypt.Crypt;
+import com.villcore.net.proxy.dns.DNS;
+import com.villcore.net.proxy.metric.ClientMetrics;
 import com.villcore.net.proxy.packet.Package;
 import com.villcore.net.proxy.util.NamedThreadFactory;
 import com.villcore.net.proxy.util.SocketUtils;
@@ -192,11 +194,18 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         HostPort hostPort = ctx.channel().attr(AttributeKey.<HostPort>valueOf(ChannelAttrKeys.HOST_PORT)).get();
 
         Channel remoteChannel = null;
+        boolean channelConnectLocal = true;
         if (localForward) {
+            channelConnectLocal = true;
             remoteChannel = this.bootstrap.connect(hostPort.getHost(), hostPort.getPort()).sync().channel();
+            ClientMetrics.incrOpenLocalChannelCounter(1);
         } else {
+            channelConnectLocal = false;
             remoteChannel = this.remoteBootstrap.connect(proxyServerAddress, proxyServerPort).sync().channel();
+            ClientMetrics.incrOpenRemoteChannelCounter(1);
         }
+        DNS.connectAddr(hostPort.getHost());
+
         Attribute<Channel> sourceChannelAttr = remoteChannel.attr(AttributeKey.<Channel>valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
         sourceChannelAttr.set(localChannel);
         Attribute<Crypt> cryptAttribute = localChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT));
@@ -205,12 +214,20 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         remoteChannel.attr(AttributeKey.valueOf(ChannelAttrKeys.LOCAL_FORWARD)).set(localForward);
 
         channelMap.put(localChannel, remoteChannel);
+        boolean finalChannelConnectLocal = channelConnectLocal;
         remoteChannel.closeFuture().addListener(new GenericFutureListener<Future<? super Void>>() {
             @Override
             public void operationComplete(Future<? super Void> future) throws Exception {
                 LOG.info("Close channel {} close complete", localChannel.remoteAddress());
                 channelMap.remove(localChannel);
                 localChannel.close();
+
+                if (finalChannelConnectLocal) {
+                    ClientMetrics.incrOpenLocalChannelCounter(-1);
+                } else {
+                    ClientMetrics.incrOpenRemoteChannelCounter(-1);
+                }
+                DNS.disConnectAddr(hostPort.getHost());
             }
         });
         LOG.info("Connect remote channel {} complete", remoteChannel.remoteAddress());
