@@ -19,7 +19,31 @@ public class IndexController {
                 .addObject("globalProxy", DNS.isGlobalProxy())
                 .addObject("localChannels", ClientMetrics.openLocalChannels())
                 .addObject("remoteChannels", ClientMetrics.openRemoteChannels())
+                .addObject("rx", getByteUnit(ClientMetrics.rx()))
+                .addObject("rxTotal", getByteUnit(ClientMetrics.rxTotal()))
+                .addObject("tx", getByteUnit(ClientMetrics.tx()))
+                .addObject("txTotal", getByteUnit(ClientMetrics.txTotal()))
                 .addObject("openChannels", ClientMetrics.openChanels());
+    }
+
+    public String getByteUnit(long byteLen) {
+        if (byteLen < 1024) {
+            return byteLen + "b";
+        }
+
+        if (byteLen < 1024 * 1024) {
+            return byteLen / 1024 + "Kb";
+        }
+
+        if (byteLen < 1024 * 1024 * 1024) {
+            return byteLen / (1024 * 1024) + "Mb";
+        }
+
+        if (byteLen < 1024 * 1024 * 1024 * 1024) {
+            return byteLen / (1024 * 1024 * 1024) + "Gb";
+        }
+
+        return byteLen + "b";
     }
 
     @RequestMapping(value = "/accessablity", method = RequestMethod.GET)

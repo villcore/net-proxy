@@ -75,6 +75,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                                 Channel channel = ctx.channel();
                                 Attribute<Channel> sourceChannelAttr = channel.attr(AttributeKey.valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
                                 Channel localChannel = sourceChannelAttr.get();
+                                ClientMetrics.incRx (pkg.getBody().length);
                                 localChannel.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Write to local channel content \n {}", new String(pkg.getBody(), StandardCharsets.UTF_8));
@@ -112,6 +113,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                                 Channel channel = ctx.channel();
                                 Attribute<Channel> sourceChannelAttr = channel.attr(AttributeKey.valueOf(ChannelAttrKeys.SOURCE_CHANNEL));
                                 Channel localChannel = sourceChannelAttr.get();
+                                ClientMetrics.incRx (pkg.getBody().length);
                                 localChannel.writeAndFlush(Unpooled.wrappedBuffer(pkg.getBody()));
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Write to local channel content \n {}", new String(pkg.getBody(), StandardCharsets.UTF_8));
@@ -178,6 +180,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
         if (remoteChannel != null) {
             byte[] bytes = Package.toBytes(pkg);
             bytes = localForward ? pkg.getBody() : bytes;
+            ClientMetrics.incTx(bytes.length);
             remoteChannel.writeAndFlush(Unpooled.wrappedBuffer(bytes));
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Forward {} bytes from local channel {} to remote channel {} complete", bytes.length, localChannel.remoteAddress(), remoteChannel.remoteAddress());

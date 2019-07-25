@@ -27,6 +27,13 @@
     <a href="${pageContext.request.contextPath}/global_proxy?globalProxy=false" style="font-weight: bold">关闭</a>
     <span>${localChannels}/${remoteChannels}/${openChannels}</span>
 </div>
+
+<div>
+    <span style="width: 10%; display: inline">RX:&nbsp ${rx}/s (${rxTotal})</span>
+</div>
+<div>
+    <span style="width: 10%; display: inline">TX:&nbsp ${tx}/s (${txTotal})</span>
+</div>
 <br/>
 <table border="1px" width="100%">
     <tr align="center">
