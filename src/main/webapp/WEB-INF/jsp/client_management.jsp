@@ -36,8 +36,8 @@
         <td style="font-weight: bold">操作</td>
     </tr>
     <c:forEach items="${accessablityMap}" var="entry">
-        <tr>
-            <td>${entry}</td>
+        <tr <c:if test="not ${entry.accessable}">style='font-weight: bold; color:royalblue'</c:if>>
+            <td>${entry.address}</td>
             <td>${entry.accessable}</td>
             <td>${entry.count}</td>
             <td>

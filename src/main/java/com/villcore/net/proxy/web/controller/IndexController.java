@@ -30,12 +30,15 @@ public class IndexController {
         DNS.getAddressAccessablity().values().forEach(v -> {
             accessiblityList.add(new DNS.Accessiblity(v.getAddress(), v.isAccessable(), v.getCount()));
         });
+
         accessiblityList.sort(new Comparator<DNS.Accessiblity>() {
             @Override
             public int compare(DNS.Accessiblity o1, DNS.Accessiblity o2) {
-                return o2.getCount() - o2.getCount();
+                return o2.getCount() - o1.getCount();
             }
         });
+
+        accessiblityList.removeIf(accessiblity -> accessiblity.getCount() == 0);
         return accessiblityList;
     }
 

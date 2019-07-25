@@ -132,6 +132,7 @@ public class DNS {
         int count;
 
         public Accessiblity(String address, boolean accessable, int count) {
+            this.address = address;
             this.accessable = accessable;
             this.count = count;
         }
@@ -173,6 +174,15 @@ public class DNS {
         @Override
         public int hashCode() {
             return Objects.hash(address, accessable, count);
+        }
+
+        @Override
+        public String toString() {
+            return "Accessiblity{" +
+                    "address='" + address + '\'' +
+                    ", accessable=" + accessable +
+                    ", count=" + count +
+                    '}';
         }
     }
 }
