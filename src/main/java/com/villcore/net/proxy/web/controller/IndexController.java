@@ -1,6 +1,7 @@
 package com.villcore.net.proxy.web.controller;
 
 import com.villcore.net.proxy.dns.DNS;
+import com.villcore.net.proxy.metric.ClientMetrics;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -15,7 +16,10 @@ public class IndexController {
     public ModelAndView index() {
         return new ModelAndView("client_management")
                 .addObject("accessablityMap", DNS.getAddressAccessablity())
-                .addObject("globalProxy", DNS.isGlobalProxy());
+                .addObject("globalProxy", DNS.isGlobalProxy())
+                .addObject("localChannels", ClientMetrics.openLocalChannels())
+                .addObject("remoteChannels", ClientMetrics.openRemoteChannels())
+                .addObject("openChannels", ClientMetrics.openChanels());
     }
 
     @RequestMapping(value = "/accessablity", method = RequestMethod.GET)
@@ -33,7 +37,7 @@ public class IndexController {
     }
 
     @RequestMapping(value = "/global_proxy", method = RequestMethod.GET)
-    public ModelAndView  setGlobalProxy(
+    public ModelAndView setGlobalProxy(
             @RequestParam(name = "globalProxy") Boolean globalProxy) {
         DNS.setGlobalProxy(globalProxy);
         return index();
@@ -57,6 +61,12 @@ public class IndexController {
     public ModelAndView remove(
             @RequestParam(name = "address") String address) {
         DNS.removeAccessablity(address);
+        return index();
+    }
+
+    @RequestMapping(value = "/metrics", method = RequestMethod.GET)
+    public ModelAndView metrics(
+            @RequestParam(name = "address") String address) {
         return index();
     }
 }

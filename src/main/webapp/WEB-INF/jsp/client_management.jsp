@@ -1,5 +1,5 @@
 <%@ page import="java.util.Date" %>
-<%@ page language="java" pageEncoding="UTF-8"%>
+<%@ page language="java" pageEncoding="UTF-8" %>
 <%@page isELIgnored="false" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -9,7 +9,7 @@
 </head>
 
 <body>
-<H1 align="center">Net-Proxy客户端管理</H1>
+<%--<H1 align="center">Net-Proxy客户端管理</H1>--%>
 <div>
     <span style="font-weight: bold; color: red">全局代理:
         <c:choose>
@@ -22,8 +22,10 @@
         </c:choose>
     </span>
 
-    <a href="${pageContext.request.contextPath}/global_proxy?globalProxy=true" style="font-weight: bold; margin-left: 50px">打开</a>
+    <a href="${pageContext.request.contextPath}/global_proxy?globalProxy=true"
+       style="font-weight: bold; margin-left: 50px">打开</a>
     <a href="${pageContext.request.contextPath}/global_proxy?globalProxy=false" style="font-weight: bold">关闭</a>
+    <span>${localChannels}/${remoteChannels}/${openChannels}</span>
 </div>
 <br/>
 <table border="1px" width="100%">
@@ -45,5 +47,13 @@
     </c:forEach>
 
 </table>
+
+<script language="JavaScript">
+    function Refresh() {
+        window.location.reload();
+    }
+
+    setTimeout('Refresh()', 1000); //1秒刷新一次
+</script>
 </body>
 </html>
