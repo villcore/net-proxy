@@ -44,8 +44,8 @@
     </tr>
     <c:forEach items="${accessablityMap}" var="entry">
         <c:choose>
-            <c:when test="${entry.address}">
-                <tr style="color: forestgreen; font-weight: bold">
+            <c:when test="${entry.accessable}">
+                <tr style="background: greenyellow; font-weight: bold">
                     <td>${entry.address}</td>
                     <td>${entry.accessable}</td>
                     <td>${entry.count}</td>
@@ -57,7 +57,7 @@
                 </tr>
             </c:when>
             <c:otherwise>
-                <tr style="color: blue; font-weight: bold">
+                <tr style="background: orange; font-weight: bold">
                     <td>${entry.address}</td>
                     <td>${entry.accessable}</td>
                     <td>${entry.count}</td>
