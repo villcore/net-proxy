@@ -27,20 +27,20 @@ public class IndexController {
     }
 
     public String getByteUnit(long byteLen) {
-        if (byteLen < 1024) {
+        if (byteLen < 1024L) { //kb
             return byteLen + "b";
         }
 
-        if (byteLen < 1024 * 1024) {
-            return byteLen / 1024 + "Kb";
+        if (byteLen < 1024L * 1024L) { //mb
+            return String.format("%.1fKb", (double) (byteLen / 1024L));
         }
 
-        if (byteLen < 1024 * 1024 * 1024) {
-            return byteLen / (1024 * 1024) + "Mb";
+        if (byteLen < 1024L * 1024L * 1024L) { //gb
+            return String.format("%.1fMb", (double) (byteLen / (1024L * 1024L)));
         }
 
-        if (byteLen < 1024 * 1024 * 1024 * 1024) {
-            return byteLen / (1024 * 1024 * 1024) + "Gb";
+        if (byteLen < (1024L * 1024L * 1024L * 1024L)) { //tb
+            return String.format("%.1fGb", (double) (byteLen / (1024L * 1024L * 1024L)));
         }
 
         return byteLen + "b";
