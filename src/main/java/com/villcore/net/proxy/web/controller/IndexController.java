@@ -32,15 +32,15 @@ public class IndexController {
         }
 
         if (byteLen < 1024L * 1024L) { //mb
-            return String.format("%.1fKb", (double) (byteLen / 1024L));
+            return String.format("%.1fKb", (double) (byteLen / 1024.0));
         }
 
         if (byteLen < 1024L * 1024L * 1024L) { //gb
-            return String.format("%.1fMb", (double) (byteLen / (1024L * 1024L)));
+            return String.format("%.1fMb", (double) (byteLen / (1024.0 * 1024.0)));
         }
 
         if (byteLen < (1024L * 1024L * 1024L * 1024L)) { //tb
-            return String.format("%.1fGb", (double) (byteLen / (1024L * 1024L * 1024L)));
+            return String.format("%.1fGb", (double) (byteLen / (1024.0 * 1024.0 * 1024.0)));
         }
 
         return byteLen + "b";
