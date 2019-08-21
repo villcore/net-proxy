@@ -121,8 +121,9 @@ public class DNS {
         return globalProxy;
     }
 
-    public static void setGlobalProxy(boolean _globalProxy) {
+    public static synchronized void setGlobalProxy(boolean _globalProxy) {
         globalProxy = _globalProxy;
+        ADDRESS_ACCESSABLITY.clear();
     }
 
     public static class Accessiblity {
