@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.stream.IntStream;
 
 /**
  * create by WangTao on 2019/1/25
@@ -52,6 +53,8 @@ public class NetProxyClient {
     }
 
     public static void run(String[] args) {
+        IntStream.range(0, 2).forEach(System.out::println);
+
         if (args.length != 1) {
             System.err.println("Usage: <client_config>");
             Runtime.getRuntime().halt(1);

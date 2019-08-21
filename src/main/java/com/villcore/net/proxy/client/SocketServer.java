@@ -46,7 +46,7 @@ public class SocketServer {
                     .childOption(ChannelOption.SO_REUSEADDR, true)
                     .childOption(ChannelOption.SO_RCVBUF, 1024 * 1024 * 1024)
                     .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
-                    .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
+                    .childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 300)
                     .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                     .childOption(ChannelOption.SO_SNDBUF, 1024 * 1024 * 1024)
                     .childHandler(new ClientChannelInitializer(remoteAddress, remotePort, password));

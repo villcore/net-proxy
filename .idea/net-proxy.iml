@@ -82,5 +82,8 @@
     <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-annotations-api:9.0.21" level="project" />
     <orderEntry type="library" name="Maven: org.apache.tomcat.embed:tomcat-embed-el:9.0.21" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.jdt:ecj:3.16.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.sun.tools.btrace:btrace-agent:1.2.3" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.sun.tools.btrace:btrace-boot:1.2.3" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.sun.tools.btrace:btrace-client:1.2.3" level="project" />
   </component>
 </module>
