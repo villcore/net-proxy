@@ -5,9 +5,12 @@ import com.villcore.net.proxy.packet.Package;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public class ClientChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
@@ -45,6 +48,8 @@ public class ClientChannelInitializer extends ChannelInitializer<NioSocketChanne
         LOG.info("Init local conn {}", ch.remoteAddress());
         ch.attr(AttributeKey.valueOf(ChannelAttrKeys.CRYPT)).set(createCrypt(password));
         ChannelPipeline channelPipeline = ch.pipeline();
+        channelPipeline.addLast(new ReadTimeoutHandler(30000, TimeUnit.MILLISECONDS));
+        channelPipeline.addLast(new ReadTimeoutHandler(30000, TimeUnit.MILLISECONDS));
         channelPipeline.addLast(new LocalHttpDecoder(4096));
 //        channelPipeline.addLast(new LocalPackageDecoder());
         channelPipeline.addLast(new PackageEncipher());

@@ -14,6 +14,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
@@ -26,6 +27,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 @ChannelHandler.Sharable
 public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package> {
@@ -62,11 +64,14 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_REUSEADDR, true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3 * 1000)
                 .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
+                        pipeline.addLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
                         pipeline.addLast(new RemotePackageDecoder());
                         pipeline.addLast(new PackageDecipher());
                         pipeline.addLast(new SimpleChannelInboundHandler<Package>() {
@@ -98,6 +103,7 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_RCVBUF, 1 * 1024 * 1024)
                 .option(ChannelOption.SO_SNDBUF, 1 * 1024 * 1024)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3 * 1000)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
@@ -105,6 +111,8 @@ public class RemotePackageForwarder extends SimpleChannelInboundHandler<Package>
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
+                        pipeline.addLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
                         pipeline.addLast(new RemotePackageDecoder());
                         pipeline.addLast(new PackageDecipher());
                         pipeline.addLast(new SimpleChannelInboundHandler<Package>() {
