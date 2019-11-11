@@ -117,14 +117,13 @@
             <artifactId>jstl</artifactId>
         </dependency>
 
-<<<<<<< HEAD
         <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
         <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>3.9.1</version>
-=======
+        </dependency>
         <dependency>
             <groupId>com.sun.tools.btrace</groupId>
             <artifactId>btrace-agent</artifactId>
@@ -142,7 +141,6 @@
             <artifactId>btrace-client</artifactId>
             <version>1.2.3</version>
             <scope>provided</scope>
->>>>>>> 5cac82f7fa779edc2783fc812f68a1a41e1af754
         </dependency>
 
         <!--<dependency>-->
